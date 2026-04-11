@@ -56,16 +56,16 @@ const ProfilePage = () => {
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
+        {
+          text: 'Logout',
           style: 'destructive',
           onPress: async () => {
-             await SafeStorage.removeItem('token');
-             await SafeStorage.removeItem('user');
-             navigation.reset({
-               index: 0,
-               routes: [{ name: 'Login' }],
-             });
+            await SafeStorage.removeItem('token');
+            await SafeStorage.removeItem('user');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
           }
         }
       ]
@@ -74,29 +74,29 @@ const ProfilePage = () => {
 
   const AddressItem = ({ title, address }: { title: string; address: string }) => (
     <View style={styles.addressCard}>
-        <View style={styles.addressHeader}>
-            <View style={styles.addressTitleRow}>
-                <View style={styles.pinIconSmall}>
-                   <Text style={{ fontSize: 13 }}>📍</Text>
-                </View>
-                <Text style={styles.addressTitle}>{title}</Text>
-            </View>
-            <View style={styles.addressActions}>
-               <TouchableOpacity><Text style={styles.actionText}>✏️</Text></TouchableOpacity>
-               <TouchableOpacity><Text style={styles.actionText}>🗑️</Text></TouchableOpacity>
-            </View>
+      <View style={styles.addressHeader}>
+        <View style={styles.addressTitleRow}>
+          <View style={styles.pinIconSmall}>
+            <Text style={{ fontSize: 13 }}>📍</Text>
+          </View>
+          <Text style={styles.addressTitle}>{title}</Text>
         </View>
-        <Text style={styles.addressContent}>{address}</Text>
+        <View style={styles.addressActions}>
+          <TouchableOpacity><Text style={styles.actionText}>✏️</Text></TouchableOpacity>
+          <TouchableOpacity><Text style={styles.actionText}>🗑️</Text></TouchableOpacity>
+        </View>
+      </View>
+      <Text style={styles.addressContent}>{address}</Text>
     </View>
   );
 
   const MenuRow = ({ title, icon, color, onPress }: { title: string; icon: string; color?: string; onPress?: () => void }) => (
     <TouchableOpacity style={styles.menuRow} onPress={onPress}>
-        <View style={styles.menuIconBox}>
-            <Text style={styles.menuIconText}>{icon}</Text>
-        </View>
-        <Text style={[styles.menuTitle, color ? { color } : null]}>{title}</Text>
-        <Text style={styles.chevron}>›</Text>
+      <View style={styles.menuIconBox}>
+        <Text style={styles.menuIconText}>{icon}</Text>
+      </View>
+      <Text style={[styles.menuTitle, color ? { color } : null]}>{title}</Text>
+      <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 
@@ -110,7 +110,7 @@ const ProfilePage = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       {/* Background Gradient - Green Themed */}
       <View style={StyleSheet.absoluteFill}>
         <Svg height="100%" width="100%">
@@ -129,7 +129,7 @@ const ProfilePage = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Profile</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.settingsCircle}
             onPress={() => navigation.navigate('EditProfile')}
           >
@@ -138,72 +138,72 @@ const ProfilePage = () => {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-          
+
           {/* Profile Card */}
           <View style={styles.profileTopContainer}>
             <View style={styles.avatarPillWrapper}>
-                <View style={styles.avatarBorderOuter}>
-                   <View style={styles.avatarInternal}>
-                      {user.profileImage ? (
-                        <Image 
-                          source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.166:5000${user.profileImage}` }} 
-                          style={{ width: '100%', height: '100%' }} 
-                        />
-                      ) : (
-                        <Text style={styles.avatarLetterBig}>{user.name?.charAt(0).toUpperCase()}</Text>
-                      )}
-                   </View>
+              <View style={styles.avatarBorderOuter}>
+                <View style={styles.avatarInternal}>
+                  {user.profileImage ? (
+                    <Image
+                      source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.138:5000${user.profileImage}` }}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  ) : (
+                    <Text style={styles.avatarLetterBig}>{user.name?.charAt(0).toUpperCase()}</Text>
+                  )}
                 </View>
-                <View style={styles.completionPill}>
-                    <Text style={styles.completionText}>100% Complete</Text>
-                </View>
+              </View>
+              <View style={styles.completionPill}>
+                <Text style={styles.completionText}>100% Complete</Text>
+              </View>
             </View>
-            
+
             <View style={styles.userInfoSide}>
-                <View style={styles.nameActionRow}>
-                    <Text style={styles.userNameText}>{user.name || 'User'}</Text>
-                    <TouchableOpacity>
-                       {/* <Text style={styles.inlineEditIcon}>✏️</Text> */}
-                    </TouchableOpacity>
-                </View>
-                <Text style={styles.userEmailText}>{user.email?.toLowerCase() || 'user@example.com'}</Text>
+              <View style={styles.nameActionRow}>
+                <Text style={styles.userNameText}>{user.name || 'User'}</Text>
+                <TouchableOpacity>
+                  {/* <Text style={styles.inlineEditIcon}>✏️</Text> */}
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.userEmailText}>{user.email?.toLowerCase() || 'user@example.com'}</Text>
             </View>
           </View>
 
           {/* Main Content Area */}
           <View style={styles.mainWhiteCard}>
-             <Text style={styles.sectionLabel}>Address</Text>
-             
-             {/* Dynamic Address Item */}
-             {user.address ? (
-               <AddressItem 
-                  title="Primary Address" 
-                  address={`${user.address.street}, ${user.address.city}, ${user.address.state} - ${user.address.pincode}`} 
-               />
-             ) : (
-               <Text style={styles.emptyText}>No address provided.</Text>
-             )}
+            <Text style={styles.sectionLabel}>Address</Text>
 
-             {/* Quick Menu Section */}
-             <View style={styles.menuSection}>
-                <MenuRow 
-                  title="Your Booking" 
-                  icon="📅" 
-                  onPress={() => navigation.navigate('Bookings' as any)} 
-                />
-                <View style={styles.menuDivider} />
-                <MenuRow 
-                  title="Notification" 
-                  icon="🔔" 
-                  onPress={() => navigation.navigate('Notifications' as any)} 
-                />
-                <View style={styles.menuDivider} />
-                <MenuRow title="Rating" icon="⭐" />
-                <View style={styles.menuDivider} />
-                <MenuRow title="Services" icon="🛠️" onPress={() => navigation.navigate('VehicleSelection', {} )} />
-                <View style={styles.menuDivider} />
-                <MenuRow title="Logout" icon="🚪" color="#FF5252" onPress={handleLogout} />
-             </View>
+            {/* Dynamic Address Item */}
+            {user.address ? (
+              <AddressItem
+                title="Primary Address"
+                address={`${user.address.street}, ${user.address.city}, ${user.address.state} - ${user.address.pincode}`}
+              />
+            ) : (
+              <Text style={styles.emptyText}>No address provided.</Text>
+            )}
+
+            {/* Quick Menu Section */}
+            <View style={styles.menuSection}>
+              <MenuRow
+                title="Your Booking"
+                icon="📅"
+                onPress={() => navigation.navigate('Bookings' as any)}
+              />
+              <View style={styles.menuDivider} />
+              <MenuRow
+                title="Notification"
+                icon="🔔"
+                onPress={() => navigation.navigate('Notifications' as any)}
+              />
+              <View style={styles.menuDivider} />
+              <MenuRow title="Rating" icon="⭐" />
+              <View style={styles.menuDivider} />
+              <MenuRow title="Services" icon="🛠️" onPress={() => navigation.navigate('VehicleSelection', {})} />
+              <View style={styles.menuDivider} />
+              <MenuRow title="Logout" icon="🚪" color="#FF5252" onPress={handleLogout} />
+            </View>
           </View>
 
         </ScrollView>

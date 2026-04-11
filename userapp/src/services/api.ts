@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Standard for Android Emulator to localhost
-const BASE_URL = 'http://192.168.0.166:5000/api'; 
+const BASE_URL = 'http://192.168.0.137:5000/api'; 
 
 // --- RESILIENT STORAGE WRAPPER ---
 // Fixes "Native module is null" if AsyncStorage isn't built/linked correctly

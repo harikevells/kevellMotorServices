@@ -164,7 +164,7 @@ const EditProfilePage = () => {
 
       console.log('[SYNC-DEBUG] 📤 Sending Payload:', JSON.stringify(updateData));
       const res: any = await updateProfile(updateData);
-      
+
       if (res.success) {
         // Essential: Update local cache so OTHER pages see the change immediately
         await SafeStorage.setItem('user', JSON.stringify(res.user));
@@ -180,29 +180,29 @@ const EditProfilePage = () => {
     }
   };
 
-  const fullImageUrl = formData.profileImage 
-    ? (formData.profileImage.startsWith('http') ? formData.profileImage : `http://192.168.0.166:5000${formData.profileImage}`)
+  const fullImageUrl = formData.profileImage
+    ? (formData.profileImage.startsWith('http') ? formData.profileImage : `http://192.168.0.138:5000${formData.profileImage}`)
     : null;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      
+
       {/* Header - Simpler now */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={{ width: 40 }} /> 
+        <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
-          
+
           {/* Avatar Section */}
           <View style={styles.avatarPickerContainer}>
             <TouchableOpacity onPress={handlePickImage} style={styles.avatarWrapper}>
@@ -210,27 +210,27 @@ const EditProfilePage = () => {
                 <Image source={{ uri: fullImageUrl }} style={styles.avatarImage as any} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                   <Text style={styles.avatarPlaceholderText}>{formData.name?.charAt(0).toUpperCase()}</Text>
+                  <Text style={styles.avatarPlaceholderText}>{formData.name?.charAt(0).toUpperCase()}</Text>
                 </View>
               )}
               <View style={styles.editIconBadge}>
-                 <Text style={styles.editIconText}>📷</Text>
+                <Text style={styles.editIconText}>📷</Text>
               </View>
             </TouchableOpacity>
             {uploading && <ActivityIndicator style={{ marginTop: 10 }} color="#1B5E20" />}
           </View>
 
           <Text style={styles.sectionTitle}>Personal Details</Text>
-          <InputField 
-            label="Full Name" 
-            value={formData.name} 
-            onChangeText={(t: string) => setFormData({...formData, name: t})} 
+          <InputField
+            label="Full Name"
+            value={formData.name}
+            onChangeText={(t: string) => setFormData({ ...formData, name: t })}
             placeholder="Enter your name"
           />
-          <InputField 
-            label="Phone Number" 
-            value={formData.phone} 
-            onChangeText={(t: string) => setFormData({...formData, phone: t})} 
+          <InputField
+            label="Phone Number"
+            value={formData.phone}
+            onChangeText={(t: string) => setFormData({ ...formData, phone: t })}
             keyboardType="phone-pad"
             placeholder="Enter phone number"
           />
@@ -239,10 +239,10 @@ const EditProfilePage = () => {
             <Text style={styles.label}>Gender</Text>
             <View style={styles.genderRow}>
               {['Male', 'Female', 'Other'].map((g) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={g}
                   style={[styles.genderBtn, formData.gender === g && styles.genderBtnActive]}
-                  onPress={() => setFormData({...formData, gender: g})}
+                  onPress={() => setFormData({ ...formData, gender: g })}
                 >
                   <Text style={[styles.genderBtnText, formData.gender === g && styles.genderBtnTextActive]}>{g}</Text>
                 </TouchableOpacity>
@@ -251,32 +251,32 @@ const EditProfilePage = () => {
           </View>
 
           <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Address Details</Text>
-          <InputField 
-            label="Street / Area" 
-            value={formData.street} 
-            onChangeText={(t: string) => setFormData({...formData, street: t})} 
+          <InputField
+            label="Street / Area"
+            value={formData.street}
+            onChangeText={(t: string) => setFormData({ ...formData, street: t })}
             placeholder="Street name"
           />
-          <InputField 
-            label="City" 
-            value={formData.city} 
-            onChangeText={(t: string) => setFormData({...formData, city: t})} 
+          <InputField
+            label="City"
+            value={formData.city}
+            onChangeText={(t: string) => setFormData({ ...formData, city: t })}
             placeholder="City"
           />
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 10 }}>
-              <InputField 
-                label="State" 
-                value={formData.state} 
-                onChangeText={(t: string) => setFormData({...formData, state: t})} 
+              <InputField
+                label="State"
+                value={formData.state}
+                onChangeText={(t: string) => setFormData({ ...formData, state: t })}
                 placeholder="State"
               />
             </View>
             <View style={{ flex: 1 }}>
-              <InputField 
-                label="Pincode" 
-                value={formData.pincode} 
-                onChangeText={(t: string) => setFormData({...formData, pincode: t})} 
+              <InputField
+                label="Pincode"
+                value={formData.pincode}
+                onChangeText={(t: string) => setFormData({ ...formData, pincode: t })}
                 keyboardType="numeric"
                 placeholder="600xxx"
               />
@@ -288,17 +288,17 @@ const EditProfilePage = () => {
 
         {/* Sticky Save Button at Bottom */}
         <View style={styles.footer}>
-           <TouchableOpacity 
-             style={[styles.saveButton, loading && { opacity: 0.7 }]} 
-             onPress={handleSave}
-             disabled={loading}
-           >
-             {loading ? (
-               <ActivityIndicator color="#FFF" />
-             ) : (
-               <Text style={styles.saveButtonText}>Save Changes</Text>
-             )}
-           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.saveButton, loading && { opacity: 0.7 }]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

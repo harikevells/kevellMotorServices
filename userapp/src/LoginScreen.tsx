@@ -40,7 +40,19 @@ const LoginScreen = () => {
       if (res.token) {
         await SafeStorage.setItem('token', res.token);
         await SafeStorage.setItem('user', JSON.stringify(res.user));
-        navigation.navigate('HomeTabs');
+        
+        // Redirect based on role and clear history
+        if (res.user.role === 'vendor') {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'VendorDrawer' }],
+          });
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'HomeTabs' }],
+          });
+        }
       }
     } catch (error: any) {
       Alert.alert('Login Failed', error.toString());

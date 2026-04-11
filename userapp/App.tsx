@@ -44,6 +44,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   PaymentSimulation: { amount: number; bookingData: any };
   EditProfile: undefined;
+  VendorDrawer: undefined;
 };
 
 
@@ -73,6 +74,7 @@ function App() {
           <Stack.Screen name="Notifications" component={NotificationPage} />
           <Stack.Screen name="PaymentSimulation" component={PaymentSimulationPage} />
           <Stack.Screen name="EditProfile" component={require('./src/AllPages/EditProfilePage').default} />
+          <Stack.Screen name="VendorDrawer" component={require('./src/VendorAllPages/VendorSidebarNavigator').default} />
         </Stack.Navigator>
 
       </NavigationContainer>

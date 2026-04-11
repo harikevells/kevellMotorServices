@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import FirstSVG from './assets/first.svg';
+import FirstSVG from './assets/xeroxspiral.png';
 
 type OnboardingScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
@@ -15,10 +15,10 @@ const OnboardingScreen = ({ navigation }: Props) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.topHalf}>
         {/* <Text style={styles.illustration}>🖨️</Text> */}
-        <FirstSVG style={styles.svg} width={350} height={500} />
+        <Image source={FirstSVG} style={[styles.svg, { width: 500, height: 550 }]} resizeMode="contain" />
       </View>
       <View style={styles.bottomHalf}>
-        <Text style={styles.title}>Urgent Service{'\n'}Xerox Delivery</Text>
+        <Text style={styles.title}>Urgent Service{'\n'}Bike Services</Text>
         <Text style={styles.subtitle}>
           We work on a crowdsourcing model. You place an order, the system selects the perfect courier for you.
         </Text>
@@ -43,7 +43,9 @@ const styles = StyleSheet.create({
 
   },
   svg: {
-    marginTop: 100,
+    marginTop: 10,
+    width: 450,
+    height: 500,
   },
   illustration: {
     fontSize: 150,

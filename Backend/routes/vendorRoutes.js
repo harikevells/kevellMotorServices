@@ -177,4 +177,8 @@ router.get('/export/orders',
   exportOrders
 );
 
+const { createDeliveryBoy, getDeliveryBoys } = require('../controllers/vendorController');
+router.post('/delivery-boys', verifyToken, createDeliveryBoy);
+router.get('/delivery-boys', verifyToken, getDeliveryBoys);
+
 module.exports = router;

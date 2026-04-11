@@ -98,6 +98,7 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/razorpay', require('./routes/razorpayRoutes'));
 app.use('/api/offers', require('./routes/offerRoutes'));
 app.use('/api/master', require('./routes/masterRoutes'));
+app.use('/api/vendor', require('./routes/vendorRoutes'));
 
 
 // Error handler

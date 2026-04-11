@@ -49,7 +49,7 @@ const BANNERS = [
     title: 'Bike First Service',
     price: '999',
     type: 'Bike',
-    color: '#0d7749ff', 
+    color: '#0d7749ff',
     img: BIKE_IMG,
   },
   {
@@ -148,8 +148,8 @@ const HomeScreen = () => {
         <Text style={styles.bannerText}>
           {item.title}{'\n'}checked for{'\n'}₹{item.price} only!
         </Text>
-        <TouchableOpacity 
-          style={styles.bannerButton} 
+        <TouchableOpacity
+          style={styles.bannerButton}
           onPress={() => handleStartBooking(item.type)}
         >
           <Text style={styles.bannerButtonText}>Book Now</Text>
@@ -161,8 +161,8 @@ const HomeScreen = () => {
     </View>
   );
 
-  const profileImageUrl = user?.profileImage 
-    ? (user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.166:5000${user.profileImage}`)
+  const profileImageUrl = user?.profileImage
+    ? (user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.138:5000${user.profileImage}`)
     : null;
 
   return (
@@ -179,19 +179,19 @@ const HomeScreen = () => {
             <Text style={styles.greetingTitle}>Hello {user?.name?.split(' ')[0] || 'User'},</Text>
             <Text style={styles.greetingSubtitle}>Your vehicle is in good hands</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.locationButton}
             onPress={() => navigation.navigate('Profile' as any)}
           >
             <View style={styles.avatarMini}>
-               {profileImageUrl ? (
-                 <Image 
-                    source={{ uri: profileImageUrl }} 
-                    style={{ width: '100%', height: '100%', borderRadius: 19 }} 
-                 />
-               ) : (
-                 <Text style={styles.avatarMiniText}>{user?.name?.charAt(0) || 'U'}</Text>
-               )}
+              {profileImageUrl ? (
+                <Image
+                  source={{ uri: profileImageUrl }}
+                  style={{ width: '100%', height: '100%', borderRadius: 19 }}
+                />
+              ) : (
+                <Text style={styles.avatarMiniText}>{user?.name?.charAt(0) || 'U'}</Text>
+              )}
             </View>
           </TouchableOpacity>
         </View>
@@ -215,9 +215,9 @@ const HomeScreen = () => {
           />
           <View style={styles.pagination}>
             {BANNERS.map((_, i) => (
-              <View 
-                key={i} 
-                style={[styles.dot, activeSlide === i && styles.activeDot]} 
+              <View
+                key={i}
+                style={[styles.dot, activeSlide === i && styles.activeDot]}
               />
             ))}
           </View>
@@ -235,16 +235,16 @@ const HomeScreen = () => {
                 navigation.navigate('VehicleSelection', { category: cat.id });
               }}
             >
-              <View 
+              <View
                 style={[
-                  styles.iconContainer, 
+                  styles.iconContainer,
                   { backgroundColor: cat.color },
                   selectedCategory === cat.id && { borderWidth: 2, borderColor: COLORS.primary }
                 ]}
               >
                 <Text style={styles.categoryIcon}>{cat.icon}</Text>
               </View>
-              <Text 
+              <Text
                 style={[
                   styles.categoryTitle,
                   selectedCategory === cat.id && { color: COLORS.primary, fontWeight: '700' }

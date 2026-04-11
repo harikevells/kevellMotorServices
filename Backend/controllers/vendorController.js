@@ -6,6 +6,7 @@ const Payment = require('../models/Payment');
 const Review = require('../models/Review');
 const Shop = require('../models/ServiceCenter'); // ✅ Changed from 'Shop'
 const User = require('../models/User');           // ✅ Added
+const DeliveryBoy = require('../models/DeliveryBoy'); // ✅ Moved to top
 const bcrypt = require('bcryptjs');                // ✅ Added
 const jwt = require('jsonwebtoken');                // ✅ Added
 const fs = require('fs');
@@ -722,10 +723,11 @@ exports.getOrderStatistics = async (req, res, next) => {
       });
     }
 
-    const { period = 'all' } = req.query; // week, month, year, all
+    const { period = 'all', year } = req.query; // week, month, year, all, custom year
 
     let dateFilter = {};
     const now = new Date();
+    const currentYear = year ? parseInt(year) : now.getFullYear();
 
     if (period === 'week') {
       const weekAgo = new Date(now.setDate(now.getDate() - 7));
@@ -733,7 +735,7 @@ exports.getOrderStatistics = async (req, res, next) => {
     } else if (period === 'month') {
       const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
       dateFilter = { $gte: monthAgo };
-    } else if (period === 'year') {
+    } else if (period === 'year' && !year) {
       const yearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
       dateFilter = { $gte: yearAgo };
     }
@@ -749,6 +751,8 @@ exports.getOrderStatistics = async (req, res, next) => {
           completedOrders: 0,
           pendingOrders: 0,
           cancelledOrders: 0,
+          totalDeliveryBoys: 0,
+          monthlyRevenue: Array(12).fill(0),
           averageOrderValue: 0,
           commissionPaid: 0,
           netEarnings: 0
@@ -757,8 +761,12 @@ exports.getOrderStatistics = async (req, res, next) => {
       });
     }
 
-    const query = { 'center': shop._id }; // ✅ Updated
-    if (Object.keys(dateFilter).length > 0) {
+    const query = { 'center': shop._id };
+    if (year) {
+      const start = new Date(currentYear, 0, 1);
+      const end = new Date(currentYear, 11, 31, 23, 59, 59);
+      query.createdAt = { $gte: start, $lte: end };
+    } else if (Object.keys(dateFilter).length > 0) {
       query.createdAt = dateFilter;
     }
 
@@ -770,6 +778,36 @@ exports.getOrderStatistics = async (req, res, next) => {
     const completedOrders = orders.filter(o => o.status === 'completed').length; // ✅ Updated
     const pendingOrders = orders.filter(o => ['pending', 'confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(o.status)).length; // ✅ Updated
     const cancelledOrders = orders.filter(o => o.status === 'cancelled').length; // ✅ Updated
+
+    // Count Total Delivery Boys for this vendor
+    const totalDeliveryBoys = await DeliveryBoy.countDocuments({ vendorId: req.user.id });
+
+    // Aggregate Monthly Revenue for the Selected Year (12 Months)
+    const startOfYear = new Date(currentYear, 0, 1);
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
+
+    const monthlyAggregation = await Order.aggregate([
+      { 
+        $match: { 
+          center: shop._id, 
+          createdAt: { $gte: startOfYear, $lte: endOfYear },
+          status: { $nin: ['cancelled'] } // Exclude cancelled orders from revenue
+        } 
+      },
+      {
+        $group: {
+          _id: { month: { $month: "$createdAt" } },
+          total: { $sum: "$totalAmount" }
+        }
+      },
+      { $sort: { "_id.month": 1 } }
+    ]);
+
+    // Format into a 12-month array (Jan=0, Dec=11)
+    const monthlyRevenue = Array(12).fill(0);
+    monthlyAggregation.forEach(item => {
+      monthlyRevenue[item._id.month - 1] = item.total;
+    });
 
     // Group by date
     const ordersByDate = {};
@@ -790,6 +828,8 @@ exports.getOrderStatistics = async (req, res, next) => {
         completedOrders,
         pendingOrders,
         cancelledOrders,
+        totalDeliveryBoys,
+        monthlyRevenue, // Array of 12 values
         averageOrderValue: totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0,
         commissionPaid: totalRevenue * (vendor.commission / 100),
         netEarnings: totalRevenue * (1 - vendor.commission / 100)
@@ -1555,3 +1595,85 @@ exports.updateOrderLocation = async (req, res, next) => {
     next(error);
   }
 };
+
+// ============= DELIVERY BOY MANAGEMENT =============
+
+exports.createDeliveryBoy = async (req, res, next) => {
+  console.log("=== [DEBUG] createDeliveryBoy START ===");
+  try {
+    const vendor = await Vendor.findOne({ user: req.user.id });
+    if (!vendor) {
+      console.log("[DEBUG] Vendor not found for user:", req.user.id);
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    const { name, email, phone, password, address, aadharNo } = req.body;
+    console.log("[DEBUG] Form Data Received:", { name, email, phone, address, aadharNo, hasPassword: !!password });
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.log("[DEBUG] User already exists with email:", email);
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    // Hash password
+    console.log("[DEBUG] Hashing password...");
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // 1. Create User account for login
+    console.log("[DEBUG] Creating User record...");
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'delivery boy',
+      phone
+    });
+    console.log("[DEBUG] User record created! ID:", newUser._id);
+
+    // 2. Create the DeliveryBoy profile linked to the User
+    console.log("[DEBUG] Creating DeliveryBoy profile...");
+    const deliveryBoy = await DeliveryBoy.create({
+      name,
+      email,
+      phone,
+      address,
+      aadharNo,
+      userId: newUser._id,
+      vendorId: req.user.id,
+      vendorName: vendor.shopName
+    });
+    console.log("[DEBUG] DeliveryBoy profile created! ID:", deliveryBoy._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Delivery boy and user account created successfully',
+      deliveryBoy,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } catch (error) {
+    console.error("=== [ERROR] createDeliveryBoy ===");
+    console.error(error);
+    next(error);
+  }
+};
+
+exports.getDeliveryBoys = async (req, res, next) => {
+  try {
+    const deliveryBoys = await DeliveryBoy.find({ vendorId: req.user.id }).sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      deliveryBoys
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
