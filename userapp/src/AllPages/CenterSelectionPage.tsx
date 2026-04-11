@@ -9,7 +9,9 @@ import {
   StatusBar,
   ActivityIndicator,
   FlatList,
+  Platform,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
@@ -29,12 +31,19 @@ interface Center {
   distance?: number;
   profile_image_url?: string;
   specializations: string[];
+  location?: {
+    coordinates: [number, number]; // [longitude, latitude]
+  };
 }
 
 const CenterSelectionPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<CenterRouteProp>();
-  const { serviceIds, vehicleId, category, fuel } = route.params;
+  const { serviceIds, vehicleId, category, fuel } = route.params || {};
+
+  // Safely guard against undefined parameters so string methods like .toUpperCase() don't crash
+  const safeCategory = typeof category === 'string' ? category : '';
+  const safeFuel = typeof fuel === 'string' ? fuel : '';
 
   const [centers, setCenters] = useState<Center[]>([]);
   const [selectedCenter, setSelectedCenter] = useState<string | null>(null);
@@ -44,18 +53,70 @@ const CenterSelectionPage = () => {
     loadCenters();
   }, []);
 
+  const generateMapHTML = (mapCenters: Center[]) => {
+    // Default center point
+    let centerLat = 13.0827;
+    let centerLng = 80.2116;
+    
+    if (mapCenters.length > 0) {
+      let sumLat = 0, sumLng = 0, count = 0;
+      mapCenters.forEach(c => {
+         if (c.location?.coordinates) {
+           sumLng += c.location.coordinates[0];
+           sumLat += c.location.coordinates[1];
+           count++;
+         }
+      });
+      if (count > 0) {
+        centerLat = sumLat / count;
+        centerLng = sumLng / count;
+      }
+    }
+    
+    const markers = mapCenters.filter(c => c.location && c.location.coordinates).map(c => `
+      L.marker([${c.location?.coordinates[1]}, ${c.location?.coordinates[0]}]).addTo(map)
+        .bindPopup("<b>${c.center_name}</b><br>${c.city}");
+    `).join('\n');
+
+    // Make sure to replace the apiKey with actual Geoapify key if needed.
+    // Falling back to OSM tile if key is invalid, but structure is Geoapify-ready
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style> body { padding: 0; margin: 0; } #map { height: 100vh; width: 100vw; } </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          var map = L.map('map').setView([${centerLat}, ${centerLng}], 11);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; Geoapify &copy; OpenStreetMap',
+            maxZoom: 19
+          }).addTo(map);
+          ${markers}
+        </script>
+      </body>
+      </html>
+    `;
+  };
+
   const loadCenters = async () => {
     try {
       setLoading(true);
-      // Fetch centers filtered by specialization (vehicle category and fuel type)
       const res = await fetchCenters({
-        vehicle_category: category,
-        fuel_type: fuel,
-        // Optional: add latitude/longitude if available
+        vehicle_category: safeCategory,
+        fuel_type: safeFuel,
       });
-      setCenters(res.data);
+      const rawCenters = res?.data ?? res;
+      setCenters(Array.isArray(rawCenters) ? rawCenters : []);
     } catch (error) {
-      console.error(error);
+      const msg = typeof error === 'string' ? error : (error as any)?.message || String(error);
+      console.error('[CenterSelection] load error:', msg);
+      setCenters([]);
     } finally {
       setLoading(false);
     }
@@ -74,6 +135,7 @@ const CenterSelectionPage = () => {
       </View>
       <View style={styles.centerInfo}>
         <Text style={styles.centerName}>{item.center_name}</Text>
+        <Text style={styles.centerLocation}>📍 {item.city}</Text>
         <Text style={styles.centerAddress}>{item.address}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.ratingText}>⭐ {item.rating} ({item.total_reviews})</Text>
@@ -102,16 +164,23 @@ const CenterSelectionPage = () => {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapText}>Service Centers Near You</Text>
-          <View style={[styles.marker, { top: 40, left: 60 }]} />
-          <View style={[styles.marker, { bottom: 50, right: 80 }]} />
-          <View style={[styles.marker, { top: 100, right: 30 }]} />
-          <View style={styles.userLocation} />
+        <View style={styles.mapWrap}>
+          <WebView 
+            originWhitelist={['*']}
+            source={{ html: generateMapHTML(centers) }} 
+            style={{ width: '100%', height: '100%' }}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+          />
         </View>
 
         <View style={styles.listHeader}>
-          <Text style={styles.listHeading}>Recommended for {fuel.toUpperCase()}</Text>
+          <Text style={styles.listHeading}>
+            {safeFuel ? `Recommended for ${safeFuel.toUpperCase()}` : 'Recommended Centers'}
+          </Text>
           <Text style={styles.listSubtitle}>{centers.length} centers found</Text>
         </View>
         
@@ -179,17 +248,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  mapPlaceholder: {
+  mapWrap: {
     height: 180,
-    backgroundColor: '#E3F2FD',
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 20,
-    position: 'relative',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#BBDEFB',
+    backgroundColor: '#E3F2FD',
   },
   mapText: {
     color: '#1976D2',
@@ -265,10 +331,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
   },
+  centerLocation: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginTop: 2,
+    marginBottom: 2,
+  },
   centerAddress: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    marginTop: 2,
   },
   metaRow: {
     flexDirection: 'row',

@@ -181,7 +181,7 @@ const EditProfilePage = () => {
   };
 
   const fullImageUrl = formData.profileImage
-    ? (formData.profileImage.startsWith('http') ? formData.profileImage : `http://192.168.0.138:5000${formData.profileImage}`)
+    ? (formData.profileImage.startsWith('http') ? formData.profileImage : `http://192.168.0.137:5000${formData.profileImage}`)
     : null;
 
   return (

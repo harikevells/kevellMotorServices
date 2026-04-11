@@ -19,11 +19,16 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TrackingRouteProp = RouteProp<RootStackParamList, 'LiveTracking'>;
 
 const STAGES = [
-  { id: 'received', label: 'Vehicle Received', icon: '📥', desc: 'Your vehicle has reached the service center.' },
-  { id: 'inspected', label: 'Initial Inspection', icon: '🔍', desc: 'Technician is inspecting for reported and hidden issues.' },
-  { id: 'in_service', label: 'Service in Progress', icon: '🛠️', desc: 'All selected services are being performed.' },
-  { id: 'quality_check', label: 'Quality Check', icon: '✅', desc: 'Final testing and quality assurance in progress.' },
-  { id: 'ready', label: 'Ready for Pickup', icon: '🎁', desc: 'Your vehicle is ready. Please visit the center.' },
+  { id: 'pending', label: 'Booking Pending', icon: '⏳', desc: 'Awaiting confirmation.' },
+  { id: 'confirmed', label: 'Booking Confirmed', icon: '📝', desc: 'Your booking has been confirmed.' },
+  { id: 'on_the_way', label: 'On The Way', icon: '🛵', desc: 'Executive is on the way.' },
+  { id: 'received', label: 'Vehicle Received', icon: '📥', desc: 'Your vehicle has reached the center.' },
+  { id: 'inspected', label: 'Inspected', icon: '🔍', desc: 'Initial inspection complete.' },
+  { id: 'in_service', label: 'In Service', icon: '🛠️', desc: 'Services are being performed.' },
+  { id: 'quality_check', label: 'Quality Check', icon: '✅', desc: 'Final testing in progress.' },
+  { id: 'ready', label: 'Ready', icon: '🎁', desc: 'Vehicle is ready for pickup/delivery.' },
+  { id: 'out_for_delivery', label: 'Out for Delivery', icon: '🚀', desc: 'Vehicle is out for delivery.' },
+  { id: 'delivered', label: 'Delivered', icon: '🏁', desc: 'Vehicle has been securely delivered.' },
 ];
 
 const LiveTrackingPage = () => {
@@ -33,7 +38,7 @@ const LiveTrackingPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
-  const [currentStage, setCurrentStage] = useState('received');
+  const [currentStage, setCurrentStage] = useState('pending');
   const [simulating, setSimulating] = useState(false);
 
   useEffect(() => {
@@ -68,12 +73,10 @@ const LiveTrackingPage = () => {
       
       if (currentBooking) {
         setBooking(currentBooking);
-        if (['received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(currentBooking.status)) {
-          setCurrentStage(currentBooking.status);
-        } else if (currentBooking.status === 'confirmed') {
-          setCurrentStage('received');
-        } else if (currentBooking.status === 'completed') {
-          setCurrentStage('ready');
+        if (currentBooking.status === 'completed') {
+          setCurrentStage('delivered');
+        } else {
+          setCurrentStage(currentBooking.status || 'pending');
         }
       }
     } catch (error) {
@@ -115,7 +118,7 @@ const LiveTrackingPage = () => {
         <View style={styles.statusCard}>
           <Text style={styles.statusLabel}>Current Status</Text>
           <Text style={styles.statusTitle}>
-             {STAGES[currentStageIndex]?.label || 'Updating...'}
+             {STAGES[currentStageIndex]?.label || (currentStage.charAt(0).toUpperCase() + currentStage.slice(1).replace(/_/g, ' '))}
           </Text>
           <Text style={styles.estimatedTime}>
              Booking ID: {booking.bookingRef}
@@ -162,26 +165,64 @@ const LiveTrackingPage = () => {
         </View>
 
         <View style={styles.infoCard}>
+          {/* Vendor Details */}
+          <Text style={styles.sectionHeading}>Vendor Details</Text>
+          <View style={styles.infoRow}>
+            <View style={styles.infoCol}>
+              <Text style={styles.infoLabel}>Shop</Text>
+              <Text style={styles.infoValue}>{booking.vendorDetails?.shopName || booking.center?.shopName || booking.center?.center_name || 'N/A'}</Text>
+            </View>
+            <TouchableOpacity style={styles.callButton}>
+              <Text style={styles.callButtonText}>📞 Call {booking.vendorDetails?.phone || 'Vendor'}</Text>
+            </TouchableOpacity>
+          </View>
+          {booking.vendorDetails?.address ? <Text style={styles.addressText}>{booking.vendorDetails.address}</Text> : null}
+
+          <View style={styles.divider} />
+
+          {/* User & Vehicle Details */}
+          <Text style={styles.sectionHeading}>Service Target</Text>
           <View style={styles.infoRow}>
             <View style={styles.infoCol}>
               <Text style={styles.infoLabel}>Vehicle</Text>
-              <Text style={styles.infoValue}>{booking.vehicle?.brand} {booking.vehicle?.model}</Text>
+              <Text style={styles.infoValue}>
+                {booking.vehicleDetails?.brand || booking.vehicle?.brand} {booking.vehicleDetails?.model || booking.vehicle?.model}
+              </Text>
             </View>
             <View style={styles.infoCol}>
               <Text style={styles.infoLabel}>Reg No</Text>
-              <Text style={styles.infoValue}>{booking.vehicle?.registration_no}</Text>
+              <Text style={styles.infoValue}>{booking.vehicleDetails?.registration_no || booking.vehicle?.registration_no}</Text>
             </View>
           </View>
+          <Text style={styles.addressText}>Address: {booking.userDetails?.address || 'N/A'}</Text>
+
           <View style={styles.divider} />
+
+          {/* Services & Payment Details */}
+          <Text style={styles.sectionHeading}>Payment & Services</Text>
+          <View style={styles.servicesBox}>
+            {(booking.serviceNames || []).length > 0 ? (
+              booking.serviceNames.map((sName: string, i: number) => (
+                <Text key={i} style={styles.bulletItem}>• {sName}</Text>
+              ))
+            ) : (
+              (booking.services || []).map((sArr: any, i: number) => (
+                <Text key={i} style={styles.bulletItem}>• {sArr.name}</Text>
+              ))
+            )}
+          </View>
+          
           <View style={styles.infoRow}>
             <View style={styles.infoCol}>
-              <Text style={styles.infoLabel}>Center</Text>
-              <Text style={styles.infoValue}>{booking.center?.center_name}</Text>
+              <Text style={styles.infoLabel}>Method</Text>
+              <Text style={styles.infoValue}>{booking.paymentMethod} ({booking.paymentStatus})</Text>
             </View>
-            <TouchableOpacity style={styles.callButton}>
-              <Text style={styles.callButtonText}>📞 Call Center</Text>
-            </TouchableOpacity>
+            <View style={styles.infoCol}>
+              <Text style={styles.infoLabel}>Total Billed</Text>
+              <Text style={[styles.infoValue, { color: COLORS.primary }]}>₹{booking.totalAmount}</Text>
+            </View>
           </View>
+
         </View>
       </ScrollView>
 
@@ -387,6 +428,31 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '700',
     fontSize: 14,
+  },
+  sectionHeading: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 10,
+    marginTop: 5,
+  },
+  addressText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  servicesBox: {
+    backgroundColor: COLORS.background,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  bulletItem: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.grey,
+    marginBottom: 4,
   },
   footer: {
     position: 'absolute',

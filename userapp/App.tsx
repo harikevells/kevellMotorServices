@@ -9,6 +9,7 @@ import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import FirstScreen from './src/AllPages/FirstScreen';
 import OnboardingScreen from './src/OnboardingScreen';
 import LoginScreen from './src/LoginScreen';
 import RegistrationScreen from './src/RegistrationScreen';
@@ -26,6 +27,7 @@ import PaymentSimulationPage from './src/AllPages/PaymentSimulationPage';
 
 
 export type RootStackParamList = {
+  FirstScreen: undefined;
   Onboarding: undefined;
   Login: undefined;
   Registration: undefined;
@@ -58,7 +60,8 @@ function App() {
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Onboarding">
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="FirstScreen">
+          <Stack.Screen name="FirstScreen" component={FirstScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registration" component={RegistrationScreen} />

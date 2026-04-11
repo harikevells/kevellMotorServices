@@ -162,7 +162,7 @@ const HomeScreen = () => {
   );
 
   const profileImageUrl = user?.profileImage
-    ? (user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.138:5000${user.profileImage}`)
+    ? (user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.137:5000${user.profileImage}`)
     : null;
 
   return (

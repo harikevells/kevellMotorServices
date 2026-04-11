@@ -18,9 +18,9 @@ const OnboardingScreen = ({ navigation }: Props) => {
         <Image source={FirstSVG} style={[styles.svg, { width: 500, height: 550 }]} resizeMode="contain" />
       </View>
       <View style={styles.bottomHalf}>
-        <Text style={styles.title}>Urgent Service{'\n'}Bike Services</Text>
+        <Text style={styles.title}>Premium Bike &{'\n'}Car Services</Text>
         <Text style={styles.subtitle}>
-          We work on a crowdsourcing model. You place an order, the system selects the perfect courier for you.
+          Professional maintenance and repair services for your vehicles. Book a slot and our experts will handle the rest.
         </Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
           <Text style={styles.buttonText}>Start using {'\u2192'}</Text>
@@ -33,7 +33,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F5E9', // Soft gradient approximation (light green)
+    backgroundColor: '#6dbbecff', // Soft sky blue
   },
   topHalf: {
     // flex: 1,

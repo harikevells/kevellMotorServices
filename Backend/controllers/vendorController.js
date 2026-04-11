@@ -138,6 +138,7 @@ exports.registerVendor = async (req, res, next) => {
 exports.getVendorProfile = async (req, res, next) => {
   try {
     const vendor = await Vendor.findOne({ user: req.user.id })
+      .populate('user', 'profileImage name email')
       .populate('services');
 
     if (!vendor) {
@@ -519,24 +520,11 @@ exports.getVendorOrders = async (req, res, next) => {
 
     const { status, fromDate, toDate, page = 1, limit = 20 } = req.query;
 
-    // Find the shop associated with this vendor
-    const shop = await Shop.findOne({ vendor: vendor._id });
-    if (!shop) {
-      return res.json({
-        success: true,
-        orders: [],
-        total: 0,
-        page: parseInt(page),
-        pages: 0,
-        statistics: []
-      });
-    }
-
-    // Build filter - use the shop ID from the Shop document
-    const filter = { 'center': shop._id }; // ✅ Updated from 'items.shop'
+    // Find the shop ID directly from the vendor profile
+    const filter = { 'center': vendor._id };
 
     if (status) {
-      filter.status = status; // ✅ Updated from orderStatus
+      filter.status = status;
     }
 
     if (fromDate || toDate) {
@@ -549,9 +537,9 @@ exports.getVendorOrders = async (req, res, next) => {
 
     const orders = await Order.find(filter)
       .populate('user', 'name email phone')
-      .populate('vehicle') // ✅ Added
-      .populate('services', 'name price') // ✅ Updated from items.service
-      .populate('center', 'center_name phone_number') // ✅ Added
+      .populate('vehicle') 
+      .populate('services', 'name price') 
+      .populate('center', 'shopName ownerName phone email') 
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -559,11 +547,11 @@ exports.getVendorOrders = async (req, res, next) => {
     const total = await Order.countDocuments(filter);
 
     // Calculate statistics (unified with getOrderStatistics logic)
-    const allOrders = await Order.find({ 'center': shop._id }); // ✅ Updated
+    const allOrders = await Order.find({ 'center': vendor._id });
     const statistics = {
       totalOrders: allOrders.length,
-      completedOrders: allOrders.filter(o => o.status === 'completed').length, // ✅ Updated
-      pendingOrders: allOrders.filter(o => ['pending', 'confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(o.status)).length, // ✅ Updated
+      completedOrders: allOrders.filter(o => ['completed', 'delivered'].includes(o.status)).length,
+      pendingOrders: allOrders.filter(o => ['pending', 'confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'].includes(o.status)).length,
       cancelledOrders: allOrders.filter(o => o.status === 'cancelled').length,
       totalRevenue: allOrders.reduce((sum, o) => sum + o.totalAmount, 0)
     };
@@ -592,23 +580,14 @@ exports.getOrderById = async (req, res, next) => {
       });
     }
 
-    // Find the shop associated with this vendor
-    const shop = await Shop.findOne({ vendor: vendor._id });
-    if (!shop) {
-      return res.status(404).json({
-        success: false,
-        message: 'Shop not found for this vendor'
-      });
-    }
-
     const order = await Order.findOne({
       _id: req.params.orderId,
-      'center': shop._id // ✅ Updated
+      'center': vendor._id
     })
       .populate('user', 'name email phone')
-      .populate('vehicle') // ✅ Added
-      .populate('services') // ✅ Updated
-      .populate('center'); // ✅ Updated
+      .populate('vehicle')
+      .populate('services')
+      .populate('center', 'shopName ownerName phone email');
 
     if (!order) {
       return res.status(404).json({
@@ -631,10 +610,9 @@ exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { status, estimatedCompletion } = req.body;
     
-    // ✅ Updated statuses for EV Service
     const validStatuses = [
-      'pending', 'confirmed', 'received', 'inspected', 
-      'in_service', 'quality_check', 'ready', 'completed', 'cancelled'
+      'pending', 'confirmed', 'on_the_way', 'received', 'inspected', 
+      'in_service', 'quality_check', 'ready', 'out_for_delivery', 'completed', 'delivered', 'cancelled'
     ];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
@@ -651,18 +629,9 @@ exports.updateOrderStatus = async (req, res, next) => {
       });
     }
 
-    // Find the shop associated with this vendor
-    const shop = await Shop.findOne({ vendor: vendor._id });
-    if (!shop) {
-      return res.status(404).json({
-        success: false,
-        message: 'Shop not found for this vendor'
-      });
-    }
-
     const order = await Order.findOne({
       _id: req.params.orderId,
-      'center': shop._id // ✅ Updated
+      'center': vendor._id
     });
 
     if (!order) {
@@ -673,10 +642,10 @@ exports.updateOrderStatus = async (req, res, next) => {
     }
 
     // Check if status update is allowed
-    if (order.status === 'completed' || order.status === 'cancelled') { // ✅ Updated
+    if (order.status === 'completed' || order.status === 'delivered' || order.status === 'cancelled') {
       return res.status(400).json({
         success: false,
-        message: `Order is already ${order.status}` // ✅ Updated
+        message: `Order is already ${order.status}`
       });
     }
 
@@ -684,7 +653,7 @@ exports.updateOrderStatus = async (req, res, next) => {
     if (estimatedCompletion) {
       order.estimatedCompletion = new Date(estimatedCompletion);
     }
-    if (status === 'completed') { // ✅ Updated
+    if (status === 'completed' || status === 'delivered') {
       order.completedAt = new Date();
 
       // Update vendor earnings with NaN checks
@@ -699,7 +668,7 @@ exports.updateOrderStatus = async (req, res, next) => {
       .populate('user', 'name email phone')
       .populate('vehicle')
       .populate('services')
-      .populate('center');
+      .populate('center', 'shopName ownerName phone email');
 
     res.json({
       success: true,
@@ -740,28 +709,7 @@ exports.getOrderStatistics = async (req, res, next) => {
       dateFilter = { $gte: yearAgo };
     }
 
-    // Find shop
-    const shop = await Shop.findOne({ vendor: vendor._id });
-    if (!shop) {
-      return res.json({
-        success: true,
-        statistics: {
-          totalOrders: 0,
-          totalRevenue: 0,
-          completedOrders: 0,
-          pendingOrders: 0,
-          cancelledOrders: 0,
-          totalDeliveryBoys: 0,
-          monthlyRevenue: Array(12).fill(0),
-          averageOrderValue: 0,
-          commissionPaid: 0,
-          netEarnings: 0
-        },
-        ordersByDate: []
-      });
-    }
-
-    const query = { 'center': shop._id };
+    const query = { 'center': vendor._id };
     if (year) {
       const start = new Date(currentYear, 0, 1);
       const end = new Date(currentYear, 11, 31, 23, 59, 59);
@@ -774,10 +722,10 @@ exports.getOrderStatistics = async (req, res, next) => {
 
     // Calculate statistics
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const completedOrders = orders.filter(o => o.status === 'completed').length; // ✅ Updated
-    const pendingOrders = orders.filter(o => ['pending', 'confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(o.status)).length; // ✅ Updated
-    const cancelledOrders = orders.filter(o => o.status === 'cancelled').length; // ✅ Updated
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status)).length; 
+    const pendingOrders = orders.filter(o => !['completed', 'delivered', 'cancelled'].includes(o.status)).length; 
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled').length; 
 
     // Count Total Delivery Boys for this vendor
     const totalDeliveryBoys = await DeliveryBoy.countDocuments({ vendorId: req.user.id });
@@ -789,15 +737,15 @@ exports.getOrderStatistics = async (req, res, next) => {
     const monthlyAggregation = await Order.aggregate([
       { 
         $match: { 
-          center: shop._id, 
+          center: vendor._id, 
           createdAt: { $gte: startOfYear, $lte: endOfYear },
-          status: { $nin: ['cancelled'] } // Exclude cancelled orders from revenue
+          status: { $nin: ['pending', 'cancelled'] } 
         } 
       },
       {
         $group: {
           _id: { month: { $month: "$createdAt" } },
-          total: { $sum: "$totalAmount" }
+          total: { $sum: { $ifNull: ["$totalAmount", 0] } }
         }
       },
       { $sort: { "_id.month": 1 } }
@@ -1266,79 +1214,70 @@ exports.getDashboardData = async (req, res, next) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const todayOrders = await Order.find({
-      'items.shop': shop._id,
+      'center': vendor._id,
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
     // Get total orders
-    const totalOrders = await Order.countDocuments({ 'items.shop': shop._id });
+    const totalOrders = await Order.countDocuments({ 'center': vendor._id });
 
-    // Get total earnings (from delivered orders)
+    // Get total earnings (from confirmed and beyond)
     const totalEarningsResult = await Order.aggregate([
       {
         $match: {
-          'items.shop': shop._id,
-          orderStatus: 'delivered'
+          'center': vendor._id,
+          status: { $nin: ['pending', 'cancelled'] }
         }
       },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      { $group: { _id: null, total: { $sum: { $ifNull: ["$totalAmount", 0] } } } }
     ]);
     const totalEarnings = totalEarningsResult.length > 0 ? totalEarningsResult[0].total : 0;
 
-    // Get pending orders (including confirmed, processing, etc.)
+    // Get pending orders
     const pendingOrdersCount = await Order.countDocuments({
-      'items.shop': shop._id,
-      orderStatus: { $in: ['pending', 'confirmed', 'processing', 'ready', 'out_for_delivery'] }
+      'center': vendor._id,
+      status: { $in: ['pending', 'confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'] }
     });
 
-    // Get completed orders (strictly 'delivered')
+    // Get completed orders
     const completedOrdersCount = await Order.countDocuments({
-      'items.shop': shop._id,
-      orderStatus: 'delivered'
+      'center': vendor._id,
+      status: { $in: ['completed', 'delivered'] }
     });
 
     // Get cancelled orders
     const cancelledOrdersCount = await Order.countDocuments({
-      'items.shop': shop._id,
-      orderStatus: 'cancelled'
+      'center': vendor._id,
+      status: 'cancelled'
     });
 
     // Get recent orders
-    const recentOrders = await Order.find({ 'items.shop': shop._id })
+    const recentOrders = await Order.find({ 'center': vendor._id })
       .populate('user', 'name')
+      .populate('vehicle')
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // Get popular services
+    // Get popular services (Aggregated from the serviceNames snapshot array)
     const popularServices = await Order.aggregate([
-      { $match: { 'items.shop': shop._id } },
-      { $unwind: '$items' },
+      { $match: { center: vendor._id } },
+      { $unwind: '$serviceNames' },
       {
         $group: {
-          _id: '$items.service',
-          count: { $sum: '$items.quantity' },
-          revenue: { $sum: '$items.totalPrice' }
+          _id: '$serviceNames',
+          count: { $sum: 1 }
         }
       },
       { $sort: { count: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: 'services',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'service'
-        }
-      },
-      { $unwind: '$service' }
+      { $limit: 10 }
     ]);
 
     // Get monthly earnings
     const monthlyEarnings = await Order.aggregate([
       {
         $match: {
-          'items.shop': shop._id,
-          orderStatus: 'delivered'
+          'center': vendor._id,
+          status: { $nin: ['pending', 'cancelled'] }
         }
       },
       {
@@ -1347,13 +1286,16 @@ exports.getDashboardData = async (req, res, next) => {
             year: { $year: '$createdAt' },
             month: { $month: '$createdAt' }
           },
-          earnings: { $sum: '$totalAmount' },
+          earnings: { $sum: { $ifNull: ["$totalAmount", 0] } },
           count: { $sum: 1 }
         }
       },
       { $sort: { '_id.year': -1, '_id.month': -1 } },
       { $limit: 6 }
     ]);
+
+    // Get delivery boy count
+    const totalDeliveryBoys = await DeliveryBoy.countDocuments({ vendorId: req.user.id });
 
     res.json({
       success: true,
@@ -1364,6 +1306,7 @@ exports.getDashboardData = async (req, res, next) => {
           pendingOrders: pendingOrdersCount,
           cancelledOrders: cancelledOrdersCount,
           totalEarnings: totalEarnings,
+          totalDeliveryBoys: totalDeliveryBoys,
           rating: vendor.rating || 0,
           totalReviews: vendor.totalReviews || 0,
           todayOrders: todayOrders.length,
@@ -1402,7 +1345,7 @@ exports.getEarningsReport = async (req, res, next) => {
       });
     }
 
-    const filter = { 'items.shop': shop._id };
+    const filter = { 'center': vendor._id };
     if (fromDate || toDate) {
       filter.createdAt = {};
       if (fromDate) filter.createdAt.$gte = new Date(fromDate);
@@ -1422,7 +1365,7 @@ exports.getEarningsReport = async (req, res, next) => {
 
     // Group by status
     orders.forEach(order => {
-      report.ordersByStatus[order.orderStatus] = (report.ordersByStatus[order.orderStatus] || 0) + 1;
+      report.ordersByStatus[order.status] = (report.ordersByStatus[order.status] || 0) + 1;
     });
 
     // Daily breakdown
@@ -1473,9 +1416,9 @@ exports.exportOrders = async (req, res, next) => {
       });
     }
 
-    const filter = { 'items.shop': shop._id };
+    const filter = { 'center': vendor._id };
 
-    if (status) filter.orderStatus = status;
+    if (status) filter.status = status;
     if (fromDate || toDate) {
       filter.createdAt = {};
       if (fromDate) filter.createdAt.$gte = new Date(fromDate);
@@ -1514,7 +1457,7 @@ exports.exportOrders = async (req, res, next) => {
         order.totalAmount,
         order.paymentMethod,
         order.paymentStatus,
-        order.orderStatus,
+        order.status,
         `${order.deliveryAddress?.doorNo || ''}, ${order.deliveryAddress?.areaStreet || ''}`,
         order.estimatedCompletion ? new Date(order.estimatedCompletion).toLocaleString() : 'N/A'
       ]);
@@ -1564,8 +1507,8 @@ exports.updateOrderLocation = async (req, res, next) => {
     const order = await Order.findOneAndUpdate(
       { 
         _id: orderId,
-        'items.shop': shop._id,
-        orderStatus: { $in: ['confirmed', 'processing', 'ready', 'out_for_delivery'] } // Allow tracking earlier
+        'center': vendor._id,
+        status: { $in: ['confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'] } 
       },
       {
         $set: {

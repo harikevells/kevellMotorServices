@@ -26,6 +26,12 @@ interface Slot {
   bookedCount: number;
 }
 
+const DEFAULT_TIMES = [
+  '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', 
+  '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', 
+  '08:00 PM', '09:00 PM'
+];
+
 const SlotBookingPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SlotRouteProp>();
@@ -54,7 +60,20 @@ const SlotBookingPage = () => {
     try {
       setLoading(true);
       const res = await fetchSlots(centerId, selectedDate);
-      setSlots(res.data);
+      const backendSlots = Array.isArray(res?.data) ? res.data : [];
+      
+      const mergedSlots = DEFAULT_TIMES.map(time => {
+        const found = backendSlots.find((s: any) => s.time === time);
+        if (found) return found;
+        return {
+          _id: time, // temporary id
+          time,
+          maxCapacity: 5,
+          bookedCount: 0
+        };
+      });
+
+      setSlots(mergedSlots);
     } catch (error) {
       console.error(error);
     } finally {

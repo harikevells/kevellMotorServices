@@ -20,7 +20,7 @@ import { fetchUserBookings } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type TabType = 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+type TabType = 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
 
 const BookingHistory = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -53,8 +53,8 @@ const BookingHistory = () => {
             return bookings.filter(b => b.status === 'pending');
         } else if (selectedTab === 'Confirmed') {
             return bookings.filter(b => ['confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(b.status));
-        } else if (selectedTab === 'Completed') {
-            return bookings.filter(b => b.status === 'completed');
+        } else if (selectedTab === 'Delivered') {
+            return bookings.filter(b => ['completed', 'delivered'].includes(b.status));
         } else {
             return bookings.filter(b => b.status === 'cancelled');
         }
@@ -72,7 +72,7 @@ const BookingHistory = () => {
                       styles.statusBadgeText,
                       booking.status === 'cancelled' && { color: '#FF4444' }
                     ]}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      {booking.status === 'completed' || booking.status === 'delivered' ? 'Delivered' : booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace(/_/g, ' ')}
                     </Text>
                 </View>
             </View>
@@ -133,7 +133,7 @@ const BookingHistory = () => {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
                     {renderTab('Pending')}
                     {renderTab('Confirmed')}
-                    {renderTab('Completed')}
+                    {renderTab('Delivered')}
                     {renderTab('Cancelled')}
                 </ScrollView>
             </View>
@@ -157,11 +157,11 @@ const BookingHistory = () => {
                   getFilteredBookings().map(renderBookingCard)
                 )}
 
-                {!loading && bookings.length > 0 && (selectedTab === 'Pending' || selectedTab === 'Confirmed') && (
+                {/* {!loading && bookings.length > 0 && (selectedTab === 'Pending' || selectedTab === 'Confirmed') && (
                   <>
                     <Text style={styles.historyHeading}>Recent History</Text>
                     <View style={styles.historyList}>
-                        {bookings.filter(b => b.status === 'completed').slice(0, 3).map((item, index, array) => (
+                        {bookings.filter(b => ['completed', 'delivered'].includes(b.status)).slice(0, 3).map((item, index, array) => (
                            <View key={item._id} style={styles.historyRow}>
                               <View style={styles.indicatorColumn}>
                                   <View style={styles.indicatorCircle}>
@@ -175,13 +175,13 @@ const BookingHistory = () => {
                                   </Text>
                                   <Text style={styles.historyTitle}>{item.services[0]?.name || 'Auto Service'}</Text>
                                   <Text style={styles.historyLocation}>{item.center.center_name}</Text>
-                                  <Text style={styles.historyPrice}>₹{item.totalAmount} • Completed</Text>
+                                  <Text style={styles.historyPrice}>₹{item.totalAmount} • {item.status === 'completed' || item.status === 'delivered' ? 'Delivered' : item.status.charAt(0).toUpperCase() + item.status.slice(1).replace(/_/g, ' ')}</Text>
                               </View>
                           </View>
                         ))}
                     </View>
                   </>
-                )}
+                )} */}
             </ScrollView>
         </SafeAreaView>
     );

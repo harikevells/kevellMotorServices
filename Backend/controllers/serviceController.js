@@ -45,18 +45,27 @@ exports.getAllServices = async (req, res, next) => {
   try {
     const { category, vehicle_category, fuel_type, search, active } = req.query;
     const filter = {};
-    if (category) filter.category = category;
-    if (active === 'false') {
-       // if active status filter is needed
-    } else {
-       filter.is_active = true;
+
+    // Only filter by category if it's a non-empty known value
+    const validCategories = ['general', 'battery', 'brake', 'engine', 'electrical', 'ac', 'body', 'software', 'washing', 'emergency'];
+    if (category && validCategories.includes(category)) {
+      filter.category = category;
     }
-    
-    if (vehicle_category) {
+
+    if (active === 'false') {
+      // no is_active filter if explicitly requesting inactive
+    } else {
+      filter.is_active = true;
+    }
+
+    // Guard: only filter if the value is a known valid enum (not the string 'undefined')
+    const validVehicleCats = ['2_wheeler', '4_wheeler', 'heavy'];
+    if (vehicle_category && validVehicleCats.includes(vehicle_category)) {
       filter.applicable_vehicle_cat = { $in: [vehicle_category, 'all'] };
     }
-    
-    if (fuel_type) {
+
+    const validFuelTypes = ['electric', 'petrol', 'diesel', 'cng', 'hybrid', 'other'];
+    if (fuel_type && validFuelTypes.includes(fuel_type)) {
       filter.applicable_fuel_types = { $in: [fuel_type, 'all'] };
     }
 

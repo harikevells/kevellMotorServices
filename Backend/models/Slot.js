@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const slotSchema = new mongoose.Schema({
   center: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ServiceCenter',
+    ref: 'Vendor',
     required: true
   },
   date: {

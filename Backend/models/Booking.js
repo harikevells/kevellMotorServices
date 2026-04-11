@@ -19,13 +19,35 @@ const bookingSchema = new mongoose.Schema({
   },
   center: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ServiceCenter',
+    ref: 'Vendor',
     required: true
   },
   services: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceType'
   }],
+  // --- Denormalized Snapshots ---
+  userDetails: {
+    name: String,
+    phone: String,
+    address: String
+  },
+  vendorDetails: {
+    vendorName: String,
+    shopName: String,
+    phone: String,
+    address: String
+  },
+  vehicleDetails: {
+    vehicle_category: String,
+    brand: String,
+    model: String,
+    year: Number,
+    registration_no: String,
+    fuel_type: String
+  },
+  serviceNames: [String],
+  // ------------------------------
   bookingDate: {
     type: String, // YYYY-MM-DD
     required: true
@@ -37,8 +59,8 @@ const bookingSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
-      'pending', 'confirmed', 'received', 'inspected', 
-      'in_service', 'quality_check', 'ready', 'completed', 'cancelled'
+      'pending', 'confirmed', 'on_the_way', 'received', 'inspected', 
+      'in_service', 'quality_check', 'ready', 'out_for_delivery', 'completed', 'delivered', 'cancelled'
     ],
     default: 'pending'
   },

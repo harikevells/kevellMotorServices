@@ -7,13 +7,14 @@ import {
   TouchableOpacity, 
   TextInput, 
   ActivityIndicator,
-  Alert 
+  Alert,
+  Image
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import SecondSVG from './assets/second.svg';
+import SecondSVG from './assets/printer.png';
 import { login, SafeStorage } from './services/api';
 import { COLORS, SHADOWS } from './constants/theme';
 
@@ -65,17 +66,17 @@ const LoginScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.topHalf}>
         <Text style={styles.heading}>
-          {'LOGIN TO YOUR\nACCOUNT'}
+          {'Login To Your Account'}
         </Text>
         <View style={styles.illustrationContainer}>
-          <SecondSVG width={300} height={350} />
+          <Image source={SecondSVG} style={{ width: 600, height: 390 }} resizeMode="contain" />
         </View>
       </View>
       
       <View style={styles.svgContainer}>
         <Svg height="100%" width="100%" viewBox="0 0 1440 320" preserveAspectRatio="none">
           <Path 
-            fill="#1B5E20" 
+            fill="#6dbbecff" 
             d="M0,192L80,202.7C160,213,320,235,480,218.7C640,203,800,149,960,138.7C1120,128,1280,160,1360,176L1440,192L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z" 
           />
         </Svg>
@@ -132,12 +133,12 @@ const LoginScreen = () => {
            <Text style={styles.backLink}>Don't have an account? <Text style={{fontWeight: '900', color: '#333333'}}>Register</Text></Text>
         </TouchableOpacity>
 
-        <View style={[styles.footerTexts, { marginTop: 'auto', marginBottom: 20 }]}>
+        {/* <View style={[styles.footerTexts, { marginTop: 'auto', marginBottom: 20 }]}>
           <Text style={styles.safeText}>Your personal details are safe with us</Text>
           <TouchableOpacity>
              <Text style={styles.linkText}>Read our Privacy Policy and Terms and Conditions</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
     </SafeAreaView>
   );
@@ -146,10 +147,10 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1B5E20',
+    backgroundColor: '#6dbbecff',
   },
   topHalf: {
-    backgroundColor: '#1B5E20',
+    backgroundColor: '#6dbbecff',
     paddingHorizontal: 30,
     paddingTop: 40,
     paddingBottom: 10,
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
     color: '#ADB5BD',
   },
   roleTextSelected: {
-    color: '#1B5E20',
+    color: '#6dbbecff',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   verifyButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#6dbbecff',
     borderRadius: 15,
     height: 60,
     justifyContent: 'center',
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   backLink: {
-    color: '#1B5E20',
+    color: '#1B4D6B',
     fontWeight: '600',
     marginBottom: 20,
     textAlign: 'center',

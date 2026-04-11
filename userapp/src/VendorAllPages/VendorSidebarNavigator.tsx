@@ -7,14 +7,17 @@ import {
   Animated,
   Dimensions,
   SafeAreaView,
+  Image,
+  Alert,
 } from 'react-native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { COLORS, SHADOWS } from '../constants/theme';
 import VendorDashboard from './VendorDashboard';
 import VendorOrderList from './VendorOrderList';
 import VendorDeliveryCreate from './VendorDeliveryCreate';
 import VendorDeliveryList from './VendorDeliveryList';
 import VendorProfile from './VendorProfile';
-import api from '../services/api';
+import api, { SafeStorage } from '../services/api';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75;
@@ -36,6 +39,8 @@ const VendorSidebarNavigator = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [shopName, setShopName] = useState('Vendor Portal');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const navigation = useNavigation<any>();
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
   useEffect(() => {
@@ -47,10 +52,35 @@ const VendorSidebarNavigator = () => {
       const res: any = await api.get('/vendor/profile');
       if (res.success && res.vendor) {
         setShopName(res.vendor.shopName);
+        
+        // Handle image path correctly with BASE URL fallback
+        const img = res.vendor.profilePicture || res.vendor.shopImage || res.vendor.user?.profileImage;
+        if (img) {
+          const baseUrl = 'http://192.168.0.137:5000'; // Base backend URL
+          setProfileImage(img.startsWith('http') ? img : `${baseUrl}${img}`);
+        }
       }
     } catch (e) {
-      console.warn('Sidebar failed to fetch shop name:', e);
+      console.warn('Sidebar failed to fetch vendor data:', e);
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Logout', 
+        onPress: async () => {
+          await SafeStorage.removeItem('token');
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            })
+          );
+        }
+      },
+    ]);
   };
 
   const toggleDrawer = () => {
@@ -112,9 +142,21 @@ const VendorSidebarNavigator = () => {
         <Animated.View style={[styles.sidebar, { transform: [{ translateX: drawerAnim }] }]}>
           <SafeAreaView style={styles.sidebarContent}>
             <View style={styles.sidebarHeader}>
-              <Text style={styles.sidebarTitle}>{shopName}</Text>
-              <Text style={styles.sidebarSubtitle}>Shop Management</Text>
+              <View style={styles.headerRow}>
+                <View style={styles.avatarContainer}>
+                  {profileImage ? (
+                    <Image source={{ uri: profileImage }} style={styles.avatar} />
+                  ) : (
+                    <Text style={styles.avatarPlaceholder}>👤</Text>
+                  )}
+                </View>
+                <View style={styles.headerText}>
+                  <Text style={styles.sidebarTitle} numberOfLines={1}>{shopName}</Text>
+                  <Text style={styles.sidebarSubtitle}>Shop Management</Text>
+                </View>
+              </View>
             </View>
+
             <View style={styles.menuList}>
               {menuItems.map((item) => (
                 <TouchableOpacity
@@ -137,6 +179,14 @@ const VendorSidebarNavigator = () => {
                   </Text>
                 </TouchableOpacity>
               ))}
+            </View>
+
+            {/* Logout at bottom */}
+            <View style={styles.logoutContainer}>
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutIcon}>🚪</Text>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
             </View>
           </SafeAreaView>
         </Animated.View>
@@ -179,13 +229,37 @@ const styles = StyleSheet.create({
   sidebarContent: { flex: 1 },
   sidebarHeader: {
     padding: 20,
-    backgroundColor: '#1B4D6B', // Premium Navy Blue
-    marginBottom: 20,
+    backgroundColor: '#1B4D6B',
     paddingTop: 60,
+    paddingBottom: 30,
   },
-  sidebarTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFF' },
-  sidebarSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 5 },
-  menuList: { paddingHorizontal: 10 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarPlaceholder: {
+    fontSize: 24,
+  },
+  headerText: {
+    flex: 1,
+  },
+  sidebarTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  sidebarSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  menuList: { paddingHorizontal: 10, flex: 1 },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,6 +273,20 @@ const styles = StyleSheet.create({
   itemIcon: { fontSize: 20, marginRight: 15 },
   itemTitle: { fontSize: 16, color: '#666', fontWeight: '600' },
   activeItemTitle: { color: '#1B4D6B', fontWeight: '700' },
+  logoutContainer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 12,
+    backgroundColor: '#FFF5F5',
+  },
+  logoutIcon: { fontSize: 20, marginRight: 15 },
+  logoutText: { fontSize: 16, color: '#FF4444', fontWeight: '700' },
 });
 
 export default VendorSidebarNavigator;

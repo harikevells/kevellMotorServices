@@ -1,4 +1,4 @@
-const ServiceCenter = require('../models/ServiceCenter');
+const Vendor = require('../models/vendor');
 const fs = require('fs');
 const path = require('path');
 
@@ -43,27 +43,11 @@ exports.createCenter = async (req, res, next) => {
 exports.getAllCenters = async (req, res, next) => {
   try {
     const { latitude, longitude, maxDistance = 50, search, specialization, vehicle_category, fuel_type } = req.query;
-    const filter = { is_active: true };
-
-    if (specialization) filter.specializations = specialization;
-    if (vehicle_category) filter.specializations = vehicle_category;
-    if (fuel_type) filter.specializations = fuel_type;
-    
-    // Support for multiple specialization filters
-    const specs = [];
-    if (specialization) specs.push(specialization);
-    if (vehicle_category) specs.push(vehicle_category);
-    if (fuel_type) specs.push(fuel_type);
-    
-    if (specs.length > 0) {
-      filter.specializations = { $all: specs };
-    }
-
-    if (search) filter.center_name = { $regex: search, $options: 'i' };
+    const filter = {}; // Relaxing '{ status: "approved" }' for testing purposes
 
     let centers;
     if (latitude && longitude) {
-      centers = await ServiceCenter.aggregate([
+      centers = await Vendor.aggregate([
         {
           $geoNear: {
             near: { type: 'Point', coordinates: [parseFloat(longitude), parseFloat(latitude)] },
@@ -76,13 +60,27 @@ exports.getAllCenters = async (req, res, next) => {
         { $sort: { distance: 1 } }
       ]);
     } else {
-      centers = await ServiceCenter.find(filter).sort({ rating: -1 });
+      centers = await Vendor.find(filter).sort({ rating: -1 });
     }
+
+    // Map vendors to match frontend ServiceCenter interface properties
+    const mappedCenters = centers.map(vendor => ({
+      _id: vendor._id,
+      center_name: vendor.shopName,
+      address: vendor.address?.street ? `${vendor.address.street}, ${vendor.address.city}` : 'No address provided',
+      city: vendor.address?.city || 'Unknown',
+      rating: vendor.rating || 0,
+      total_reviews: vendor.totalReviews || 0,
+      distance: vendor.distance,
+      profile_image_url: vendor.shopImage || vendor.profilePicture,
+      specializations: [], // Vendor specifies services differently, skipping specializations array for now.
+      location: vendor.location
+    }));
 
     res.json({
       success: true,
-      count: centers.length,
-      data: centers
+      count: mappedCenters.length,
+      data: mappedCenters
     });
   } catch (error) {
     next(error);
@@ -92,11 +90,22 @@ exports.getAllCenters = async (req, res, next) => {
 
 exports.getCenterById = async (req, res, next) => {
   try {
-    const center = await ServiceCenter.findById(req.params.id);
+    const center = await Vendor.findById(req.params.id);
     if (!center) {
-      return res.status(404).json({ success: false, message: 'Service Center not found' });
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
     }
-    res.json({ success: true, data: center });
+    const mappedCenter = {
+      _id: center._id,
+      center_name: center.shopName,
+      address: center.address?.street ? `${center.address.street}, ${center.address.city}` : 'No address provided',
+      city: center.address?.city || 'Unknown',
+      rating: center.rating || 0,
+      total_reviews: center.totalReviews || 0,
+      profile_image_url: center.shopImage || center.profilePicture,
+      specializations: [],
+      location: center.location
+    };
+    res.json({ success: true, data: mappedCenter });
   } catch (error) {
     next(error);
   }

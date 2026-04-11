@@ -11,8 +11,8 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { COLORS, SHADOWS } from '../constants/theme';
-import api from '../services/api';
+import { COLORS, SHADOWS, SIZES } from '../constants/theme';
+import { fetchVendorDashboard, fetchOrderStatistics } from '../services/api';
 import { useVendorNav } from './VendorSidebarNavigator';
 
 const { width } = Dimensions.get('window');
@@ -20,6 +20,7 @@ const { width } = Dimensions.get('window');
 const VendorDashboard = () => {
   const { toggleDrawer } = useVendorNav();
   const [stats, setStats] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('Today');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -32,16 +33,22 @@ const VendorDashboard = () => {
   ).reverse();
 
   useEffect(() => {
-    fetchDashboard();
+    loadAllData();
   }, [selectedYear]);
 
-  const fetchDashboard = async () => {
+  const loadAllData = async () => {
     try {
       setLoading(true);
-      // Pass the selected year to the statistics API
-      const res: any = await api.get(`/vendor/orders/statistics?year=${selectedYear}`);
-      if (res.success) {
-        setStats(res.statistics);
+      const [dashRes, statsRes]: any = await Promise.all([
+        fetchVendorDashboard(),
+        fetchOrderStatistics(selectedYear)
+      ]);
+
+      if (dashRes.success) {
+        setDashboardData(dashRes.dashboard);
+      }
+      if (statsRes.success) {
+        setStats(statsRes.statistics);
       }
     } catch (e) {
       console.warn(e);
@@ -73,7 +80,7 @@ const VendorDashboard = () => {
 
     // Fixed Target line calculation (mockup trend matching image)
     const targets = months.map((_, i) => (maxRevenue * 0.3) + (i * (maxRevenue * 0.05)));
-    const totalRevenue = data.reduce((sum, val) => sum + val, 0);
+    const totalRevenue = data.reduce((sum, val) => sum + (val || 0), 0);
 
     return (
       <View style={styles.chartCard}>
@@ -109,6 +116,12 @@ const VendorDashboard = () => {
                 const barHeight = (val / maxRevenue) * chartHeight;
                 const targetHeight = (targets[i] / maxRevenue) * chartHeight;
 
+                // Trend Line Calculation
+                const nextVal = data[i + 1];
+                const hasNext = nextVal !== undefined;
+                const nextHeight = hasNext ? (nextVal / maxRevenue) * chartHeight : 0;
+                const barWidth = (width - 100) / 12;
+
                 return (
                   <View key={i} style={styles.barGroup}>
                     <View style={[styles.bar, { height: Math.max(barHeight, 5) }]} />
@@ -129,7 +142,7 @@ const VendorDashboard = () => {
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendLine, { backgroundColor: '#EB5757' }]} />
-            <Text style={styles.legendText}>Sales Target</Text>
+            <Text style={styles.legendText}>Target</Text>
           </View>
         </View>
 
@@ -141,22 +154,56 @@ const VendorDashboard = () => {
     );
   };
 
-  const ServiceCard = ({ title, icon }: any) => (
+  const ServiceCard = ({ title, count, icon }: any) => (
     <View style={styles.serviceCard}>
       <View style={styles.serviceIconContainer}>
-        <Text style={styles.serviceEmoji}>{icon}</Text>
+        <Text style={styles.serviceEmoji}>{icon || '🛠️'}</Text>
       </View>
-      <Text style={styles.serviceTitle}>{title}</Text>
+      <Text style={styles.serviceTitle} numberOfLines={1}>{title}</Text>
+      <Text style={styles.serviceCount}>{count} orders</Text>
     </View>
   );
 
-  if (loading && !stats) {
+  const RecentOrderCard = ({ order }: { order: any }) => (
+    <View style={styles.recentOrderCard}>
+      <View style={styles.recentOrderHeader}>
+        <Text style={styles.customerName}>{order.user?.name || 'Customer'}</Text>
+        <Text style={styles.orderAmount}>₹{order.totalAmount}</Text>
+      </View>
+      <Text style={styles.vehicleInfo}>
+        {order.vehicleDetails?.brand} {order.vehicleDetails?.model}
+      </Text>
+      <View style={styles.statusRow}>
+        <Text style={styles.orderTime}>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        <View style={[styles.statusDot, { backgroundColor: order.status === 'pending' ? '#EF6C00' : '#1B4D6B' }]} />
+        <Text style={styles.statusName}>{order.status.replace(/_/g, ' ')}</Text>
+      </View>
+    </View>
+  );
+
+  if (loading && !dashboardData) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={'#1B4D6B'} />
       </View>
     );
   }
+
+  const overview = dashboardData?.overview || {};
+  const popularServices = dashboardData?.popularServices || [];
+  const recentOrders = dashboardData?.recentOrders || [];
+
+  const getServiceIcon = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('brake')) return '⚙️';
+    if (n.includes('engine')) return '🔌';
+    if (n.includes('wheel')) return '🔘';
+    if (n.includes('battery')) return '🔋';
+    if (n.includes('ac') || n.includes('air')) return '❄️';
+    if (n.includes('oil')) return '🛢️';
+    if (n.includes('wash')) return '🧽';
+    return '🛠️';
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -201,7 +248,7 @@ const VendorDashboard = () => {
           />
           <StatCard
             title="Total Services"
-            value={stats?.totalOrders}
+            value={stats?.completedOrders}
             percentage="+12%"
             icon="📊"
             color="#9B51E0"
@@ -225,6 +272,7 @@ const VendorDashboard = () => {
           />
         </View>
 
+
         <View style={styles.chartSection}>
           <RevenueChart data={stats?.monthlyRevenue || Array(12).fill(0)} />
         </View>
@@ -232,16 +280,28 @@ const VendorDashboard = () => {
         <View style={styles.servicesSection}>
           <Text style={styles.sectionTitle}>Popular Services</Text>
           <View style={styles.servicesGrid}>
-            <ServiceCard title="Check Engine Light" icon="🔌" />
-            <ServiceCard title="Brake Pads" icon="⚙️" />
-            <ServiceCard title="Wheel Balancing" icon="🔘" />
-            <ServiceCard title="Battery Services" icon="🔋" />
-            <ServiceCard title="A/C Diagnosis" icon="❄️" />
-            <ServiceCard title="Wheel Alignment" icon="🚜" />
-            <ServiceCard title="Exhaust" icon="🎺" />
-            <ServiceCard title="Transmission" icon="⛓️" />
-            <ServiceCard title="Normal Service" icon="🛠️" />
+            {popularServices.map((s: any, i: number) => (
+              <ServiceCard
+                key={i}
+                title={s._id}
+                count={s.count}
+                icon={getServiceIcon(s._id)}
+              />
+            ))}
+            {popularServices.length === 0 && (
+              <Text style={styles.emptyText}>No service data available yet.</Text>
+            )}
           </View>
+        </View>
+
+        <View style={styles.recentSection}>
+          <Text style={styles.sectionTitle}>Recent Bookings</Text>
+          {recentOrders.map((order: any) => (
+            <RecentOrderCard key={order._id} order={order} />
+          ))}
+          {recentOrders.length === 0 && (
+            <Text style={styles.emptyText}>No recent bookings found.</Text>
+          )}
         </View>
       </ScrollView>
 
@@ -426,10 +486,14 @@ const styles = StyleSheet.create({
     top: 60,
     left: 0,
     right: 0,
-    height: 2,
-    backgroundColor: 'rgba(235, 87, 87, 0.4)',
-    transform: [{ rotate: '-12deg' }],
+    height: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: 'rgba(235, 87, 87, 0.3)',
+    borderRadius: 1,
+    transform: [{ rotate: '-10deg' }],
   },
+
   xLabel: {
     fontSize: 8,
     color: '#000',
@@ -488,9 +552,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  serviceCount: { fontSize: 9, color: '#999', marginTop: 2 },
+  recentSection: { paddingHorizontal: 20, marginTop: 20, paddingBottom: 30 },
+  recentOrderCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    ...SHADOWS.light,
+  },
+  recentOrderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
+  customerName: { fontSize: 14, fontWeight: '700', color: '#000' },
+  orderAmount: { fontSize: 14, fontWeight: '800', color: '#1B4D6B' },
+  vehicleInfo: { fontSize: 12, color: '#666', marginBottom: 8 },
+  statusRow: { flexDirection: 'row', alignItems: 'center' },
+  orderTime: { fontSize: 11, color: '#999', flex: 1 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
+  statusName: { fontSize: 11, fontWeight: '600', color: '#333', textTransform: 'capitalize' },
+  emptyText: { fontSize: 14, color: '#999', textAlign: 'center', width: '100%', marginVertical: 20 },
+
+  // Modal & Picker Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -498,13 +582,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 30,
-    maxHeight: '60%',
+    maxHeight: '50%',
   },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 20, textAlign: 'center' },
   yearItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE', alignItems: 'center' },
   yearItemText: { fontSize: 18, color: '#666' },
   activeYearText: { color: '#1B4D6B', fontWeight: 'bold' },
-  closeBtn: { marginTop: 20, padding: 15, backgroundColor: '#000', borderRadius: 15, alignItems: 'center' },
+  closeBtn: { marginTop: 20, padding: 15, backgroundColor: '#1B4D6B', borderRadius: 15, alignItems: 'center' },
   closeBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
 

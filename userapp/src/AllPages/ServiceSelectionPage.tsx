@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -34,37 +34,66 @@ const ServiceSelectionPage = () => {
   const route = useRoute<ServiceRouteProp>();
   const { vehicleId, category: vehicleCat, fuel } = route.params;
 
+  // Sanitise route params — guard against undefined being sent as a literal string
+  const VALID_VEHICLE_CATS = ['2_wheeler', '4_wheeler', 'heavy'];
+  const VALID_FUEL_TYPES   = ['electric', 'petrol', 'diesel', 'cng', 'hybrid'];
+  const safeCat  = VALID_VEHICLE_CATS.includes(vehicleCat) ? vehicleCat : '';
+  const safeFuel = VALID_FUEL_TYPES.includes(fuel)         ? fuel        : '';
+
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<string[]>(['all']);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const initialised = useRef(false);
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
+  // Re-load services whenever category tab changes (skip first mount)
   useEffect(() => {
-    loadServices();
+    if (!initialised.current) return;
+    loadServices(selectedCategory);
   }, [selectedCategory]);
 
   const loadInitialData = async () => {
     try {
+      setLoading(true);
+      setLoadError(false);
+
+      // Load category tabs and initial service list in sequence
       const catRes = await fetchCategories();
-      setCategories(['all', ...catRes.data]);
+      const rawCats = catRes?.data ?? catRes;
+      const fetchedCats: string[] = Array.isArray(rawCats) ? rawCats : [];
+      setCategories(['all', ...fetchedCats]);
+
+      const res = await fetchServices('', safeCat, safeFuel);
+      const rawServices = res?.data ?? res;
+      setServices(Array.isArray(rawServices) ? rawServices : []);
+
+      initialised.current = true;
     } catch (err) {
-      console.error(err);
+      console.error('[ServiceSelection] load error:', err);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const loadServices = async () => {
+  const loadServices = async (cat: string) => {
     try {
       setLoading(true);
-      const serviceCat = selectedCategory === 'all' ? '' : selectedCategory;
-      const resSpecific = await fetchServices(serviceCat, vehicleCat, fuel);
-      setServices(resSpecific.data);
+      setLoadError(false);
+      const serviceCat = cat === 'all' ? '' : cat;
+      const res = await fetchServices(serviceCat, safeCat, safeFuel);
+      const rawServices = res?.data ?? res;
+      setServices(Array.isArray(rawServices) ? rawServices : []);
     } catch (err) {
-      console.error(err);
+      console.error('[ServiceSelection] filter error:', err);
+      setLoadError(true);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -147,11 +176,37 @@ const ServiceSelectionPage = () => {
           </View>
         </View>
         
+        {/* DEBUG BANNER - remove after fix */}
+        <View style={{ backgroundColor: services.length === 0 && !loading ? '#ff4444' : '#22aa44', padding: 6, borderRadius: 8, marginBottom: 8 }}>
+          <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', fontWeight: 'bold' }}>
+            {loading ? 'Loading...' : `Services: ${services.length} | Cat: ${selectedCategory} | Error: ${String(loadError)}`}
+          </Text>
+        </View>
+
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+        ) : loadError ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Failed to load services. Check connection.</Text>
+            <TouchableOpacity
+              style={[styles.retryButton]}
+              onPress={() => loadInitialData()}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         ) : services.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No services found for this category.</Text>
+            <Text style={styles.emptyText}>No services available for this category.</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                setSelectedCategory('all');
+                loadServices('all');
+              }}
+            >
+              <Text style={styles.retryButtonText}>Show All Services</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
@@ -378,13 +433,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   emptyContainer: {
-     marginTop: 50,
-     alignItems: 'center',
+    marginTop: 50,
+    alignItems: 'center',
+    paddingHorizontal: 30,
   },
   emptyText: {
-     fontSize: 16,
-     color: COLORS.textSecondary,
-  }
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
 });
 
 export default ServiceSelectionPage;

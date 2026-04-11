@@ -146,7 +146,7 @@ const ProfilePage = () => {
                 <View style={styles.avatarInternal}>
                   {user.profileImage ? (
                     <Image
-                      source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.138:5000${user.profileImage}` }}
+                      source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.137:5000${user.profileImage}` }}
                       style={{ width: '100%', height: '100%' }}
                     />
                   ) : (

@@ -126,4 +126,12 @@ export const createBooking = (data: any) => api.post('/bookings', data);
 export const fetchUserBookings = () => api.get('/bookings');
 export const fetchTracking = (bookingId: string) => api.get('/bookings/' + bookingId + '/track');
 
+// Vendor
+export const fetchVendorOrders = () => api.get('/vendor/orders');
+export const updateOrderStatus = (bookingId: string, status: string) => 
+  api.patch(`/vendor/orders/${bookingId}/status`, { status });
+export const fetchVendorDashboard = () => api.get('/vendor/dashboard');
+export const fetchOrderStatistics = (year: number) => api.get(`/vendor/orders/statistics?year=${year}`);
+export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
+
 export default api;
