@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  SafeAreaView, 
-  TouchableOpacity, 
-  TextInput, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  TouchableOpacity,
+  TextInput,
   ActivityIndicator,
   Alert,
   Image
@@ -22,7 +22,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'user' | 'vendor'>('user');
@@ -37,11 +37,11 @@ const LoginScreen = () => {
     try {
       setLoading(true);
       const res: any = await login({ email, password, role });
-      
+
       if (res.token) {
         await SafeStorage.setItem('token', res.token);
         await SafeStorage.setItem('user', JSON.stringify(res.user));
-        
+
         // Redirect based on role and clear history
         if (res.user.role === 'vendor') {
           navigation.reset({
@@ -72,26 +72,26 @@ const LoginScreen = () => {
           <Image source={SecondSVG} style={{ width: 600, height: 390 }} resizeMode="contain" />
         </View>
       </View>
-      
+
       <View style={styles.svgContainer}>
         <Svg height="100%" width="100%" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <Path 
-            fill="#6dbbecff" 
-            d="M0,192L80,202.7C160,213,320,235,480,218.7C640,203,800,149,960,138.7C1120,128,1280,160,1360,176L1440,192L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z" 
+          <Path
+            fill="#6dbbecff"
+            d="M0,192L80,202.7C160,213,320,235,480,218.7C640,203,800,149,960,138.7C1120,128,1280,160,1360,176L1440,192L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"
           />
         </Svg>
       </View>
 
       <View style={styles.bottomHalf}>
         <View style={styles.roleContainer}>
-          <TouchableOpacity 
-            style={[styles.roleOption, role === 'user' && styles.roleSelected]} 
+          <TouchableOpacity
+            style={[styles.roleOption, role === 'user' && styles.roleSelected]}
             onPress={() => setRole('user')}
           >
             <Text style={[styles.roleText, role === 'user' && styles.roleTextSelected]}>User Login</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.roleOption, role === 'vendor' && styles.roleSelected]} 
+          <TouchableOpacity
+            style={[styles.roleOption, role === 'vendor' && styles.roleSelected]}
             onPress={() => setRole('vendor')}
           >
             <Text style={[styles.roleText, role === 'vendor' && styles.roleTextSelected]}>Vendor Login</Text>
@@ -99,7 +99,7 @@ const LoginScreen = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <TextInput 
+          <TextInput
             style={styles.input}
             placeholder="Email Address"
             placeholderTextColor="#999"
@@ -111,7 +111,7 @@ const LoginScreen = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <TextInput 
+          <TextInput
             style={styles.input}
             placeholder="Password"
             placeholderTextColor="#999"
@@ -121,8 +121,8 @@ const LoginScreen = () => {
           />
         </View>
 
-        <TouchableOpacity 
-          style={styles.verifyButton} 
+        <TouchableOpacity
+          style={styles.verifyButton}
           onPress={handleLogin}
           disabled={loading}
         >
@@ -130,7 +130,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('Registration' as any)} style={{ alignSelf: 'center' }}>
-           <Text style={styles.backLink}>Don't have an account? <Text style={{fontWeight: '900', color: '#333333'}}>Register</Text></Text>
+          <Text style={styles.backLink}>Don't have an account? <Text style={{ fontWeight: '900', color: '#333333' }}>Register</Text></Text>
         </TouchableOpacity>
 
         {/* <View style={[styles.footerTexts, { marginTop: 'auto', marginBottom: 20 }]}>

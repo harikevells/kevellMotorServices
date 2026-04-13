@@ -334,7 +334,7 @@ const MotorServicesLogo: React.FC = () => {
                     },
                 ]}
             >
-                <Text style={styles.motorText}>KEVELL MOTOR</Text>
+                <Text style={styles.motorText}>KEVELL</Text>
                 <View style={styles.redLine} />
                 <Text style={styles.servicesText}>SERVICES</Text>
             </Animated.View>

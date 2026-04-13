@@ -1,0 +1,116 @@
+/* vendor.css */
+:root {
+  --gold-primary: #c9992a;
+  --gray-card: #1e2029;
+  --gray-border: rgba(255,255,255,0.1);
+  --gray-text: #cccccc;
+}
+
+.vendor-management-container {
+  color: white;
+}
+
+.management-card {
+  background-color: var(--gray-card) !important;
+  border: 1px solid var(--gray-border) !important;
+  border-radius: 12px !important;
+  padding: 20px;
+}
+
+.filter-input, .filter-select {
+  background-color: rgba(0,0,0,0.2) !important;
+  border: 1px solid var(--gray-border) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  padding: 10px 15px !important;
+}
+
+.filter-input:focus, .filter-select:focus {
+  border-color: var(--gold-primary) !important;
+  box-shadow: 0 0 0 0.1rem rgba(201,153,42,0.1) !important;
+  background-color: rgba(0,0,0,0.4) !important;
+}
+
+.table {
+  color: var(--gray-text) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+}
+
+.table thead th {
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--gray-border) !important;
+  color: var(--gold-primary) !important;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 15px !important;
+  text-align: center !important;
+}
+
+.table tbody tr {
+  background-color: transparent !important;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid var(--gray-border) !important;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(255,255,255,0.03) !important;
+}
+
+.table tbody td {
+  padding: 15px !important;
+  text-align: center !important;
+  border-top: 1px solid var(--gray-border) !important;
+  border-bottom: 1px solid var(--gray-border) !important;
+}
+
+.action-btn {
+  background-color: transparent !important;
+  border: 1px solid var(--gray-border) !important;
+  color: var(--gold-primary) !important;
+  transition: all 0.2s ease !important;
+}
+
+.action-btn:hover {
+  background-color: var(--gold-primary) !important;
+  color: black !important;
+}
+
+.detail-modal .modal-content {
+  border-radius: 15px;
+  border: 1px solid var(--gray-border);
+}
+
+.detail-section {
+  background-color: rgba(255,255,255,0.03);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--gray-border);
+}
+
+.section-title {
+  color: var(--gold-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--gray-border);
+  padding-bottom: 10px;
+}
+
+.pagination .page-link {
+  background-color: var(--gray-card) !important;
+  border-color: var(--gray-border) !important;
+  color: var(--gray-text) !important;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--gold-primary) !important;
+  border-color: var(--gold-primary) !important;
+  color: #000 !important;
+}

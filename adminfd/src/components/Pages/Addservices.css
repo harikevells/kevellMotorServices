@@ -1,0 +1,88 @@
+/* Addservices.css - Premium Gold & Gray styling for Add Service Form */
+
+:root {
+  --gold-primary: #c9992a;
+  --gold-hover: #e8b84b;
+  --gray-card: #1e2029;
+  --gray-bg: #0c0d10;
+  --gray-text: #cccccc;
+  --gray-border: rgba(255, 255, 255, 0.1);
+}
+
+.add-service-card {
+  /* background-color: transparent !important; */
+  border-radius: 0px !important;
+  color: var(--gold-primary) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--gray-border) !important;
+}
+
+.add-service-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--gray-border) !important;
+  color: var(--gold-primary) !important;
+  font-weight: bold;
+}
+
+.form-label {
+  color: var(--gold-primary) !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-control, .form-select {
+  background-color: transparent !important;
+  border: 1px solid var(--gray-border) !important;
+  color: var(--gold-primary) !important;
+  border-radius: 8px !important;
+  padding: 10px 15px !important;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: rgba(201, 153, 42, 0.05) !important;
+  border-color: var(--gold-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(201, 153, 42, 0.15) !important;
+}
+
+.input-group-text {
+  background-color: transparent !important;
+  border: 1px solid var(--gray-border) !important;
+  color: var(--gold-primary) !important;
+}
+
+.btn-warning {
+  background-color: var(--gold-primary) !important;
+  border-color: var(--gold-primary) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-warning:hover {
+  background-color: var(--gold-hover) !important;
+  transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+  color: var(--gray-text) !important;
+  border-color: var(--gray-border) !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.image-preview-container {
+  border: 2px dashed var(--gray-border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--gray-bg);
+}
+
+.form-check-input:checked {
+  background-color: var(--gold-primary) !important;
+  border-color: var(--gold-primary) !important;
+}

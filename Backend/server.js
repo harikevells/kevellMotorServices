@@ -59,23 +59,23 @@ async function createDefaultAdmin() {
   try {
     const User = require('./models/User');
 
-    const existingAdmin = await User.findOne({ email: 'admin@drc.com' });
+    const existingAdmin = await User.findOne({ email: 'admin@gmail.com' });
 
     if (!existingAdmin) {
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('admin123', salt);
+      const hashedPassword = await bcrypt.hash('Admin@123', salt);
 
       const admin = new User({
         name: 'Admin',
-        email: 'admin@drc.com',
+        email: 'admin@gmail.com',
         password: hashedPassword,
         role: 'admin'
       });
 
       await admin.save();
       console.log('✅ Default admin created successfully!');
-      console.log('   Email: admin@drc.com');
-      console.log('   Password: admin123');
+      console.log('   Email: admin@gmail.com');
+      console.log('   Password: Admin@123');
     } else {
       console.log('✅ Admin already exists');
     }
@@ -87,6 +87,7 @@ async function createDefaultAdmin() {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/admin/vendors', require('./routes/adminvendorRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/centers', require('./routes/centerRoutes'));

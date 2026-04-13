@@ -1,0 +1,109 @@
+/* Viewservices.css - Premium Gold & Gray styling for Service Management Table */
+
+:root {
+  --gold-primary: #c9992a;
+  --gold-hover: #e8b84b;
+  --gray-card: #1e2029;
+  --gray-bg: #0c0d10;
+  --gray-text: #cccccc;
+  --gray-muted: #888888;
+  --gray-border: rgba(255, 255, 255, 0.1);
+}
+
+.service-management-container {
+  color: white;
+}
+
+.table {
+  color: var(--gold-primary) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+}
+
+.table thead th {
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--gray-border) !important;
+  color: var(--gold-primary) !important;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 15px !important;
+  text-align: center !important;
+}
+
+.table tbody tr {
+  background-color: transparent !important;
+  transition: all 0.3s ease;
+  color: white !important;
+  border-bottom: 1px solid var(--gray-border) !important;
+}
+
+.table tbody tr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3) !important;
+  border-color: var(--gold-primary) !important;
+}
+
+.table tbody td {
+  padding: 15px !important;
+  background: transparent !important;
+  color: white !important;
+  text-align: center !important;
+  border-top: 1px solid #9c9c9c !important;
+  border-bottom: 1px solid #9c9c9c !important;
+}
+
+.table tbody td:first-child {
+  border-left: 1px solid #9c9c9c !important;
+  border-radius: 8px 0 0 8px;
+}
+
+.table tbody td:last-child {
+  border-right: 1px solid #9c9c9c !important;
+  border-radius: 0 8px 8px 0;
+}
+
+.management-card {
+  background-color: transparent !important;
+  border: 0px solid var(--gray-border) !important;
+  border-radius: 12px !important;
+}
+
+.filter-input, .filter-select {
+  background-color: var(--gray-bg) !important;
+  border: 3px solid var(--gray-border) !important;
+  color: white !important;
+  border-radius: 8px !important;
+}
+
+.filter-input:focus, .filter-select:focus {
+  border-color: var(--gold-primary) !important;
+  box-shadow: 0 0 0 0.1rem rgba(201, 153, 42, 0.1) !important;
+}
+
+.badge-bike { background-color: var(--gold-primary) !important; color: black !important; }
+.badge-car { background-color: #2e7d32 !important; color: white !important; }
+.badge-heavy { background-color: #d32f2f !important; color: white !important; }
+
+.action-btn {
+  background-color: transparent !important;
+  border: none !important;
+  color: var(--gold-primary) !important;
+  transition: all 0.2s ease !important;
+}
+
+.action-btn:hover.edit { color: var(--gold-primary) !important; background-color: rgba(201, 153, 42, 0.1) !important; }
+.action-btn:hover.delete { color: #ff5252 !important; background-color: rgba(255, 82, 82, 0.1) !important; }
+
+.pagination .page-link {
+  background-color: var(--gray-card) !important;
+  border-color: var(--gray-border) !important;
+  color: var(--gray-text) !important;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--gold-primary) !important;
+  border-color: var(--gold-primary) !important;
+  color: #000 !important;
+  font-weight: bold;
+}

@@ -199,4 +199,40 @@ exports.cancelBooking = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getAllBookingsAdmin = async (req, res, next) => {
+  try {
+    const { search, status } = req.query;
+    console.log('--- ADMIN BOOKING FETCH ---');
+    console.log('Query Params:', { search, status });
+
+    let query = {};
+
+    if (search) {
+      query.bookingRef = { $regex: search, $options: 'i' };
+    }
+
+    if (status && status !== 'All') {
+      query.status = status;
+    }
+
+    const bookings = await Booking.find(query)
+      .populate('user', '-password')
+      .populate('vehicle')
+      .populate('center')
+      .populate('services')
+      .sort({ createdAt: -1 });
+
+    console.log(`Found ${bookings.length} bookings`);
+    
+    res.json({
+      success: true,
+      count: bookings.length,
+      data: bookings
+    });
+  } catch (error) {
+    console.error('BACKEND ERROR IN ADMIN BOOKING FETCH:', error);
+    next(error);
+  }
+};
 
