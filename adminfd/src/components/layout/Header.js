@@ -1,41 +1,43 @@
-import React from 'react';
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Menu } from 'lucide-react';
+import './Header.css';
 
-const Header = () => {
+const Header = ({ activePage, onLogout, onToggleSidebar, collapsed }) => {
     const storedAdmin = typeof window !== 'undefined' ? localStorage.getItem('adminUser') : null;
     const adminData = storedAdmin ? JSON.parse(storedAdmin) : {};
-    const adminName = adminData.name || adminData.username || 'Admin';
-    const adminRole = adminData.role || 'Super Admin';
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('adminUser');
-        window.location.reload();
-    };
+    const adminName = adminData.name || 'Owner';
+    const adminRole = adminData.role || 'Admin';
 
     return (
-        <header>
+        <header className="header-new" style={{ left: collapsed ? '80px' : '240px', width: collapsed ? 'calc(100% - 80px)' : 'calc(100% - 240px)' }}>
             <div className="header-left">
-                {/* <h1>Dashboard</h1> */}
+                <button 
+                    type="button" 
+                    className="menu-toggle-btn" 
+                    onClick={(e) => { e.preventDefault(); onToggleSidebar(); }}
+                >
+                    <Menu size={20} />
+                </button>
+                <h1 className="header-title">{activePage || 'DashBoard'}</h1>
             </div>
+            
             <div className="header-right">
-                <div className="icon-btn">
-                    <Bell size={18} />
-                </div>
-                <div className="profile-section">
-                    <div className="avatar">
+                <div className="user-profile">
+                    <div className="avatar-small">
                         <img
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=2a2d35&color=fff`}
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=f28b2c&color=fff`}
                             alt={adminName}
                         />
                     </div>
-                    <div className="profile-info">
-                        <span className="profile-name">{adminName}</span>
-                        <span className="profile-role">{adminRole}</span>
-                    </div>
+                    <span className="user-role-text">{adminRole}</span>
                 </div>
-                <div className="icon-btn logout-btn" onClick={handleLogout} title="Logout">
-                    <LogOut size={18} />
+                
+                <div className="header-icon-group">
+                    <div className="header-icon-btn">
+                        <Bell size={20} />
+                    </div>
+                    <div className="header-icon-btn logout-btn" onClick={onLogout} title="Logout">
+                        <LogOut size={20} />
+                    </div>
                 </div>
             </div>
         </header>

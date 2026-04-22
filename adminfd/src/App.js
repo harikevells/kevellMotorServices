@@ -14,6 +14,7 @@ function App() {
   const [activePage, setActivePage] = useState('Dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // Check for existing session
@@ -77,9 +78,9 @@ function App() {
 
   return (
     <div className="dashboard-wrapper">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onLogout={handleLogout} />
-      <main className="main-content">
-        <Header activePage={activePage} onLogout={handleLogout} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} onLogout={handleLogout} collapsed={sidebarCollapsed} />
+      <Header activePage={activePage} onLogout={handleLogout} onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} collapsed={sidebarCollapsed} />
+      <main className="main-content" style={{ marginLeft: sidebarCollapsed ? '80px' : '240px' }}>
         {renderContent()}
       </main>
     </div>

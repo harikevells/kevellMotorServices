@@ -9,7 +9,7 @@ const serviceTypeSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Bike', 'Car', 'Heavy']
+    enum: ['Bike', 'Car', 'Heavy', '2 Wheeler', '4 Wheeler']
   },
   price: {
     type: Number,

@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Container, Table, Button, Form, Modal, Badge, 
-    Pagination, InputGroup, Row, Col, Image, Spinner, Card
-} from 'react-bootstrap';
-import { Search, Plus, Edit2, Trash2, Filter, Loader } from 'lucide-react';
+import { Spinner, Table, Button, Form } from 'react-bootstrap';
+import { Search, Edit3, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import AddService from './AddService';
 import './Viewservices.css';
@@ -17,10 +14,8 @@ const ServiceCreate = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const servicesPerPage = 5;
+    const servicesPerPage = 8; // Match image pagination 1-8
 
-    const [showFormModal, setShowFormModal] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [currentService, setCurrentService] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -50,46 +45,36 @@ const ServiceCreate = () => {
         try {
             const url = currentService ? `${API_BASE_URL}/${currentService._id}` : API_BASE_URL;
             const method = currentService ? 'put' : 'post';
-            
+
             const response = await axios[method](url, formData, {
-                headers: { 
+                headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Placeholder for auth
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
 
             if (response.data.success) {
                 fetchServices();
-                setShowFormModal(false);
+                setCurrentService(null); // Reset form
             }
         } catch (error) {
             console.error('Error saving service:', error);
-            alert('Error saving service. Please check console.');
+            alert('Error saving service.');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const confirmDelete = async () => {
-        try {
-            await axios.delete(`${API_BASE_URL}/${currentService._id}`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-            fetchServices();
-            setShowDeleteModal(false);
-        } catch (error) {
-            console.error('Error deleting service:', error);
-        }
-    };
-
-    const toggleStatus = async (id) => {
-        try {
-            await axios.patch(`${API_BASE_URL}/${id}/toggle`, {}, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-            fetchServices();
-        } catch (error) {
-            console.error('Error toggling status:', error);
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this service?')) {
+            try {
+                await axios.delete(`${API_BASE_URL}/${id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                fetchServices();
+            } catch (error) {
+                console.error('Error deleting service:', error);
+            }
         }
     };
 
@@ -100,146 +85,147 @@ const ServiceCreate = () => {
     const totalPages = Math.ceil(services.length / servicesPerPage);
 
     return (
-        <Container fluid className="service-management-container py-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h3 className="fw-bold mb-0" style={{ color: 'var(--gold-primary)' }}>Service Management</h3>
-                <Button variant="warning" onClick={() => { setCurrentService(null); setShowFormModal(true); }} className="d-flex align-items-center gap-2">
-                    <Plus size={20} /> Add Service
-                </Button>
-            </div>
+        <div className="service-management-outer">
+            {/* Embedded Form at the Top */}
+            <AddService
+                initialData={currentService}
+                onSubmit={handleSaveService}
+                onCancel={() => setCurrentService(null)}
+                isLoading={isSaving}
+            />
 
-            <Card className="management-card mb-4">
-                <Row className="g-3">
-                    <Col md={4}>
-                        <InputGroup>
-                            <InputGroup.Text className="bg-transparent border-end-0" style={{ borderColor: 'var(--gray-border)' }}>
-                                <Search size={18} className="text-gold" />
-                            </InputGroup.Text>
-                            <Form.Control
-                                placeholder="Search services..."
-                                className="filter-input border-start-0"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </InputGroup>
-                    </Col>
-                    <Col md={3}>
-                        <Form.Select className="filter-select" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                            <option value="All">All Categories</option>
-                            <option value="Bike">Bike</option>
-                            <option value="Car">Car</option>
-                            <option value="Heavy">Heavy</option>
-                        </Form.Select>
-                    </Col>
-                    <Col md={3}>
-                        <Form.Select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                            <option value="All">All Statuses</option>
-                            <option value="Active">Active Only</option>
-                            <option value="Inactive">Inactive Only</option>
-                        </Form.Select>
-                    </Col>
-                    <Col md={2}>
-                        <Button variant="outline-dark" className="w-100 action-btn" onClick={() => { setSearchTerm(''); setFilterCategory('All'); setFilterStatus('All'); }}>
-                            Clear
-                        </Button>
-                    </Col>
-                </Row>
-            </Card>
+            {/* View Services Section */}
+            <div className="view-services-section">
+                <div className="section-header">
+                    <h5 className="section-title">View Services</h5>
+                    {/* <Button 
+                        variant="orange" 
+                        className="add-services-btn-orange"
+                        onClick={() => {
+                            setCurrentService(null);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    >
+                        +Add Services
+                    </Button> */}
+                </div>
 
-            <div className="card management-card overflow-hidden">
-                <Table responsive hover className="mb-0 align-middle">
-                    <thead>
-                        <tr>
-                            <th>S.No</th>
-                            <th>Service Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Duration</th>
-                            <th>Status</th>
-                            <th className="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
+                {/* Filter Row */}
+                <div className="filter-row-custom">
+                    <div className="search-wrapper">
+                        <Search size={18} className="search-icon-inside" />
+                        <Form.Control
+                            placeholder="Search services"
+                            className="search-input-custom"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <Form.Select 
+                        className="filter-select-custom" 
+                        value={filterCategory} 
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                    >
+                        <option value="All">All Category</option>
+                        <option value="2 Wheeler">2 Wheeler</option>
+                        <option value="4 Wheeler">4 Wheeler</option>
+                        <option value="Heavy">Heavy</option>
+                    </Form.Select>
+                    <Form.Select 
+                        className="filter-select-custom" 
+                        value={filterStatus} 
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </Form.Select>
+                </div>
+
+                {/* Table */}
+                <div className="table-container-custom">
+                    <Table responsive className="table-custom">
+                        <thead>
                             <tr>
-                                <td colSpan={7} className="text-center py-5">
-                                    <Spinner animation="border" variant="warning" />
-                                </td>
+                                <th>Service Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>ACTION</th>
                             </tr>
-                        ) : currentRows.length > 0 ? (
-                            currentRows.map((service, index) => (
-                                <tr key={service._id}>
-                                    <td>{indexOfFirstService + index + 1}</td>
-                                    <td className="fw-bold">{service.serviceName || service.name || 'Unnamed Service'}</td>
-                                    <td>
-                                        <Badge className={`badge-${service.category.toLowerCase()}`}>
-                                            {service.category}
-                                        </Badge>
-                                    </td>
-                                    <td className="fw-bold text-white">₹ {service.price}</td>
-                                    <td>{service.duration}</td>
-                                    <td>
-                                        <Form.Check 
-                                            type="switch"
-                                            id={`toggle-${service._id}`}
-                                            checked={service.status}
-                                            onChange={() => toggleStatus(service._id)}
-                                        />
-                                    </td>
-                                    <td className="text-center">
-                                        <div className="d-flex justify-content-center gap-2">
-                                            <Button variant="light" size="sm" className="action-btn edit" onClick={() => { setCurrentService(service); setShowFormModal(true); }}>
-                                                <Edit2 size={14} />
-                                            </Button>
-                                            <Button variant="light" size="sm" className="action-btn delete" onClick={() => { setCurrentService(service); setShowDeleteModal(true); }}>
-                                                <Trash2 size={14} />
-                                            </Button>
-                                        </div>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-5">
+                                        <Spinner animation="border" variant="warning" />
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={7} className="text-center py-5 text-muted">No services found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
-            </div>
+                            ) : currentRows.length > 0 ? (
+                                currentRows.map((service) => (
+                                    <tr key={service._id}>
+                                        <td>{service.serviceName}</td>
+                                        <td>{service.category}</td>
+                                        <td>{service.price}</td>
+                                        <td>{service.duration || 'N/A'}</td>
+                                        <td>
+                                            <span className={service.status === 'Active' || service.status === true ? 'status-active-text' : 'text-danger'}>
+                                                {service.status === true || service.status === 'Active' ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button className="action-icon-btn" onClick={() => {
+                                                setCurrentService(service);
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}>
+                                                <Edit3 size={18} />
+                                            </button>
+                                            <button className="action-icon-btn" onClick={() => handleDelete(service._id)}>
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-5">No services found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
 
-            <div className="d-flex justify-content-between align-items-center mt-3">
-                <div className="text-muted small">Showing {currentRows.length} of {services.length} entries</div>
-                <Pagination size="sm">
-                    {[...Array(totalPages)].map((_, i) => (
-                        <Pagination.Item key={i+1} active={i+1 === currentPage} onClick={() => setCurrentPage(i+1)}>
-                            {i+1}
-                        </Pagination.Item>
-                    ))}
-                </Pagination>
-            </div>
-
-            <Modal show={showFormModal} onHide={() => setShowFormModal(false)} size="lg" centered>
-                <Modal.Body className="p-0 border-0 bg-transparent">
-                    <AddService 
-                        initialData={currentService}
-                        onSubmit={handleSaveService}
-                        onCancel={() => setShowFormModal(false)}
-                        isLoading={isSaving}
-                    />
-                </Modal.Body>
-            </Modal>
-
-            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
-                <div className="management-card p-3 border-0">
-                    <h6 className="text-white mb-3">Delete Service?</h6>
-                    <p className="small text-muted mb-4">Are you sure you want to remove {currentService?.serviceName}?</p>
-                    <div className="d-flex justify-content-end gap-2">
-                        <Button variant="outline-light" size="sm" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                        <Button variant="danger" size="sm" onClick={confirmDelete}>Delete</Button>
+                {/* Footer / Pagination */}
+                <div className="pagination-footer">
+                    <div>
+                        Show rows per page 
+                        <select className="rows-per-page-select">
+                            <option>8</option>
+                        </select>
+                    </div>
+                    <div className="pagination-nav">
+                        <span>{indexOfFirstService + 1}-{Math.min(indexOfLastService, services.length)} of {services.length}</span>
+                        <div className="d-flex gap-2">
+                            <button 
+                                className="nav-arrow-btn" 
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => prev - 1)}
+                            >
+                                &lt;
+                            </button>
+                            <button 
+                                className="nav-arrow-btn"
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(prev => prev + 1)}
+                            >
+                                &gt;
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </Modal>
-        </Container>
+            </div>
+        </div>
     );
 };
 

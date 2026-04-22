@@ -3,7 +3,7 @@ import {
     Container, Table, Button, Form, Modal, Badge, 
     Pagination, InputGroup, Row, Col, Spinner, Card
 } from 'react-bootstrap';
-import { Search, Eye, Filter, Calendar, MapPin, Phone, User, Car, Wrench, Clock, CheckCircle } from 'lucide-react';
+import { Search, Eye, Trash, Filter, ChevronLeft, ChevronRight, User, MapPin, Car, Calendar, Wrench } from 'lucide-react';
 import axios from 'axios';
 import './order.css';
 
@@ -16,7 +16,7 @@ const Ordermanagement = () => {
     const [filterStatus, setFilterStatus] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
     const [fetchError, setFetchError] = useState(null);
-    const rowsPerPage = 10;
+    const [rowsPerPage, setRowsPerPage] = useState(6);
 
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
@@ -30,14 +30,12 @@ const Ordermanagement = () => {
             const response = await axios.get(`${API_BASE_URL}/admin/all${query}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            console.log("FETCH SUCCESS. Data length:", response.data.data?.length);
             if (response.data.success) {
                 setBookings(response.data.data);
                 setFetchError(null);
             }
         } catch (error) {
-            console.error('FETCH ERROR:', error.message);
-            setFetchError(`Request failed: ${error.message}. Ensure backend is at ${API_BASE_URL}`);
+            setFetchError(`Request failed: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -53,6 +51,14 @@ const Ordermanagement = () => {
     const currentRows = bookings.slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(bookings.length / rowsPerPage);
 
+    const getStatusClass = (status) => {
+        const s = status.toLowerCase().replace(' ', '-');
+        if (s === 'delivered' || s === 'completed') return 'delivered';
+        if (s === 'pending') return 'pending';
+        if (s === 'in-progress') return 'in-progress';
+        return '';
+    };
+
     const getStatusStyle = (status) => {
         const styles = {
             pending: { bg: 'warning', color: 'black' },
@@ -65,139 +71,126 @@ const Ordermanagement = () => {
     };
 
     return (
-        <Container fluid className="order-management-container py-4">
+        <div className="order-management-container">
+            {/* Search and filter row */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h3 className="fw-bold mb-0" style={{ color: 'var(--gold-primary)' }}>Order Management</h3>
-                <div className="text-muted small">Total Bookings: {bookings.length}</div>
+                <div className="search-input-group">
+                    <Search size={18} color="#888" />
+                    <input 
+                        type="text" 
+                        placeholder="Search by bookings" 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <select 
+                    className="status-filter-select"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                >
+                    <option value="All">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
             </div>
 
-            <Card className="management-card mb-4 border-0">
-                <Row className="g-3">
-                    <Col md={6}>
-                        <InputGroup>
-                            <InputGroup.Text className="bg-transparent border-end-0 border-gray">
-                                <Search size={18} className="text-gold" />
-                            </InputGroup.Text>
-                            <Form.Control
-                                placeholder="Search by Booking Reference (e.g. EV2026...)"
-                                className="filter-input border-start-0"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </InputGroup>
-                    </Col>
-                    <Col md={4}>
-                        <Form.Select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                            <option value="All">All Statuses</option>
-                            <option value="pending">Pending</option>
-                            <option value="received">Received</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                        </Form.Select>
-                    </Col>
-                    <Col md={2}>
-                        <Button variant="outline-dark" className="w-100 action-btn" onClick={() => { setSearchTerm(''); setFilterStatus('All'); }}>
-                            Refresh
-                        </Button>
-                    </Col>
-                </Row>
-            </Card>
-
             {fetchError && (
-                <div className="alert alert-danger mb-4 py-2 border-0" style={{ background: 'rgba(220, 53, 69, 0.2)', color: '#ff8a8a' }}>
-                    <small>⚠️ {fetchError}</small>
-                </div>
+                <div className="text-danger small mb-3">⚠️ {fetchError}</div>
             )}
 
-            <div className="card management-card overflow-hidden">
-                <Table responsive hover className="mb-0 align-middle">
+            {/* Main Table */}
+            <div className="order-table-container">
+                <table className="custom-order-table">
                     <thead>
                         <tr>
-                            <th>S.No</th>
-                            <th>Booking Ref</th>
+                            <th>Booking Id</th>
                             <th>Customer</th>
                             <th>Vendor</th>
                             <th>Category</th>
                             <th>Services</th>
                             <th>Status</th>
-                            <th className="text-center">Action</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-5">
+                                <td colSpan={7} className="text-center py-5">
                                     <Spinner animation="border" variant="warning" />
                                 </td>
                             </tr>
                         ) : currentRows.length > 0 ? (
-                            currentRows.map((booking, index) => (
+                            currentRows.map((booking) => (
                                 <tr key={booking._id}>
-                                    <td>{indexOfFirstRow + index + 1}</td>
-                                    <td className="fw-bold text-white">{booking.bookingRef}</td>
+                                    <td className="td-booking-id">{booking.bookingRef}</td>
+                                    <td>{booking.userDetails?.name || "N/A"}</td>
+                                    <td>{booking.vendorDetails?.shopName || "N/A"}</td>
+                                    <td>{booking.vehicleDetails?.vehicle_category || "N/A"}</td>
                                     <td>
-                                        <div className="d-flex flex-column">
-                                            <span className="fw-bold text-gold">{booking.userDetails?.name || "No Name"}</span>
-                                            {/* <span className="small text-muted">{booking.userDetails?.phone || "No Phone"}</span> */}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="d-flex flex-column">
-                                            <span className="fw-bold">{booking.vendorDetails?.shopName || "No Shop"}</span>
-                                            {/* <span className="small text-muted">{booking.vendorDetails?.vendorName || "No Owner"}</span> */}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <Badge bg="dark" className="border border-secondary text-capitalize">
-                                            {booking.vehicleDetails?.vehicle_category || "N/A"}
-                                        </Badge>
-                                    </td>
-                                    <td>
-                                        <div className="text-truncate" style={{ maxWidth: '250px' }} title={booking.serviceNames?.join(', ')}>
+                                        <div className="text-truncate" style={{ maxWidth: '200px' }}>
                                             {booking.serviceNames?.join(', ')}
                                         </div>
                                     </td>
                                     <td>
-                                        <Badge 
-                                            bg={getStatusStyle(booking.status).bg} 
-                                            text={getStatusStyle(booking.status).color}
-                                            className="text-capitalize px-3 py-2"
-                                        >
+                                        <span className={`status-val ${getStatusClass(booking.status)}`}>
                                             {booking.status}
-                                        </Badge>
+                                        </span>
                                     </td>
-                                    <td className="text-center">
-                                        <Button 
-                                            variant="light" 
-                                            size="sm" 
-                                            className="action-btn view" 
-                                            onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }}
-                                        >
-                                            <Eye size={18} />
-                                        </Button>
+                                    <td>
+                                        <div className="action-icons">
+                                            <Eye 
+                                                size={20} 
+                                                className="action-icon" 
+                                                onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }} 
+                                            />
+                                            <Trash size={20} className="action-icon" />
+                                        </div>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={8} className="text-center py-5 text-muted">No bookings found matching your criteria.</td>
+                                <td colSpan={7} className="text-center py-5 text-muted">No bookings found.</td>
                             </tr>
                         )}
                     </tbody>
-                </Table>
+                </table>
             </div>
 
-            <div className="d-flex justify-content-between align-items-center mt-3">
-                <div className="text-muted small">Showing {currentRows.length} of {bookings.length} entries</div>
-                <Pagination size="sm">
-                    {[...Array(totalPages)].map((_, i) => (
-                        <Pagination.Item key={i+1} active={i+1 === currentPage} onClick={() => setCurrentPage(i+1)}>
-                            {i+1}
-                        </Pagination.Item>
-                    ))}
-                </Pagination>
+            {/* Footer and Pagination */}
+            <div className="table-footer">
+                <div className="rows-per-page">
+                    Show rows per page 
+                    <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
+                        <option value={6}>6</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                    </select>
+                </div>
+                <div className="pagination-controls">
+                    <div className="pagi-numbers">
+                        {indexOfFirstRow + 1}-{Math.min(indexOfLastRow, bookings.length)} of {bookings.length}
+                    </div>
+                    <div className="pagi-arrows">
+                        <button 
+                            className="pagi-arrow" 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => prev - 1)}
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <button 
+                            className="pagi-arrow"
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Detailed Booking Modal */}
@@ -282,7 +275,7 @@ const Ordermanagement = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </Container>
+        </div>
     );
 };
 

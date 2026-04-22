@@ -1,0 +1,87 @@
+.sidebar-new {
+    width: 240px;
+    background-color: var(--bg-primary);
+    height: calc(100vh - 55px);
+    position: fixed;
+    left: 0;
+    top: 55px; /* Matches Header Height */
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 10px;
+    border-right: 1px solid var(--border);
+    z-index: 1000;
+    transition: width 0.3s ease;
+}
+
+.sidebar-new.collapsed {
+    width: 80px;
+    padding: 24px 8px;
+}
+
+.nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.nav-item-new {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    border-radius: 50px; /* Pill shape */
+    color: #fff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-new.collapsed .nav-item-new {
+    padding: 12px 6px;
+    justify-content: center;
+}
+
+.nav-item-new:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item-new.active {
+    background-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(242, 139, 44, 0.3);
+}
+
+.nav-icon-new {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
+.nav-text-new {
+    letter-spacing: 0.3px;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-bottom: 24px;
+}
+
+.logout-item {
+    color: #ff4d4d;
+}
+
+.logout-item:hover {
+    background-color: rgba(255, 77, 77, 0.1);
+}
+
+/* Responsiveness for Sidebar */
+@media (max-width: 860px) {
+    .sidebar-new {
+        display: none; /* Hide on mobile by default or implement a toggle */
+    }
+}

@@ -1,62 +1,29 @@
 import React from 'react';
 import StatCard from './StatCard';
-import SalesChart from './SalesChart';
-import UserGrowthChart from './UserGrowthChart';
-import BubbleChart from './BubbleChart';
+import BookingOverview from './BookingOverview';
+import RevenueDetails from './RevenueDetails';
+import RecentBookings from './RecentBookings';
 
 const DashboardView = () => {
     return (
         <div className="dashboard-container">
-            {/* Top Row: Stats (2x2) + Sales Trend */}
-            <div className="top-section">
-                <div className="stats-2x2">
-                    <StatCard 
-                        label="Total Cars Listed" 
-                        value="1,248" 
-                        change="+8%" 
-                        icon="🏎️" 
-                        type="cars" 
-                        data={[30, 45, 38, 52, 48, 60, 55, 70, 65, 80]} 
-                        spotlight={true}
-                    />
-                    <StatCard 
-                        label="Active Users" 
-                        value="3,492" 
-                        change="+5%" 
-                        icon="👥" 
-                        type="users" 
-                        data={[50, 40, 45, 35, 30, 40, 45, 55, 50, 60]} 
-                    />
-                    <StatCard 
-                        label="Total Transactions" 
-                        value="892" 
-                        change="+12%" 
-                        icon="💳" 
-                        type="transactions" 
-                        data={[20, 30, 25, 35, 40, 38, 45, 50, 55, 65]} 
-                    />
-                    <StatCard 
-                        label="Revenue" 
-                        value="$142,560" 
-                        change="+10%" 
-                        icon="💰" 
-                        type="revenue" 
-                        data={[40, 60, 50, 70, 65, 85, 80, 95, 90, 110]} 
-                    />
-                </div>
-                <div className="sales-trend-container">
-                    <SalesChart />
-                </div>
+            {/* Top Row: Metric Cards */}
+            <div className="dashboard-row stats-row">
+                <StatCard label="Total Bookings" value="20" />
+                <StatCard label="Active Services" value="15" />
+                <StatCard label="Completed Services" value="10" />
+                <StatCard label="Pending Services" value="05" />
             </div>
 
-            {/* Bottom Row: User Growth + Bubble Chart */}
-            <div className="bottom-section">
-                <div className="growth-chart-container">
-                    <UserGrowthChart />
-                </div>
-                <div className="bubble-chart-container">
-                    <BubbleChart />
-                </div>
+            {/* Middle Row: Charts */}
+            <div className="dashboard-row charts-row">
+                <BookingOverview />
+                <RevenueDetails />
+            </div>
+
+            {/* Bottom Row: Table */}
+            <div className="dashboard-row table-row">
+                <RecentBookings />
             </div>
         </div>
     );

@@ -1,116 +1,189 @@
-﻿/* user.css */
-:root {
-  --gold-primary: #c9992a;
-  --gray-card: #1e2029;
-  --gray-border: rgba(255,255,255,0.1);
-  --gray-text: #cccccc;
-}
+/* user.css - Optimized Design matching the dashboard system */
 
 .user-management-container {
-  color: white;
+    /* padding: 15px !important; */
+    margin-top: 35px;
+    color: #ffffff;
+    background-color: var(--bg-primary);
 }
 
-.management-card {
-  background-color: var(--gray-card) !important;
-  border: 1px solid var(--gray-border) !important;
-  border-radius: 12px !important;
-  padding: 20px;
+/* Search and Filter section */
+.search-filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 25px;
 }
 
-.filter-input, .filter-select {
-  background-color: rgba(0,0,0,0.2) !important;
-  border: 1px solid var(--gray-border) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  padding: 10px 15px !important;
+.search-input-group {
+    background-color: #111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 2px 12px;
+    display: flex;
+    align-items: center;
+    max-width: 450px;
+    flex: 1;
 }
 
-.filter-input:focus, .filter-select:focus {
-  border-color: var(--gold-primary) !important;
-  box-shadow: 0 0 0 0.1rem rgba(201,153,42,0.1) !important;
-  background-color: rgba(0,0,0,0.4) !important;
+.search-input-group input {
+    background: transparent !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 14px;
+    outline: none;
+    padding: 10px;
+    width: 100%;
 }
 
-.table {
-  color: var(--gray-text) !important;
-  border-collapse: separate !important;
-  border-spacing: 0 8px !important;
+.filter-select-group {
+    display: flex;
+    gap: 10px;
 }
 
-.table thead th {
-  background-color: transparent !important;
-  border-bottom: 2px solid var(--gray-border) !important;
-  color: var(--gold-primary) !important;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 1px;
-  padding: 15px !important;
-  text-align: center !important;
+.status-filter-select {
+    background-color: #111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 10px 15px !important;
+    font-size: 14px;
+    min-width: 160px;
 }
 
-.table tbody tr {
-  background-color: transparent !important;
-  transition: all 0.3s ease;
-  border-bottom: 1px solid var(--gray-border) !important;
+/* Table Design */
+.user-table-container {
+    background-color: transparent !important;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 5px; /* 5px margin outside table */
 }
 
-.table tbody tr:hover {
-  background-color: rgba(255,255,255,0.03) !important;
+.custom-user-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
 }
 
-.table tbody td {
-  padding: 15px !important;
-  text-align: center !important;
-  border-top: 1px solid var(--gray-border) !important;
-  border-bottom: 1px solid var(--gray-border) !important;
+.custom-user-table thead {
+    background-color: #f28b2c; /* High contrast orange */
 }
 
-.action-btn {
-  background-color: transparent !important;
-  border: 1px solid var(--gray-border) !important;
-  color: var(--gold-primary) !important;
-  transition: all 0.2s ease !important;
+.custom-user-table th {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 18px 24px;
+    text-align: left;
+    text-transform: capitalize;
 }
 
-.action-btn:hover {
-  background-color: var(--gold-primary) !important;
-  color: black !important;
+.custom-user-table tr {
+    background-color: transparent;
 }
 
-.detail-modal .modal-content {
-  border-radius: 15px;
-  border: 1px solid var(--gray-border);
+.custom-user-table tr:last-child {
+    background-color: transparent;
 }
 
-.detail-section {
-  background-color: rgba(255,255,255,0.03);
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid var(--gray-border);
+.custom-user-table td {
+    padding: 18px 24px;
+    font-size: 14px;
+    color: #ffffff;
+    vertical-align: middle;
+    border-bottom: 1px solid #ffffff;
+    border-top: 1px solid #ffffff;
 }
 
-.section-title {
-  color: var(--gold-primary);
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid var(--gray-border);
-  padding-bottom: 10px;
+.custom-user-table th {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 18px 24px;
+    text-align: left;
+    text-transform: capitalize;
 }
 
-.pagination .page-link {
-  background-color: var(--gray-card) !important;
-  border-color: var(--gray-border) !important;
-  color: var(--gray-text) !important;
+.custom-user-table tbody tr {
+    border: 1px solid #ffffff; /* White border around entire row */
+    box-shadow: inset 0 0 0 1px #ffffff; /* Ensure border shows */
 }
 
-.pagination .page-item.active .page-link {
-  background-color: var(--gold-primary) !important;
-  border-color: var(--gold-primary) !important;
-  color: #000 !important;
+/* Status Indicators (Roles for users) */
+.role-badge {
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ccc;
+}
+
+.role-badge.admin {
+    background-color: rgba(242, 139, 44, 0.1);
+    border-color: #f28b2c;
+    color: #f28b2c;
+}
+
+/* Action Buttons */
+.action-icons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.action-icon {
+    color: #ffffff;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.action-icon:hover {
+    opacity: 1;
+}
+
+/* Footer & Pagination */
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5px;
+    font-size: 13px;
+    color: #888;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.pagi-arrows {
+    display: flex;
+    gap: 10px;
+}
+
+.pagi-arrow {
+    background: transparent;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 4px;
+    width: 28px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.pagi-arrow:hover {
+    background-color: #222;
+}
+
+.pagi-numbers {
+    font-weight: 700;
+    color: #fff;
 }

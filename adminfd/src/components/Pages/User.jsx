@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Table, Button, Form, Modal, Badge, Pagination, InputGroup, Row, Col, Spinner, Card } from 'react-bootstrap';
-import { Search, Eye, User as UserIcon, Mail, MapPin } from 'lucide-react';
+import { 
+    Container, Table, Button, Form, Modal, Badge, 
+    Pagination, InputGroup, Row, Col, Spinner, Card
+} from 'react-bootstrap';
+import { Search, Eye, Trash, User as UserIcon, Mail, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import './user.css';
 
 const API_BASE_URL = 'http://localhost:5000/api/users';
-const rowsPerPage = 20;
+const rowsPerPage = 6;
 
 const UserPage = () => {
   const [users, setUsers] = useState([]);
@@ -21,22 +24,10 @@ const UserPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     setFetchError(null);
-
     const token = localStorage.getItem('token');
-    if (!token) {
-      setFetchError('Missing auth token. Please login again.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const params = {
-        page: currentPage,
-        limit: rowsPerPage,
-      };
-
+      const params = { page: currentPage, limit: rowsPerPage, role: 'user' };
       if (searchTerm.trim()) params.search = searchTerm.trim();
-      params.role = 'user';
 
       const response = await axios.get(API_BASE_URL, {
         headers: { Authorization: `Bearer ${token}` },
@@ -46,12 +37,9 @@ const UserPage = () => {
       if (response.data.success) {
         setUsers(response.data.users || []);
         setTotalPages(response.data.pages || 1);
-      } else {
-        setFetchError('Unable to load users.');
       }
     } catch (error) {
-      console.error('User fetch error:', error);
-      setFetchError(error.response?.data?.message || error.message);
+      setFetchError(error.message);
     } finally {
       setLoading(false);
     }
@@ -61,60 +49,42 @@ const UserPage = () => {
     fetchUsers();
   }, [currentPage, searchTerm, roleFilter]);
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setRoleFilter('user');
-    setCurrentPage(1);
-  };
-
   const handleOpenModal = (user) => {
     setSelectedUser(user);
     setShowDetailModal(true);
   };
 
   return (
-    <Container fluid className="user-management-container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold mb-0">User Management</h3>
-        <div className="text-muted small">Total Users: {users.length}</div>
+    <div className="user-management-container">
+      {/* Search and Filters */}
+      <div className="search-filter-row">
+        <div className="search-input-group">
+          <Search size={18} color="#888" />
+          <input 
+            type="text" 
+            placeholder="Search users by name, email or phone"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+          />
+        </div>
+        <div className="filter-select-group">
+          <select 
+            className="status-filter-select" 
+            value={roleFilter} 
+            disabled
+          >
+            <option value="user">User Role</option>
+          </select>
+        </div>
       </div>
 
-      <Card className="management-card mb-4 border-0">
-        <Row className="g-3 align-items-center">
-          <Col md={5}>
-            <InputGroup>
-              <InputGroup.Text className="bg-transparent border-end-0 border-gray">
-                <Search size={18} className="text-gold" />
-              </InputGroup.Text>
-              <Form.Control
-                placeholder="Search users by name, email or phone"
-                className="filter-input border-start-0"
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              />
-            </InputGroup>
-          </Col>
-          <Col md={4}>
-            <Form.Select className="filter-select" value={roleFilter} disabled>
-              <option value="user">User</option>
-            </Form.Select>
-          </Col>
-          <Col md={3}>
-            <Button variant="outline-dark" className="w-100 action-btn" onClick={resetFilters}>
-              Refresh
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-
       {fetchError && (
-        <div className="alert alert-danger mb-4 py-2 border-0" style={{ background: 'rgba(220, 53, 69, 0.2)', color: '#ff8a8a' }}>
-          <small>⚠️ {fetchError}</small>
-        </div>
+        <div className="text-danger small mb-3">⚠️ {fetchError}</div>
       )}
 
-      <div className="card management-card overflow-hidden">
-        <Table responsive hover className="mb-0 align-middle">
+      {/* Main Table */}
+      <div className="user-table-container">
+        <table className="custom-user-table">
           <thead>
             <tr>
               <th>S.No</th>
@@ -137,45 +107,65 @@ const UserPage = () => {
               users.map((user, index) => (
                 <tr key={user._id || index}>
                   <td>{(currentPage - 1) * rowsPerPage + index + 1}</td>
-                  <td className="text-start">
-                    <div className="d-flex flex-column align-items-start">
+                  <td>
+                    <div className="d-flex flex-column">
                       <span className="fw-bold text-white">{user.name || 'Unnamed'}</span>
-                      <small className="text-muted">{user.address?.city || user.role || 'No extra info'}</small>
+                      {/* <small className="text-muted">{user.address?.city || 'No Location'}</small> */}
                     </div>
                   </td>
                   <td>{user.email || 'N/A'}</td>
                   <td>{user.phone || 'N/A'}</td>
                   <td>
-                    <Badge bg="dark" className="border border-secondary text-capitalize">
+                    <span className={`role-badge ${user.role?.toLowerCase()}`}>
                       {user.role || 'user'}
-                    </Badge>
+                    </span>
                   </td>
                   <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
-                  <td className="text-center">
-                    <Button variant="light" size="sm" className="action-btn view" onClick={() => handleOpenModal(user)}>
-                      <Eye size={18} />
-                    </Button>
+                  <td>
+                    <div className="action-icons">
+                      <Eye 
+                        size={20} 
+                        className="action-icon" 
+                        onClick={() => handleOpenModal(user)} 
+                      />
+                      <Trash size={20} className="action-icon" />
+                    </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="text-center py-5 text-muted">No users found matching your filters.</td>
+                <td colSpan={7} className="text-center py-5 text-muted">No users found.</td>
               </tr>
             )}
           </tbody>
-        </Table>
+        </table>
       </div>
 
-      <div className="d-flex justify-content-between align-items-center mt-3">
+      {/* Pagination Footer */}
+      <div className="table-footer">
         <div className="text-muted small">Showing {users.length} users</div>
-        <Pagination size="sm" className="mb-0">
-          {[...Array(totalPages)].map((_, i) => (
-            <Pagination.Item key={i + 1} active={i + 1 === currentPage} onClick={() => setCurrentPage(i + 1)}>
-              {i + 1}
-            </Pagination.Item>
-          ))}
-        </Pagination>
+        <div className="pagination-controls">
+          <div className="pagi-numbers">
+            {currentPage} of {totalPages}
+          </div>
+          <div className="pagi-arrows">
+            <button 
+              className="pagi-arrow" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button 
+              className="pagi-arrow"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg" centered className="detail-modal">
@@ -216,7 +206,7 @@ const UserPage = () => {
           <Button variant="outline-light" onClick={() => setShowDetailModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
-    </Container>
+    </div>
   );
 };
 

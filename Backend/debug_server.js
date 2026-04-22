@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -29,9 +29,9 @@ app.use((req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     if (req.url.includes('services') || req.url.includes('toggle')) {
-       console.log(`[ROUTING-DEBUG] ${req.method} ${req.url} -> ${res.statusCode} (${duration}ms)`);
+      console.log(`[ROUTING-DEBUG] ${req.method} ${req.url} -> ${res.statusCode} (${duration}ms)`);
     } else {
-       console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
     }
   });
   next();

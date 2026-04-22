@@ -1,18 +1,14 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Container, Table, Button, Form, Modal, Badge, Pagination, InputGroup, Row, Col, Spinner, Card } from 'react-bootstrap';
-import { Search, Eye, MapPin, Phone, ShieldCheck, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+    Container, Table, Button, Form, Modal, Badge, 
+    Pagination, InputGroup, Row, Col, Spinner, Card 
+} from 'react-bootstrap';
+import { Search, Eye, Trash, MapPin, ShieldCheck, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import './vendor.css';
 
 const API_BASE_URL = 'http://localhost:5000/api/admin/vendors';
-const rowsPerPage = 20;
-
-const statusStyles = {
-  pending: { bg: 'warning', text: 'dark' },
-  approved: { bg: 'success', text: 'white' },
-  rejected: { bg: 'danger', text: 'white' },
-  suspended: { bg: 'secondary', text: 'white' },
-};
+const rowsPerPage = 6;
 
 const Vendorlist = () => {
   const [vendors, setVendors] = useState([]);
@@ -29,20 +25,9 @@ const Vendorlist = () => {
   const fetchVendors = async () => {
     setLoading(true);
     setFetchError(null);
-
     const token = localStorage.getItem('token');
-    if (!token) {
-      setFetchError('Missing auth token. Please login again.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const params = {
-        page: currentPage,
-        limit: rowsPerPage,
-      };
-
+      const params = { page: currentPage, limit: rowsPerPage };
       if (searchTerm.trim()) params.search = searchTerm.trim();
       if (statusFilter !== 'All') params.status = statusFilter;
       if (verifiedFilter !== 'All') params.isVerified = verifiedFilter === 'Verified';
@@ -55,12 +40,9 @@ const Vendorlist = () => {
       if (response.data.success) {
         setVendors(response.data.vendors || []);
         setTotalPages(response.data.pages || 1);
-      } else {
-        setFetchError('Unable to load vendors.');
       }
     } catch (error) {
-      console.error('Vendor fetch error:', error);
-      setFetchError(error.response?.data?.message || error.message);
+      setFetchError(error.message);
     } finally {
       setLoading(false);
     }
@@ -70,87 +52,55 @@ const Vendorlist = () => {
     fetchVendors();
   }, [currentPage, searchTerm, statusFilter, verifiedFilter]);
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('All');
-    setVerifiedFilter('All');
-    setCurrentPage(1);
-  };
-
   const handleOpenModal = (vendor) => {
     setSelectedVendor(vendor);
     setShowDetailModal(true);
   };
 
-  const renderBadge = (value) => {
-    if (typeof value === 'boolean') {
-      return value ? (
-        <Badge bg="success" pill>Verified</Badge>
-      ) : (
-        <Badge bg="secondary" pill>Unverified</Badge>
-      );
-    }
-    return (
-      <Badge bg={statusStyles[value]?.bg || 'secondary'} text={statusStyles[value]?.text || 'white'} pill>
-        {value || 'Unknown'}
-      </Badge>
-    );
-  };
-
   return (
-    <Container fluid className="vendor-management-container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold mb-0">Vendor Management</h3>
-        <div className="text-muted small">Total Vendors: {vendors.length}</div>
+    <div className="vendor-management-container">
+      {/* Search and Filters */}
+      <div className="search-filter-row">
+        <div className="search-input-group">
+          <Search size={18} color="#888" />
+          <input 
+            type="text" 
+            placeholder="Search vendors by name, email or phone"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+          />
+        </div>
+        <div className="filter-select-group">
+          <select 
+            className="status-filter-select" 
+            value={statusFilter} 
+            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="All">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="suspended">Suspended</option>
+          </select>
+          <select 
+            className="status-filter-select" 
+            value={verifiedFilter} 
+            onChange={(e) => { setVerifiedFilter(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="All">All Verification</option>
+            <option value="Verified">Verified</option>
+            <option value="Unverified">Unverified</option>
+          </select>
+        </div>
       </div>
 
-      <Card className="management-card mb-4 border-0">
-        <Row className="g-3 align-items-center">
-          <Col md={5}>
-            <InputGroup>
-              <InputGroup.Text className="bg-transparent border-end-0 border-gray">
-                <Search size={18} className="text-gold" />
-              </InputGroup.Text>
-              <Form.Control
-                placeholder="Search vendors by name, email or phone"
-                className="filter-input border-start-0"
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              />
-            </InputGroup>
-          </Col>
-          <Col md={3}>
-            <Form.Select className="filter-select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
-              <option value="All">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="suspended">Suspended</option>
-            </Form.Select>
-          </Col>
-          <Col md={3}>
-            <Form.Select className="filter-select" value={verifiedFilter} onChange={(e) => { setVerifiedFilter(e.target.value); setCurrentPage(1); }}>
-              <option value="All">All Verification</option>
-              <option value="Verified">Verified</option>
-              <option value="Unverified">Unverified</option>
-            </Form.Select>
-          </Col>
-          <Col md={1}>
-            <Button variant="outline-dark" className="w-100 action-btn" onClick={resetFilters}>
-              Refresh
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-
       {fetchError && (
-        <div className="alert alert-danger mb-4 py-2 border-0" style={{ background: 'rgba(220, 53, 69, 0.2)', color: '#ff8a8a' }}>
-          <small>⚠️ {fetchError}</small>
-        </div>
+        <div className="text-danger small mb-3">⚠️ {fetchError}</div>
       )}
 
-      <div className="card management-card overflow-hidden">
-        <Table responsive hover className="mb-0 align-middle">
+      {/* Main Table */}
+      <div className="vendor-table-container">
+        <table className="custom-vendor-table">
           <thead>
             <tr>
               <th>S.No</th>
@@ -174,42 +124,70 @@ const Vendorlist = () => {
               vendors.map((vendor, index) => (
                 <tr key={vendor._id || index}>
                   <td>{(currentPage - 1) * rowsPerPage + index + 1}</td>
-                  <td className="text-start">
-                    <div className="d-flex flex-column align-items-start">
+                  <td>
+                    <div className="d-flex flex-column">
                       <span className="fw-bold text-white">{vendor.shopName || 'Unnamed Shop'}</span>
-                      <small className="text-muted">{vendor.address?.city || vendor.address?.state || 'No location'}</small>
+                      <small className="text-muted">{vendor.address?.city || 'No location'}</small>
                     </div>
                   </td>
                   <td>{vendor.user?.name || 'No owner'}</td>
                   <td>{vendor.email || vendor.user?.email || 'N/A'}</td>
                   <td>{vendor.phone || 'N/A'}</td>
-                  <td>{renderBadge(vendor.status)}</td>
-                  <td>{renderBadge(vendor.isVerified)}</td>
-                  <td className="text-center">
-                    <Button variant="light" size="sm" className="action-btn view" onClick={() => handleOpenModal(vendor)}>
-                      <Eye size={18} />
-                    </Button>
+                  <td>
+                    <span className={`status-indicator ${vendor.status?.toLowerCase()}`}>
+                      {vendor.status}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-indicator ${vendor.isVerified ? 'verified' : 'unverified'}`}>
+                      {vendor.isVerified ? 'Verified' : 'Unverified'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-icons">
+                      <Eye 
+                        size={20} 
+                        className="action-icon" 
+                        onClick={() => handleOpenModal(vendor)} 
+                      />
+                      <Trash size={20} className="action-icon" />
+                    </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="text-center py-5 text-muted">No vendors found matching your filters.</td>
+                <td colSpan={8} className="text-center py-5 text-muted">No vendors found.</td>
               </tr>
             )}
           </tbody>
-        </Table>
+        </table>
       </div>
 
-      <div className="d-flex justify-content-between align-items-center mt-3">
+      {/* Pagination Footer */}
+      <div className="table-footer">
         <div className="text-muted small">Showing {vendors.length} vendors</div>
-        <Pagination size="sm" className="mb-0">
-          {[...Array(totalPages)].map((_, i) => (
-            <Pagination.Item key={i + 1} active={i + 1 === currentPage} onClick={() => setCurrentPage(i + 1)}>
-              {i + 1}
-            </Pagination.Item>
-          ))}
-        </Pagination>
+        <div className="pagination-controls">
+          <div className="pagi-numbers">
+            {currentPage} of {totalPages}
+          </div>
+          <div className="pagi-arrows">
+            <button 
+              className="pagi-arrow" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button 
+              className="pagi-arrow"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg" centered className="detail-modal">
@@ -252,7 +230,7 @@ const Vendorlist = () => {
           <Button variant="outline-light" onClick={() => setShowDetailModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
-    </Container>
+    </div>
   );
 };
 
