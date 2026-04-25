@@ -1,14 +1,19 @@
 import './Sidebar.css';
 import { 
   LayoutDashboard, 
-  CarFront, 
   Users, 
   ShoppingCart,
   Wrench,
-  LogOut
+  LogOut,
+  Bell,
+  Star,
+  CreditCard,
+  Map
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
+import fullLogo from '../../assets/logo.png';
+import smallLogo from '../../assets/smallLogo.png';
 
 const Sidebar = ({ activePage, setActivePage, onLogout, collapsed }) => {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -19,10 +24,21 @@ const Sidebar = ({ activePage, setActivePage, onLogout, collapsed }) => {
         { name: 'Service Management', icon: <Wrench size={20} /> },
         { name: 'Vendor Management', icon: <ShoppingCart size={20} /> },
         { name: 'User Management', icon: <Users size={20} /> },
+        { name: 'Reviews & Ratings', icon: <Star size={20} /> },
+        { name: 'Payment', icon: <CreditCard size={20} /> },
+        { name: 'Tracking', icon: <Map size={20} /> },
+        // { name: 'Notification', icon: <Bell size={20} /> },
     ];
 
     return (
         <aside className={`sidebar-new ${collapsed ? 'collapsed' : ''}`}>
+            <div className="sidebar-logo-container">
+                <img 
+                    src={collapsed ? smallLogo : fullLogo} 
+                    alt="Logo" 
+                    className={collapsed ? 'sidebar-logo-small' : 'sidebar-logo-full'} 
+                />
+            </div>
             <div className="nav-list">
                 {mainMenuItems.map((item) => (
                     <div 

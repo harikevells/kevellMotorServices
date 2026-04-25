@@ -49,7 +49,8 @@ exports.register = async (req, res, next) => {
     const {
       name, email, password, role, phone, gender,
       street, city, state, pincode, country,
-      shopName, ownerName, location
+      shopName, ownerName, location,
+      licenseNo, gstNo, capacity
     } = req.body;
 
     // Check if user exists
@@ -115,6 +116,9 @@ exports.register = async (req, res, next) => {
         user: user._id,
         shopName: shopName || 'New Shop',
         ownerName: ownerName || name,
+        licenseNo: licenseNo || '',
+        gstNo: gstNo || '',
+        capacity: capacity || 0,
         email: email,
         phone: phone,
         address: {
@@ -184,6 +188,17 @@ exports.login = async (req, res, next) => {
         success: false,
         message: `Account is not registered as a ${role}`
       });
+    }
+
+    // Verification check for Vendors
+    if (user.role === 'vendor') {
+      const vendor = await Vendor.findOne({ user: user._id });
+      if (vendor && !vendor.isVerified) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is not verified. Please contact admin for access.'
+        });
+      }
     }
 
     const isMatch = await bcrypt.compare(password, user.password);

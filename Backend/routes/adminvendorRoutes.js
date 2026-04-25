@@ -11,7 +11,8 @@ const {
   updateCommission,
   deleteVendor,
   getPendingVendors,
-  getVendorEarnings
+  getVendorEarnings,
+  updateVendor
 } = require('../controllers/adminvendorController');
 const verifyToken = require('../middleware/auth');
 const { isAdmin } = require('../middleware/roleCheck');
@@ -19,7 +20,15 @@ const { isAdmin } = require('../middleware/roleCheck');
 // All routes are protected and require admin
 router.use(verifyToken, isAdmin);
 
+// Request logger for this specific router
+router.use((req, res, next) => {
+  console.log(`[ADMIN-VENDOR-ROUTER] ${req.method} ${req.path}`);
+  next();
+});
+
 // Vendor management
+console.log('[DEBUG] Initializing Admin Vendor Routes...');
+router.patch('/:id', updateVendor);
 router.get('/', getAllVendors);
 router.get('/pending', getPendingVendors);
 router.get('/:id', getVendorById);

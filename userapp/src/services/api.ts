@@ -1,8 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Standard for Android Emulator to localhost
-const BASE_URL = 'http://192.168.0.137:5000/api'; 
+import { BASE_URL } from '../constants/config';
+
+// Base URL is now managed in src/constants/config.ts
 
 // --- RESILIENT STORAGE WRAPPER ---
 // Fixes "Native module is null" if AsyncStorage isn't built/linked correctly
@@ -71,7 +72,7 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     let message = 'Something went wrong';
-    
+
     if (error.response) {
       // Backend returned an error (4xx, 5xx)
       message = error.response.data?.message || `Server Error: ${error.response.status}`;
@@ -85,7 +86,7 @@ api.interceptors.response.use(
       message = error.message;
       console.error('[API Request Error]:', message);
     }
-    
+
     return Promise.reject(message);
   }
 );
@@ -107,18 +108,18 @@ export const verifyOTP = (phone: string, otp: string) => api.post('/auth/verify-
 // Vehicles
 export const fetchUserVehicles = () => api.get('/vehicles');
 export const addVehicle = (data: any) => api.post('/vehicles', data);
-export const fetchBrands = (category: string, fuel: string) => 
+export const fetchBrands = (category: string, fuel: string) =>
   api.get(`/vehicles/brands?category=${category}&fuel=${fuel}`);
 
 // Services
 export const fetchCategories = () => api.get('/services/categories');
-export const fetchServices = (serviceCategory: string, vehicleCategory: string, fuelType: string) => 
+export const fetchServices = (serviceCategory: string, vehicleCategory: string, fuelType: string) =>
   api.get(`/services?category=${serviceCategory}&vehicle_category=${vehicleCategory}&fuel_type=${fuelType}`);
 
 // Centers
 export const fetchCenters = (params: any) => api.get('/centers', { params });
 export const fetchCenterDetails = (id: string) => api.get(`/centers/${id}`);
-export const fetchSlots = (centerId: string, date: string) => 
+export const fetchSlots = (centerId: string, date: string) =>
   api.get(`/slots/${centerId}?date=${date}`);
 
 // Bookings
@@ -128,7 +129,7 @@ export const fetchTracking = (bookingId: string) => api.get('/bookings/' + booki
 
 // Vendor
 export const fetchVendorOrders = () => api.get('/vendor/orders');
-export const updateOrderStatus = (bookingId: string, status: string) => 
+export const updateOrderStatus = (bookingId: string, status: string) =>
   api.patch(`/vendor/orders/${bookingId}/status`, { status });
 export const fetchVendorDashboard = () => api.get('/vendor/dashboard');
 export const fetchOrderStatistics = (year: number) => api.get(`/vendor/orders/statistics?year=${year}`);

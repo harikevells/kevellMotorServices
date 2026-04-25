@@ -1,0 +1,200 @@
+.payment-page-container {
+    color: #ffffff;
+    background-color: transparent;
+    margin-top: 35px;
+    padding: 0 5px;
+}
+
+/* Header / Search Row */
+.payment-search-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.search-input-group {
+    background-color: #111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 2px 12px;
+    display: flex;
+    align-items: center;
+    max-width: 450px;
+    width: 100%;
+}
+
+.search-input-group input {
+    background: transparent !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 14px;
+    outline: none;
+    padding: 10px;
+    width: 100%;
+}
+
+.status-filter-group select {
+    background-color: #111;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px 30px 10px 15px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    min-width: 150px;
+}
+
+/* Table Design */
+.payment-table-container {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.custom-payment-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.custom-payment-table thead {
+    background-color: #f28b2c; /* High contrast orange */
+}
+
+.custom-payment-table th {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 15px 20px;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.custom-payment-table tbody tr {
+    background-color: #000;
+    transition: all 0.2s ease;
+}
+
+.custom-payment-table td {
+    padding: 15px 20px;
+    font-size: 14px;
+    color: #ffffff;
+    vertical-align: middle;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.custom-payment-table td:first-child {
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.custom-payment-table td:last-child {
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Selected/Hover Row highlight */
+.custom-payment-table tbody tr:hover {
+    box-shadow: 0 0 0 2px #00aaff;
+}
+
+/* Status Colors */
+.status-text.completed {
+    color: #00d084; /* Green */
+    font-weight: 600;
+}
+
+.status-text.pending {
+    color: #f28b2c;
+}
+
+.status-text.failed {
+    color: #ff4d4d;
+}
+
+/* Action Icons */
+.action-icons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.action-icon {
+    color: #ffffff;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: all 0.2s;
+}
+
+.action-icon:hover {
+    opacity: 1;
+    color: #f28b2c;
+}
+
+/* Footer & Pagination */
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    font-size: 13px;
+    color: #ffffff;
+}
+
+.rows-per-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rows-per-page select {
+    background-color: #111;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 2px 5px;
+    outline: none;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.pagi-numbers {
+    font-weight: 500;
+}
+
+.pagi-arrows {
+    display: flex;
+    gap: 10px;
+}
+
+.pagi-arrow {
+    background: transparent;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 4px;
+    width: 28px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pagi-arrow:hover:not(:disabled) {
+    background-color: #333;
+}
+
+.pagi-arrow:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}

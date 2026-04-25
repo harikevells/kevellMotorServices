@@ -15,6 +15,26 @@
     margin-bottom: 25px;
 }
 
+.add-vendor-btn {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-vendor-btn:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
 .search-input-group {
     background-color: #111 !important;
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -122,6 +142,40 @@
 
 .status-indicator.verified { color: #00bcd4; }
 .status-indicator.unverified { color: #ff9800; }
+
+/* Verification Dropdown */
+.verification-dropdown {
+    background-color: #111;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    text-align: center;
+}
+
+.verification-dropdown.verified {
+    color: #00ff00 !important; /* Green */
+    border: none;
+}
+
+.verification-dropdown.unverified {
+    color: #ff0000 !important; /* Red */
+    border: none;
+}
+
+.verification-dropdown option {
+    background-color: #111;
+    color: white;
+}
+
+.custom-vendor-table th.text-center,
+.custom-vendor-table td.text-center {
+    text-align: center !important;
+}
 
 /* Action Buttons */
 .action-icons {

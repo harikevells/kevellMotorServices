@@ -9,11 +9,16 @@ import Ordermanagement from './components/Pages/Ordermanagement';
 import Vendorlist from './components/Pages/Vendorlist';
 import User from './components/Pages/User';
 import Login from './components/Pages/Login';
+import Notification from './components/Pages/Notification';
+import Addvendor from './components/Pages/Addvendor';
+import Reviews from './components/Pages/Reviews';
+import Payment from './components/Pages/Payment';
+import Tracking from './components/Pages/Tracking';
 
 function App() {
   const [activePage, setActivePage] = useState('Dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [, setUser] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -24,6 +29,13 @@ function App() {
       setIsAuthenticated(true);
       setUser(JSON.parse(savedUser));
     }
+
+    const handlePageChange = (e) => {
+      setActivePage(e.detail);
+    };
+
+    window.addEventListener('changePage', handlePageChange);
+    return () => window.removeEventListener('changePage', handlePageChange);
   }, []);
 
   const handleLoginSuccess = (userData, token) => {
@@ -49,8 +61,18 @@ function App() {
         return <Ordermanagement />;
       case 'Vendor Management':
         return <Vendorlist />;
+      case 'Add Vendor':
+        return <Addvendor />;
       case 'User Management':
         return <User />;
+      case 'Notification':
+        return <Notification />;
+      case 'Reviews & Ratings':
+        return <Reviews />;
+      case 'Payment':
+        return <Payment />;
+      case 'Tracking':
+        return <Tracking />;
       case 'Car Management':
       case 'Transactions':
       case 'Content':

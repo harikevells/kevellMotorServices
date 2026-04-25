@@ -29,7 +29,8 @@ body {
 
 .main-content {
     flex: 1;
-    margin-left: 240px; /* Sidebar width */
+    margin-left: 240px;
+    /* Sidebar width */
     padding: 15px;
     padding-top: 30px;
     max-width: 100%;
@@ -171,7 +172,7 @@ body {
 
 .recent-bookings-table th {
     padding: 16px 24px;
-    text-align: left;
+    text-align: center; /* Updated to center */
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
@@ -184,6 +185,7 @@ body {
     font-size: 14px;
     border-bottom: 1px solid var(--border);
     color: var(--text-primary);
+    text-align: center; /* Updated to center */
 }
 
 .recent-bookings-table tbody tr:last-child td {
@@ -200,9 +202,17 @@ body {
     font-weight: 600;
 }
 
-.status-completed { color: var(--success); }
-.status-pending { color: var(--pending); }
-.status-in-progress { color: var(--in-progress); }
+.status-completed {
+    color: var(--success);
+}
+
+.status-pending {
+    color: var(--pending);
+}
+
+.status-in-progress {
+    color: var(--in-progress);
+}
 
 .action-link {
     color: var(--text-primary);
@@ -216,6 +226,7 @@ body {
     .stats-row {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .charts-row {
         grid-template-columns: 1fr;
     }
@@ -232,20 +243,24 @@ body {
     .stats-row {
         grid-template-columns: 1fr;
     }
+
     .recent-bookings-table thead {
         display: none;
     }
+
     .recent-bookings-table tr {
         display: block;
         padding: 16px;
         border-bottom: 1px solid var(--border);
     }
+
     .recent-bookings-table td {
         display: flex;
         justify-content: space-between;
         padding: 8px 0;
         border: none;
     }
+
     .recent-bookings-table td::before {
         content: attr(data-label);
         font-weight: 700;
@@ -259,6 +274,7 @@ body {
     .dashboard-container {
         padding: 40px;
     }
+
     .stat-value-new {
         font-size: 56px;
     }

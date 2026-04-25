@@ -18,6 +18,7 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import { COLORS, SHADOWS } from '../constants/theme';
 import api, { SafeStorage, updateProfile, uploadAvatar } from '../services/api';
 import { useVendorNav } from './VendorSidebarNavigator';
+import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 
@@ -212,7 +213,7 @@ const VendorProfile = () => {
             <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
               <View style={styles.avatarContainer}>
                 {user?.profileImage ? (
-                  <Image source={{ uri: `http://192.168.0.137:5000${user.profileImage}` }} style={styles.avatarImage} />
+                  <Image source={{ uri: getImageUrl(user.profileImage) as string }} style={styles.avatarImage} />
                 ) : (
                   <Text style={styles.avatarPlaceholder}>{user?.name?.charAt(0) || 'V'}</Text>
                 )}

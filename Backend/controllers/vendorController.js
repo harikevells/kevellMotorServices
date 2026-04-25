@@ -11,6 +11,7 @@ const bcrypt = require('bcryptjs');                // ✅ Added
 const jwt = require('jsonwebtoken');                // ✅ Added
 const fs = require('fs');
 const path = require('path');
+const { createNotification } = require('./notificationController');
 
 // ============= VENDOR REGISTRATION & PROFILE =============
 
@@ -113,6 +114,15 @@ exports.registerVendor = async (req, res, next) => {
       closing_time: defaultTimings ? JSON.parse(defaultTimings).closingTime : '06:00 PM', // ✅ Updated field
       profile_image_url: `/uploads/shops/${req.file.filename}`, // ✅ Updated field
       is_active: false // ✅ Updated field (Start as inactive until admin approval)
+    });
+
+    // --- Generate Notification to Admin ---
+    await createNotification({
+      title: 'New Vendor Registration',
+      message: `A new vendor has registered: ${shopName}. Pending verification.`,
+      type: 'registration',
+      recipientRole: 'admin',
+      data: { vendorId: vendor._id }
     });
 
     res.status(201).json({
@@ -662,6 +672,26 @@ exports.updateOrderStatus = async (req, res, next) => {
       await vendor.save();
     }
     await order.save();
+
+    // --- Generate Notifications ---
+    // 1. To User
+    await createNotification({
+      title: 'Order Status Updated',
+      message: `Your order ${order.bookingRef} status has been updated to ${status}.`,
+      type: 'status_update',
+      recipientRole: 'user',
+      recipientId: order.user,
+      data: { bookingId: order._id, status }
+    });
+
+    // 2. To Admin
+    await createNotification({
+      title: 'Order Status Updated',
+      message: `Order ${order.bookingRef} status updated to ${status} by vendor ${vendor.shopName}.`,
+      type: 'status_update',
+      recipientRole: 'admin',
+      data: { bookingId: order._id, status }
+    });
 
     // Re-fetch populated order to send back to frontend
     const updatedOrder = await Order.findById(order._id)

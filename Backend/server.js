@@ -86,8 +86,8 @@ async function createDefaultAdmin() {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/admin/vendors', require('./routes/adminvendorRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/centers', require('./routes/centerRoutes'));
@@ -100,6 +100,7 @@ app.use('/api/razorpay', require('./routes/razorpayRoutes'));
 app.use('/api/offers', require('./routes/offerRoutes'));
 app.use('/api/master', require('./routes/masterRoutes'));
 app.use('/api/vendor', require('./routes/vendorRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 
 // Error handler

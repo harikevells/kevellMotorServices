@@ -10,6 +10,13 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        maven { 
+            url "https://repo.maven.apache.org/maven2"
+        }
+        maven { 
+            url "http://repo.maven.apache.org/maven2"
+            allowInsecureProtocol = true
+        }
     }
     dependencies {
         classpath("com.android.tools.build:gradle")
@@ -33,6 +40,17 @@ allprojects {
         }
         google()
         mavenCentral()
+        maven { 
+            url "https://repo.maven.apache.org/maven2"
+        }
+        maven { 
+            url "http://repo.maven.apache.org/maven2"
+            allowInsecureProtocol = true
+        }
         maven { url 'https://www.jitpack.io' }
+        maven { 
+            url 'http://www.jitpack.io'
+            allowInsecureProtocol = true
+        }
     }
 }

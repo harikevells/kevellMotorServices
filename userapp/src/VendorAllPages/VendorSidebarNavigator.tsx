@@ -18,6 +18,7 @@ import VendorDeliveryCreate from './VendorDeliveryCreate';
 import VendorDeliveryList from './VendorDeliveryList';
 import VendorProfile from './VendorProfile';
 import api, { SafeStorage } from '../services/api';
+import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75;
@@ -52,12 +53,11 @@ const VendorSidebarNavigator = () => {
       const res: any = await api.get('/vendor/profile');
       if (res.success && res.vendor) {
         setShopName(res.vendor.shopName);
-        
+
         // Handle image path correctly with BASE URL fallback
         const img = res.vendor.profilePicture || res.vendor.shopImage || res.vendor.user?.profileImage;
         if (img) {
-          const baseUrl = 'http://192.168.0.137:5000'; // Base backend URL
-          setProfileImage(img.startsWith('http') ? img : `${baseUrl}${img}`);
+          setProfileImage(getImageUrl(img));
         }
       }
     } catch (e) {
@@ -68,8 +68,8 @@ const VendorSidebarNavigator = () => {
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Logout', 
+      {
+        text: 'Logout',
         onPress: async () => {
           await SafeStorage.removeItem('token');
           navigation.dispatch(

@@ -87,11 +87,11 @@ const UserPage = () => {
         <table className="custom-user-table">
           <thead>
             <tr>
-              <th>S.No</th>
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Role</th>
+              <th>Gender</th>
+              <th>City</th>
               <th>Registered</th>
               <th className="text-center">Action</th>
             </tr>
@@ -106,7 +106,6 @@ const UserPage = () => {
             ) : users.length > 0 ? (
               users.map((user, index) => (
                 <tr key={user._id || index}>
-                  <td>{(currentPage - 1) * rowsPerPage + index + 1}</td>
                   <td>
                     <div className="d-flex flex-column">
                       <span className="fw-bold text-white">{user.name || 'Unnamed'}</span>
@@ -115,14 +114,11 @@ const UserPage = () => {
                   </td>
                   <td>{user.email || 'N/A'}</td>
                   <td>{user.phone || 'N/A'}</td>
-                  <td>
-                    <span className={`role-badge ${user.role?.toLowerCase()}`}>
-                      {user.role || 'user'}
-                    </span>
-                  </td>
+                  <td>{user.gender || 'Other'}</td>
+                  <td>{user.address?.city || 'N/A'}</td>
                   <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
                   <td>
-                    <div className="action-icons">
+                    <div className="action-icons" style={{ justifyContent: 'center' }}>
                       <Eye 
                         size={20} 
                         className="action-icon" 
@@ -135,7 +131,7 @@ const UserPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="text-center py-5 text-muted">No users found.</td>
+                <td colSpan={8} className="text-center py-5 text-muted">No users found.</td>
               </tr>
             )}
           </tbody>

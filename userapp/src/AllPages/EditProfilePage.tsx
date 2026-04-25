@@ -19,6 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SHADOWS } from '../constants/theme';
 import { SafeStorage, updateProfile, uploadAvatar } from '../services/api';
+import { getImageUrl } from '../constants/config';
 // --- Safer Import for Native Modules (Handles 'uncaught' errors if rebuild is missing) ---
 let launchImageLibrary: any = null;
 try {
@@ -180,9 +181,7 @@ const EditProfilePage = () => {
     }
   };
 
-  const fullImageUrl = formData.profileImage
-    ? (formData.profileImage.startsWith('http') ? formData.profileImage : `http://192.168.0.137:5000${formData.profileImage}`)
-    : null;
+  const fullImageUrl = getImageUrl(formData.profileImage);
 
   return (
     <SafeAreaView style={styles.container}>

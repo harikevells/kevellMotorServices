@@ -1,28 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const RecentBookings = () => {
-    const bookings = [
-        { id: 'Bk-1001', customer: 'Rahul', vehicle: 'Nexon Ev', service: 'Nexon Ev', date: '12/04/2026 11:30 Am', status: 'In progress' },
-        { id: 'Bk-1002', customer: 'John', vehicle: 'Nexon Ev', service: 'Nexon Ev', date: '12/04/2026 11:30 Am', status: 'Completed' },
-        { id: 'Bk-1003', customer: 'Kiran', vehicle: 'Nexon Ev', service: 'Nexon Ev', date: '12/04/2026 11:30 Am', status: 'Pending' },
-        { id: 'Bk-1004', customer: 'Rohit', vehicle: 'Nexon Ev', service: 'Nexon Ev', date: '12/04/2026 11:30 Am', status: 'In progress' },
-        { id: 'Bk-1005', customer: 'Ravi', vehicle: 'Nexon Ev', service: 'Nexon Ev', date: '12/04/2026 11:30 Am', status: 'Completed' },
-    ];
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRecent = async () => {
+            try {
+                const response = await axios.get('http://localhost:5000/api/bookings/admin/all');
+                if (response.data.success) {
+                    // Sort by newest first and limit to 6 items
+                    const sorted = response.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    setBookings(sorted.slice(0, 6));
+                }
+            } catch (error) {
+                console.error('Error fetching recent bookings:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecent();
+    }, []);
 
     const getStatusClass = (status) => {
-        switch (status) {
-            case 'Completed': return 'status-completed';
-            case 'Pending': return 'status-pending';
-            case 'In progress': return 'status-in-progress';
-            default: return '';
-        }
+        const s = status.toLowerCase();
+        if (s === 'completed') return 'status-completed';
+        if (s === 'pending') return 'status-pending';
+        if (s === 'in_progress' || s === 'confirmed' || s === 'received') return 'status-in-progress';
+        return '';
+    };
+
+    const formatStatusText = (status) => {
+        if (status === 'in_progress') return 'In Progress';
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    };
+
+    const formatTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
+    const navigateToOrderManagement = (e) => {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('changePage', { detail: 'Order Management' }));
     };
 
     return (
         <div className="dash-card table-card">
             <div className="table-header-row">
                 <h3 className="chart-title">Recent Bookings</h3>
-                <a href="#view-all" className="view-all-link">View All</a>
+                <a href="#view-all" onClick={navigateToOrderManagement} className="view-all-link">View All</a>
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table className="recent-bookings-table">
@@ -33,28 +66,36 @@ const RecentBookings = () => {
                             <th>Vehicle Name</th>
                             <th>Service</th>
                             <th>Date</th>
+                            <th>Time</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {bookings.map((bk) => (
-                            <tr key={bk.id}>
-                                <td data-label="Booking ID" className="booking-id">{bk.id}</td>
-                                <td data-label="Customer">{bk.customer}</td>
-                                <td data-label="Vehicle Name">{bk.vehicle}</td>
-                                <td data-label="Service">{bk.service}</td>
-                                <td data-label="Date">{bk.date}</td>
-                                <td data-label="Status">
-                                    <span className={`status-text ${getStatusClass(bk.status)}`}>
-                                        {bk.status}
-                                    </span>
-                                </td>
-                                <td data-label="Action">
-                                    <a href="#view" className="action-link">View</a>
-                                </td>
-                            </tr>
-                        ))}
+                        {loading ? (
+                            <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>Loading...</td></tr>
+                        ) : bookings.length > 0 ? (
+                            bookings.map((bk) => (
+                                <tr key={bk._id}>
+                                    <td data-label="Booking ID" className="booking-id">{bk.bookingRef}</td>
+                                    <td data-label="Customer">{bk.userDetails?.name || 'Unknown'}</td>
+                                    <td data-label="Vehicle Name">{bk.vehicleDetails?.model || 'N/A'}</td>
+                                    <td data-label="Service">{bk.serviceNames?.[0] || 'Service'}{bk.serviceNames?.length > 1 ? ` (+${bk.serviceNames.length - 1})` : ''}</td>
+                                    <td data-label="Date">{formatDate(bk.createdAt)}</td>
+                                    <td data-label="Time">{formatTime(bk.createdAt)}</td>
+                                    <td data-label="Status">
+                                        <span className={`status-text ${getStatusClass(bk.status)}`}>
+                                            {formatStatusText(bk.status)}
+                                        </span>
+                                    </td>
+                                    <td data-label="Action">
+                                        <a href="#view" className="action-link">View</a>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>No bookings found</td></tr>
+                        )}
                     </tbody>
                 </table>
             </div>

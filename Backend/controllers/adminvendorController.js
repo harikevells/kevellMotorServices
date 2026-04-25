@@ -3,6 +3,8 @@ const Vendor = require('../models/vendor');
 const User = require('../models/User');
 const Booking = require('../models/Booking'); // ✅ Changed from 'Order'
 const Shop = require('../models/ServiceCenter'); // ✅ Added
+const bcrypt = require('bcryptjs');
+const { createNotification } = require('./notificationController');
 
 // Get all vendors (admin only)
 exports.getAllVendors = async (req, res, next) => {
@@ -131,6 +133,16 @@ exports.approveVendor = async (req, res, next) => {
     // Update user role to vendor
     await User.findByIdAndUpdate(vendor.user, { role: 'vendor' });
 
+    // --- Generate Notification ---
+    await createNotification({
+      title: 'Vendor Approved',
+      message: `Your vendor profile for ${vendor.shopName} has been approved. You can now access vendor features.`,
+      type: 'registration',
+      recipientRole: 'vendor',
+      recipientId: vendor.user,
+      data: { vendorId: vendor._id }
+    });
+
     res.json({
       success: true,
       message: 'Vendor approved successfully',
@@ -159,6 +171,16 @@ exports.rejectVendor = async (req, res, next) => {
     vendor.rejectionReason = reason;
     vendor.isApproved = false;
     await vendor.save();
+
+    // --- Generate Notification ---
+    await createNotification({
+      title: 'Vendor Profile Rejected',
+      message: `Your vendor profile for ${vendor.shopName} has been rejected. Reason: ${reason}`,
+      type: 'registration',
+      recipientRole: 'vendor',
+      recipientId: vendor.user,
+      data: { vendorId: vendor._id, reason }
+    });
 
     res.json({
       success: true,
@@ -200,9 +222,10 @@ exports.suspendVendor = async (req, res, next) => {
   }
 };
 
-// Verify vendor documents (admin only)
+// Update vendor verification status (admin only)
 exports.verifyVendor = async (req, res, next) => {
   try {
+    const { isVerified } = req.body;
     const vendor = await Vendor.findById(req.params.id);
 
     if (!vendor) {
@@ -212,14 +235,89 @@ exports.verifyVendor = async (req, res, next) => {
       });
     }
 
-    vendor.isVerified = true;
-    vendor.verifiedAt = new Date();
-    vendor.verifiedBy = req.user.id;
+    vendor.isVerified = isVerified;
+    if (isVerified) {
+      vendor.verifiedAt = new Date();
+      vendor.verifiedBy = req.user.id;
+    } else {
+      vendor.verifiedAt = null;
+      vendor.verifiedBy = null;
+    }
     await vendor.save();
 
     res.json({
       success: true,
-      message: 'Vendor verified successfully',
+      message: `Vendor ${isVerified ? 'verified' : 'unverified'} successfully`,
+      vendor
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update vendor details (admin only)
+exports.updateVendor = async (req, res, next) => {
+  try {
+    console.log(`[ADMIN-VENDOR] Updating vendor ${req.params.id}:`, req.body);
+    const { 
+      shopName, ownerName, email, phone, password,
+      status, isVerified, licenseNo, gstNo, capacity,
+      address, city, street, state, pincode 
+    } = req.body;
+
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vendor not found'
+      });
+    }
+
+    // Update Vendor fields
+    if (shopName) vendor.shopName = shopName;
+    if (ownerName) vendor.ownerName = ownerName;
+    if (email) vendor.email = email;
+    if (phone) vendor.phone = phone;
+    if (status) vendor.status = status;
+    if (isVerified !== undefined) vendor.isVerified = isVerified;
+    if (licenseNo !== undefined) vendor.licenseNo = licenseNo;
+    if (gstNo !== undefined) vendor.gstNo = gstNo;
+    if (capacity !== undefined) vendor.capacity = capacity;
+    
+    // Flexible address update
+    if (!vendor.address) vendor.address = {};
+    if (address) {
+      vendor.address = { ...vendor.address, ...address };
+    }
+    if (city) vendor.address.city = city;
+    if (street) vendor.address.street = street;
+    if (state) vendor.address.state = state;
+    if (pincode) vendor.address.pincode = pincode;
+
+    await vendor.save();
+
+    // Also update linked User if needed
+    if (vendor.user && (ownerName || email || phone || password)) {
+      try {
+        const userId = vendor.user._id || vendor.user;
+        console.log(`[ADMIN-VENDOR] Updating linked user ${userId}`);
+        const userUpdateData = {};
+        if (ownerName) userUpdateData.name = ownerName;
+        if (email) userUpdateData.email = email;
+        if (phone) userUpdateData.phone = phone;
+        if (password) {
+          userUpdateData.password = await bcrypt.hash(password, 10);
+        }
+        await User.findByIdAndUpdate(userId, userUpdateData);
+      } catch (userError) {
+        console.error(`[ADMIN-VENDOR] Failed to update linked user:`, userError);
+        // We continue because the vendor itself was updated successfully
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Vendor updated successfully',
       vendor
     });
   } catch (error) {

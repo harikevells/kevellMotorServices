@@ -13,6 +13,18 @@ const vendorSchema = new mongoose.Schema({
     required: [true, 'Shop name is required'],
     trim: true
   },
+  licenseNo: {
+    type: String,
+    trim: true
+  },
+  gstNo: {
+    type: String,
+    trim: true
+  },
+  capacity: {
+    type: Number,
+    default: 0
+  },
   ownerName: {
     type: String,
     trim: true

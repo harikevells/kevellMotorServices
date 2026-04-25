@@ -3,7 +3,7 @@ import {
     Container, Table, Button, Form, Modal, Badge, 
     Pagination, InputGroup, Row, Col, Spinner, Card
 } from 'react-bootstrap';
-import { Search, Eye, Trash, Filter, ChevronLeft, ChevronRight, User, MapPin, Car, Calendar, Wrench } from 'lucide-react';
+import { Search, Eye, Trash, Filter, ChevronLeft, ChevronRight, User, MapPin, Car, Calendar, Wrench, LocateFixed } from 'lucide-react';
 import axios from 'axios';
 import './order.css';
 
@@ -112,13 +112,14 @@ const Ordermanagement = () => {
                             <th>Category</th>
                             <th>Services</th>
                             <th>Status</th>
-                            <th>ACTION</th>
+                            <th>View</th>
+                            <th>Track</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-5">
+                                <td colSpan={8} className="text-center py-5">
                                     <Spinner animation="border" variant="warning" />
                                 </td>
                             </tr>
@@ -140,20 +141,29 @@ const Ordermanagement = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <div className="action-icons">
+                                        <div className="action-icons" style={{ display: 'flex', justifyContent: 'center' }}>
                                             <Eye 
                                                 size={20} 
                                                 className="action-icon" 
                                                 onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }} 
                                             />
-                                            <Trash size={20} className="action-icon" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="action-icons" style={{ display: 'flex', justifyContent: 'center' }}>
+                                            <LocateFixed 
+                                                size={20} 
+                                                className="action-icon" 
+                                                style={{ color: 'var(--accent)' }}
+                                                onClick={() => { window.dispatchEvent(new CustomEvent('changePage', { detail: 'Tracking' })); }} 
+                                            />
                                         </div>
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} className="text-center py-5 text-muted">No bookings found.</td>
+                                <td colSpan={8} className="text-center py-5 text-muted">No bookings found.</td>
                             </tr>
                         )}
                     </tbody>
@@ -196,7 +206,7 @@ const Ordermanagement = () => {
             {/* Detailed Booking Modal */}
             <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg" centered className="booking-detail-modal">
                 <Modal.Header closeButton className="bg-dark border-secondary">
-                    <Modal.Title className="text-gold">
+                    <Modal.Title className="text-gold text-white">
                         Booking Details: {selectedBooking?.bookingRef}
                     </Modal.Title>
                 </Modal.Header>
@@ -254,14 +264,14 @@ const Ordermanagement = () => {
                                     <hr className="border-secondary" />
                                     <div className="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <p className="mb-1 text-muted">Payment Method: <strong>{selectedBooking.paymentMethod}</strong></p>
+                                            <p className="mb-1 text-white">Payment Method: <strong>{selectedBooking.paymentMethod}</strong></p>
                                             {selectedBooking.specialInstructions && (
                                                 <p className="small italic text-warning">Note: {selectedBooking.specialInstructions}</p>
                                             )}
                                         </div>
                                         <div className="text-end">
                                             <h4 className="text-gold mb-0">Total: ₹ {selectedBooking.totalAmount}</h4>
-                                            <p className="small text-muted">(Includes tax: ₹ {selectedBooking.tax})</p>
+                                            <p className="small text-white">(Includes tax: ₹ {selectedBooking.tax})</p>
                                         </div>
                                     </div>
                                 </div>

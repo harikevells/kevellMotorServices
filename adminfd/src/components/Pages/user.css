@@ -74,7 +74,7 @@
     font-weight: 700;
     font-size: 14px;
     padding: 18px 24px;
-    text-align: left;
+    text-align: center;
     text-transform: capitalize;
 }
 
@@ -93,15 +93,7 @@
     vertical-align: middle;
     border-bottom: 1px solid #ffffff;
     border-top: 1px solid #ffffff;
-}
-
-.custom-user-table th {
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 18px 24px;
-    text-align: left;
-    text-transform: capitalize;
+    text-align: center;
 }
 
 .custom-user-table tbody tr {

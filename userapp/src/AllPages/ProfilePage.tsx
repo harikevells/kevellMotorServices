@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { SafeStorage, fetchProfile } from '../services/api';
+import { getImageUrl } from '../constants/config';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -146,7 +147,7 @@ const ProfilePage = () => {
                 <View style={styles.avatarInternal}>
                   {user.profileImage ? (
                     <Image
-                      source={{ uri: user.profileImage.startsWith('http') ? user.profileImage : `http://192.168.0.137:5000${user.profileImage}` }}
+                      source={{ uri: getImageUrl(user.profileImage) as string }}
                       style={{ width: '100%', height: '100%' }}
                     />
                   ) : (

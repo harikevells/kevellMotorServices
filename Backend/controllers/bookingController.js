@@ -6,6 +6,7 @@ const Slot = require('../models/Slot');
 const Tracking = require('../models/Tracking');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const { createNotification } = require('./notificationController');
 
 const generateBookingRef = () => {
   const date = new Date();
@@ -128,6 +129,36 @@ exports.createBooking = async (req, res, next) => {
       .populate('vehicle')
       .populate('services');
 
+    // --- Generate Notifications ---
+    // 1. To Admin
+    await createNotification({
+      title: 'Booking services',
+      message: `A new booking has been received and is awaiting confirmation. Ref: ${booking.bookingRef}`,
+      type: 'booking',
+      recipientRole: 'admin',
+      data: { bookingId: booking._id }
+    });
+
+    // 2. To Vendor
+    await createNotification({
+      title: 'New Booking Received',
+      message: `You have received a new booking from ${fullUser?.name || 'a customer'}. Ref: ${booking.bookingRef}`,
+      type: 'booking',
+      recipientRole: 'vendor',
+      recipientId: centerExists.user, // The user account linked to vendor
+      data: { bookingId: booking._id }
+    });
+
+    // 3. To User
+    await createNotification({
+      title: 'Booking Confirmed',
+      message: `Your booking for ${vehicleExists.brand} ${vehicleExists.model} has been received. Ref: ${booking.bookingRef}`,
+      type: 'booking',
+      recipientRole: 'user',
+      recipientId: req.user.id,
+      data: { bookingId: booking._id }
+    });
+
     res.status(201).json({
       success: true,
       message: 'Booking confirmed successfully',
@@ -195,6 +226,29 @@ exports.cancelBooking = async (req, res, next) => {
     );
 
     res.json({ success: true, message: 'Booking cancelled' });
+
+    // --- Generate Notifications ---
+    // To Admin
+    await createNotification({
+      title: 'Booking Cancelled',
+      message: `Booking ${booking.bookingRef} has been cancelled by the user.`,
+      type: 'booking',
+      recipientRole: 'admin',
+      data: { bookingId: booking._id }
+    });
+
+    // To Vendor
+    const vendor = await Vendor.findById(booking.center);
+    if (vendor) {
+      await createNotification({
+        title: 'Booking Cancelled',
+        message: `Booking ${booking.bookingRef} has been cancelled by the customer.`,
+        type: 'booking',
+        recipientRole: 'vendor',
+        recipientId: vendor.user,
+        data: { bookingId: booking._id }
+      });
+    }
   } catch (error) {
     next(error);
   }
