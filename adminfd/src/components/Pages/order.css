@@ -107,6 +107,13 @@
 .custom-order-table tbody tr {
     border: 1px solid #ffffff; /* White border around entire row */
     box-shadow: inset 0 0 0 1px #ffffff; /* Ensure border shows */
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.custom-order-table tbody tr:hover {
+    background-color: rgba(242, 139, 44, 0.05);
+    transform: translateY(-1px);
+    border-color: #f28b2c;
 }
 
 /* Specific Column Styling */
@@ -124,6 +131,72 @@
 .status-val.pending { color: #f44336; } /* Red */
 .status-val.in-progress { color: #00bcd4; } /* Cyan */
 .status-val.cancelled { color: #757575; }
+
+/* Status Dropdown Styling */
+.status-select-custom {
+    background-color: transparent !important;
+    border: none !important; /* Remove border line as requested */
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 5px 10px;
+    cursor: pointer;
+    width: 100%;
+    min-width: 130px;
+    transition: all 0.2s ease;
+    text-align: center !important; /* Alignment center */
+    text-align-last: center; /* Center for selected value in some browsers */
+    appearance: none; /* Remove default arrow to keep it clean */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Colors for all statuses */
+.status-select-custom.pending { color: #ffb100 !important; } /* Amber/Yellow */
+.status-select-custom.confirmed { color: #2196f3 !important; } /* Blue */
+.status-select-custom.received { color: #00bcd4 !important; } /* Cyan */
+.status-select-custom.inspected { color: #9c27b0 !important; } /* Purple */
+.status-select-custom.in-service { color: #3f51b5 !important; } /* Indigo */
+.status-select-custom.quality-check { color: #673ab7 !important; } /* Deep Purple */
+.status-select-custom.ready { color: #8bc34a !important; } /* Light Green */
+.status-select-custom.completed, .status-select-custom.delivered { color: #00d084 !important; } /* Green */
+.status-select-custom.cancelled { color: #f44336 !important; } /* Red */
+
+.status-select-custom:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.status-select-custom option {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    text-align: left;
+}
+
+/* Modal Background override */
+.booking-detail-modal .modal-content {
+    background-color: #121212 !important;
+    border: 1px solid rgba(242, 139, 44, 0.3);
+}
+
+.detail-section {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-section p {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #ddd;
+}
+
+.detail-section strong {
+    color: #f28b2c;
+    margin-right: 5px;
+}
 
 /* Action Buttons */
 .action-icons {

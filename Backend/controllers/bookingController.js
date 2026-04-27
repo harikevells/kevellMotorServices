@@ -17,7 +17,12 @@ const generateBookingRef = () => {
 
 exports.createBooking = async (req, res, next) => {
   try {
-    const { vehicle, center, services, bookingDate, timeSlot, paymentMethod, specialInstructions, couponCode } = req.body;
+    const { 
+      vehicle, center, services, bookingDate, timeSlot, 
+      paymentMethod, specialInstructions, couponCode,
+      // User details and location
+      userName, userPhone, userAddress, latitude, longitude
+    } = req.body;
 
     // 1. Validate Vehicle
     const vehicleExists = await Vehicle.findById(vehicle);
@@ -35,7 +40,7 @@ exports.createBooking = async (req, res, next) => {
 
     // 3. Validate Slot Availability
     let slot = await Slot.findOne({ center, date: bookingDate, time: timeSlot });
-    
+
     // Auto-create slot if it hasn't been initialized yet
     if (!slot) {
       slot = await Slot.create({
@@ -60,16 +65,19 @@ exports.createBooking = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No valid services selected' });
     }
 
-    const subtotal = serviceDetails.reduce((sum, s) => sum + s.base_price, 0);
+    const subtotal = serviceDetails.reduce((sum, s) => sum + s.price, 0);
     const tax = Math.round(subtotal * 0.18 * 100) / 100; // 18% GST
     const totalAmount = subtotal + tax;
 
     // Build denormalized snapshots for historical context
     const fullUser = await User.findById(req.user.id);
-    const userAddressString = fullUser?.address?.street ? `${fullUser.address.street}, ${fullUser.address.city || ''}` : '';
+    const finalUserName = userName || fullUser?.name || 'Unknown';
+    const finalUserPhone = userPhone || fullUser?.phone || 'Unknown';
+    const finalUserAddress = userAddress || (fullUser?.address?.street ? `${fullUser.address.street}, ${fullUser.address.city || ''}` : '');
+    
     const vendorAddressString = centerExists.address?.street ? `${centerExists.address.street}, ${centerExists.address.city || ''}` : '';
 
-    const serviceNames = serviceDetails.map(s => s.name);
+    const serviceNames = serviceDetails.map(s => s.serviceName);
 
     // 5. Create Booking
     const booking = await Booking.create({
@@ -81,9 +89,11 @@ exports.createBooking = async (req, res, next) => {
       
       // Store snapshots
       userDetails: {
-        name: fullUser?.name || 'Unknown',
-        phone: fullUser?.phone || 'Unknown',
-        address: userAddressString
+        name: finalUserName,
+        phone: finalUserPhone,
+        address: finalUserAddress,
+        latitude: latitude || 0,
+        longitude: longitude || 0
       },
       vendorDetails: {
         vendorName: centerExists.ownerName || 'Unknown',
@@ -278,7 +288,7 @@ exports.getAllBookingsAdmin = async (req, res, next) => {
       .sort({ createdAt: -1 });
 
     console.log(`Found ${bookings.length} bookings`);
-    
+
     res.json({
       success: true,
       count: bookings.length,
@@ -289,4 +299,31 @@ exports.getAllBookingsAdmin = async (req, res, next) => {
     next(error);
   }
 };
-
+
+exports.updateBookingStatusAdmin = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    )
+      .populate('user', '-password')
+      .populate('vehicle')
+      .populate('center')
+      .populate('services');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Booking status updated successfully',
+      data: booking
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

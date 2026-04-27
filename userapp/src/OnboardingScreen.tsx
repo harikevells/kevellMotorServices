@@ -159,7 +159,7 @@ type OnboardingScreenNavigationProp = NativeStackNavigationProp<RootStackParamLi
 type Props = { navigation: OnboardingScreenNavigationProp };
 
 const OnboardingScreen = ({ navigation }: Props) => {
-  const [selected, setSelected] = useState<'user' | 'vendor' | null>(null);
+  const [selected, setSelected] = useState<'user' | 'vendor' | null>('user');
   const [error, setError] = useState(false);
 
   const logoAnim = useRef(new Animated.Value(0)).current;
@@ -210,7 +210,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
     }
 
     // Always navigate to Login for both roles as per request
-    navigation.navigate('Login');
+    navigation.navigate('Login', { role: selected as any });
   };
 
   const logoY = logoAnim.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] });
@@ -418,9 +418,11 @@ const styles = StyleSheet.create({
     width: '100%',
     overflow: 'hidden',
     marginBottom: 30,
+    paddingVertical: 10,
   },
   strip: {
     flexDirection: 'row',
+    paddingVertical: 5,
   },
   stripItem: {
     alignItems: 'center',

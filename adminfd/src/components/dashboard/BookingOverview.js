@@ -45,7 +45,7 @@ const BookingOverview = () => {
 
         setFilteredStats({
             total: filtered.length,
-            completed: filtered.filter(b => b.status === 'completed').length,
+            completed: filtered.filter(b => b.status === 'delivered').length,
             cancelled: filtered.filter(b => b.status === 'cancelled').length
         });
     }, [allBookings, selectedMonth, selectedYear]);

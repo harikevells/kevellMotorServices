@@ -35,7 +35,7 @@ const DEFAULT_TIMES = [
 const SlotBookingPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SlotRouteProp>();
-  const { centerId, serviceIds, vehicleId, category, fuel } = route.params;
+  const { centerId, serviceIds, vehicleId, category, fuel, vehicleCategory } = route.params;
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -163,14 +163,15 @@ const SlotBookingPage = () => {
 
         <TouchableOpacity 
           style={[styles.nextButton, !selectedTime && styles.disabledButton]}
-          onPress={() => selectedTime && navigation.navigate('BookingSummary', { 
+          onPress={() => selectedTime && navigation.navigate('Address', { 
             centerId, 
             serviceIds, 
             slotDate: selectedDate, 
             slotTime: selectedTime,
             vehicleId,
             category,
-            fuel
+            fuel,
+            vehicleCategory
           })}
           disabled={!selectedTime}
         >
@@ -184,7 +185,7 @@ const SlotBookingPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#060606',
   },
   header: {
     flexDirection: 'row',
@@ -192,20 +193,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: COLORS.white,
-    ...SHADOWS.light,
+    backgroundColor: '#060606',
   },
   backButton: {
     padding: 5,
   },
   backButtonText: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -213,8 +213,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: '#f28b2c',
     marginBottom: 15,
   },
   dateList: {
@@ -222,87 +222,92 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   dateItem: {
-    width: 65,
-    height: 85,
-    backgroundColor: COLORS.white,
-    borderRadius: 15,
+    width: 70,
+    height: 90,
+    backgroundColor: '#121212',
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    ...SHADOWS.light,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#333333',
   },
   selectedDateItem: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
+    borderColor: '#f28b2c',
   },
   dateDay: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     marginBottom: 8,
+    fontWeight: '600',
   },
   dateNumber: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   selectedDateText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
   },
   slotGrid: {
     paddingBottom: 20,
   },
   slotItem: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    padding: 15,
-    borderRadius: 15,
+    backgroundColor: '#121212',
+    padding: 18,
+    borderRadius: 20,
     margin: 6,
     alignItems: 'center',
-    ...SHADOWS.light,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#1A1A1A',
   },
   selectedSlot: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '10',
+    borderColor: '#f28b2c',
+    backgroundColor: '#f28b2c15',
   },
   fullSlot: {
-    backgroundColor: COLORS.lightGrey,
-    opacity: 0.6,
+    backgroundColor: '#1A1A1A',
+    opacity: 0.4,
   },
   slotTime: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   slotAvailability: {
     fontSize: 12,
-    color: COLORS.primary,
+    color: '#f28b2c',
     marginTop: 4,
+    fontWeight: '800',
   },
   fullSlotText: {
-    color: COLORS.grey,
+    color: '#333333',
   },
   selectedSlotText: {
-    color: COLORS.primary,
+    color: '#f28b2c',
   },
   nextButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     paddingVertical: 18,
     borderRadius: 15,
     alignItems: 'center',
     marginTop: 'auto',
-    ...SHADOWS.medium,
+    shadowColor: '#f28b2c',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
   disabledButton: {
-    backgroundColor: COLORS.grey,
+    backgroundColor: '#333333',
+    opacity: 0.5,
   },
   nextButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   emptyContainer: {
     flex: 1,
@@ -311,7 +316,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
   }
 });
 

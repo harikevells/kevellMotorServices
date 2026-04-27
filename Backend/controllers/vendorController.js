@@ -548,7 +548,7 @@ exports.getVendorOrders = async (req, res, next) => {
     const orders = await Order.find(filter)
       .populate('user', 'name email phone')
       .populate('vehicle') 
-      .populate('services', 'name price') 
+      .populate('services', 'serviceName price') 
       .populate('center', 'shopName ownerName phone email') 
       .sort({ createdAt: -1 })
       .skip(skip)

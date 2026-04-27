@@ -30,7 +30,9 @@ const bookingSchema = new mongoose.Schema({
   userDetails: {
     name: String,
     phone: String,
-    address: String
+    address: String,
+    latitude: Number,
+    longitude: Number
   },
   vendorDetails: {
     vendorName: String,

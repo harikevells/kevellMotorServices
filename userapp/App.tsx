@@ -18,6 +18,7 @@ import VehicleSelectionPage from './src/AllPages/VehicleSelectionPage';
 import ServiceSelectionPage from './src/AllPages/ServiceSelectionPage';
 import CenterSelectionPage from './src/AllPages/CenterSelectionPage';
 import SlotBookingPage from './src/AllPages/SlotBookingPage';
+import AddressPage from './src/AllPages/AddressPage';
 import BookingSummaryPage from './src/AllPages/BookingSummaryPage';
 import BookingConfirmationPage from './src/AllPages/BookingConfirmationPage';
 import LiveTrackingPage from './src/AllPages/LiveTrackingPage';
@@ -29,16 +30,31 @@ import PaymentSimulationPage from './src/AllPages/PaymentSimulationPage';
 export type RootStackParamList = {
   FirstScreen: undefined;
   Onboarding: undefined;
-  Login: undefined;
+  Login: { role?: 'user' | 'vendor' };
   Registration: undefined;
   HomeTabs: undefined;
   VehicleSelection: { category?: string };
-  ServiceSelection: { vehicleId: string; category: string; fuel: string };
+  ServiceSelection: { vehicleId: string; category: string; fuel: string; vehicleCategory: string };
 
-  CenterSelection: { serviceIds: string[]; vehicleId: string; category: string; fuel: string };
-  SlotBooking: { centerId: string; serviceIds: string[]; vehicleId: string; category: string; fuel: string };
+  CenterSelection: { serviceIds: string[]; vehicleId: string; category: string; fuel: string; vehicleCategory: string };
+  SlotBooking: { centerId: string; serviceIds: string[]; vehicleId: string; category: string; fuel: string; vehicleCategory: string };
+  Address: { centerId: string; serviceIds: string[]; slotDate: string; slotTime: string; vehicleId: string; category: string; fuel: string; vehicleCategory: string };
 
-  BookingSummary: { centerId: string; serviceIds: string[]; slotDate: string; slotTime: string; vehicleId: string; category: string; fuel: string };
+  BookingSummary: { 
+    centerId: string; 
+    serviceIds: string[]; 
+    slotDate: string; 
+    slotTime: string; 
+    vehicleId: string; 
+    category: string; 
+    fuel: string; 
+    vehicleCategory: string;
+    userName: string;
+    userPhone: string;
+    userAddress: string;
+    latitude: number;
+    longitude: number;
+  };
 
   BookingConfirmation: { bookingRef: string };
   LiveTracking: { bookingId: string };
@@ -70,6 +86,7 @@ function App() {
           <Stack.Screen name="ServiceSelection" component={ServiceSelectionPage} />
           <Stack.Screen name="CenterSelection" component={CenterSelectionPage} />
           <Stack.Screen name="SlotBooking" component={SlotBookingPage} />
+          <Stack.Screen name="Address" component={AddressPage} />
           <Stack.Screen name="BookingSummary" component={BookingSummaryPage} />
           <Stack.Screen name="BookingConfirmation" component={BookingConfirmationPage} />
           <Stack.Screen name="LiveTracking" component={LiveTrackingPage} />

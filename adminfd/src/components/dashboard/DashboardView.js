@@ -23,8 +23,8 @@ const DashboardView = () => {
                     const bookings = response.data.data;
 
                     const total = bookings.length;
-                    const active = bookings.filter(b => b.status === 'in_progress' || b.status === 'confirmed').length;
-                    const completed = bookings.filter(b => b.status === 'completed').length;
+                    const active = bookings.filter(b => ['received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'].includes(b.status)).length;
+                    const completed = bookings.filter(b => b.status === 'delivered').length;
                     const pending = bookings.filter(b => b.status === 'pending').length;
 
                     setStats({

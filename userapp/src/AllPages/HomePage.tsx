@@ -24,16 +24,14 @@ import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 
-// Import banner images (Keeping original imports as requested)
-const BIKE_IMG = require('../assets/banners/bike.png');
-const CAR_IMG = require('../assets/banners/car.png');
-const HEAVY_IMG = require('../assets/banners/heavy.png');
-
-// Unique images for the banner floating circles
-const CIRCLE_IMG_1 = "https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=200&auto=format&fit=crop"; // Bike
-const CIRCLE_IMG_2 = "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=200&auto=format&fit=crop"; // Car
-const CIRCLE_IMG_3 = "https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=200&auto=format&fit=crop"; // Bike 2
-const CIRCLE_IMG_4 = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=200&auto=format&fit=crop"; // Car 2
+const V1 = require('../assets/banners/v1.png');
+const V2 = require('../assets/banners/v2.png');
+const V3 = require('../assets/banners/v3.png');
+const V4 = require('../assets/banners/v4.png');
+const V5 = require('../assets/banners/v5.png');
+const V6 = require('../assets/banners/v6.png');
+const OFFER_1 = require('../assets/offers/free_checkup.png');
+const OFFER_2 = require('../assets/offers/battery_repair.png');
 
 const CATEGORIES = [
   { id: 'General Service', title: 'Periodic Service', icon: '🛠️', color: '#111' },
@@ -47,14 +45,14 @@ const OFFERS = [
     id: '1',
     title: 'Free Checkup',
     subtitle: 'On your first service',
-    image: 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?q=80&w=500&auto=format&fit=crop',
+    image: OFFER_1,
     discount: 'FREE',
   },
   {
     id: '2',
     title: '20% Offer',
     subtitle: 'On battery repair',
-    image: 'https://images.unsplash.com/photo-1597766353915-d729e24f468b?q=80&w=500&auto=format&fit=crop',
+    image: OFFER_2,
     discount: '20%',
   }
 ];
@@ -66,7 +64,7 @@ const BANNERS = [
     price: '999',
     type: 'Bike',
     color: '#ff8c00', 
-    img: BIKE_IMG,
+    img: V1,
   },
   {
     id: '2',
@@ -74,7 +72,7 @@ const BANNERS = [
     price: '2999',
     type: 'Car',
     color: '#ff8c00',
-    img: CAR_IMG,
+    img: V2,
   },
 ];
 
@@ -166,11 +164,12 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
       <View style={styles.bannerRightImages}>
-         {/* Circular Floating Images with staggered alignment */}
-         <Image source={{ uri: CIRCLE_IMG_1 }} style={styles.floatImg1} />
-         <Image source={{ uri: CIRCLE_IMG_2 }} style={styles.floatImg2} />
-         <Image source={{ uri: CIRCLE_IMG_3 }} style={styles.floatImg3} />
-         <Image source={{ uri: CIRCLE_IMG_4 }} style={styles.floatImg4} />
+         <Image source={V3} style={styles.floatImg1} />
+         <Image source={V2} style={styles.floatImg2} />
+         <Image source={V4} style={styles.floatImg3} />
+         <Image source={V1} style={styles.floatImg4} />
+         <Image source={V5} style={styles.floatImg5} />
+         <Image source={V6} style={styles.floatImg6} />
       </View>
     </View>
   );
@@ -265,9 +264,9 @@ const HomeScreen = () => {
         <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Exclusive Offers</Text>
         <View style={styles.offersGrid}>
            {OFFERS.map(offer => (
-              <ImageBackground 
+               <ImageBackground 
                 key={offer.id}
-                source={{ uri: offer.image }} 
+                source={offer.image} 
                 style={styles.offerCardNew}
                 imageStyle={{ borderRadius: 20 }}
               >
@@ -303,8 +302,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 25,
+    marginTop: 50,
+    marginBottom: 15,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -384,7 +383,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 180,
     position: 'relative',
-    overflow: 'hidden',
+    // overflow: 'hidden', // Allowed bleed as per screenshot
   },
   bannerContent: {
     flex: 1.2,
@@ -414,10 +413,12 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: '100%',
   },
-  floatImg1: { width: 85, height: 85, borderRadius: 42.5, position: 'absolute', bottom: 0, left: 10, borderWidth: 3, borderColor: '#fff', zIndex: 5 },
-  floatImg2: { width: 60, height: 60, borderRadius: 30, position: 'absolute', top: 5, right: 15, borderWidth: 3, borderColor: '#fff', zIndex: 4 },
-  floatImg3: { width: 45, height: 45, borderRadius: 22.5, position: 'absolute', top: 50, left: 40, borderWidth: 2, borderColor: '#fff', zIndex: 3 },
-  floatImg4: { width: 40, height: 40, borderRadius: 20, position: 'absolute', bottom: 45, right: 0, borderWidth: 2, borderColor: '#fff', zIndex: 2 },
+  floatImg1: { width: 75, height: 75, borderRadius: 37.5, position: 'absolute', bottom: -10, left: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 6 },
+  floatImg2: { width: 45, height: 45, borderRadius: 22.5, position: 'absolute', top: 5, left: 3, borderWidth: 1.5, borderColor: '#fff', zIndex: 5 },
+  floatImg3: { width: 65, height: 65, borderRadius: 32.5, position: 'absolute', top: -20, right: 25, borderWidth: 1.5, borderColor: '#fff', zIndex: 4 },
+  floatImg4: { width: 35, height: 35, borderRadius: 17.5, position: 'absolute', top: 60, right: 50, borderWidth: 1.5, borderColor: '#fff', zIndex: 3 },
+  floatImg5: { width: 40, height: 40, borderRadius: 20, position: 'absolute', top: 35, right: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 2 },
+  floatImg6: { width: 55, height: 55, borderRadius: 27.5, position: 'absolute', bottom: -5, right: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 1 },
   
   pagination: {
     flexDirection: 'row',
@@ -445,7 +446,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   serviceCard: {
-    width: 160,
+    width: 180,
     height: 60,
     backgroundColor: '#000',
     borderRadius: 15,
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
   },
   serviceIcon: {
     fontSize: 22,
-    marginRight: 12,
+    marginRight: 17, // Added 5px padding/margin right
   },
   serviceTitle: {
     color: '#fff',

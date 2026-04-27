@@ -11,19 +11,42 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from 'react-native';
+import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { COLORS, SIZES, SHADOWS } from './constants/theme';
 import { register, SafeStorage } from './services/api';
 
+const { width } = Dimensions.get('window');
+const ORANGE = '#f28b2c';
+const BG = '#060606';
+const CARD_BG = '#111';
+const INPUT_BG = '#1A1A1A';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const EyeIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <Circle cx="12" cy="12" r="3" />
+  </Svg>
+);
+
+const EyeOffIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <Line x1="1" y1="1" x2="23" y2="23" />
+  </Svg>
+);
 
 const RegistrationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [role, setRole] = useState<'user' | 'vendor'>('user');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: '', // For User: Full Name, For Vendor: Owner Name
@@ -165,14 +188,19 @@ const RegistrationScreen = () => {
             />
 
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Minimum 6 characters"
-              placeholderTextColor="#555"
-              secureTextEntry
-              value={form.password}
-              onChangeText={(text) => setForm({ ...form, password: text })}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Minimum 6 characters"
+                placeholderTextColor="#555"
+                secureTextEntry={!showPassword}
+                value={form.password}
+                onChangeText={(text) => setForm({ ...form, password: text })}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                {showPassword ? <EyeIcon color={ORANGE} /> : <EyeOffIcon color="#555" />}
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.label}>Phone Number</Text>
             <View style={styles.phoneInputContainer}>
@@ -225,7 +253,7 @@ const RegistrationScreen = () => {
                     onChangeText={(text) => setForm({ ...form, city: text })}
                   />
                   <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 10 }]}
+                    style={[styles.input, { flex: 1 }]}
                     placeholder="State"
                     placeholderTextColor="#555"
                     value={form.state}
@@ -233,9 +261,9 @@ const RegistrationScreen = () => {
                   />
                 </View>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { marginTop: 10 }]}
                   placeholder="Pincode"
-                  placeholderTextColor="#000"
+                  placeholderTextColor="#555"
                   keyboardType="number-pad"
                   maxLength={6}
                   value={form.pincode}
@@ -268,7 +296,7 @@ const RegistrationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: BG,
   },
   header: {
     flexDirection: 'row',
@@ -282,61 +310,81 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFF',
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 20,
   },
   formSection: {
-    backgroundColor: COLORS.white,
+    backgroundColor: CARD_BG,
     borderRadius: 20,
     padding: 20,
     ...SHADOWS.light,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#222',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textSecondary,
+    color: '#777',
     marginBottom: 8,
     marginTop: 15,
   },
   input: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     paddingHorizontal: 15,
     height: 50,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
     fontSize: 15,
-    color: '#333',
+    color: '#FFF',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: INPUT_BG,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#FFF',
+  },
+  eyeButton: {
+    padding: 5,
   },
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     paddingHorizontal: 15,
     height: 50,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
   },
   countryCode: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: '#FFF',
     marginRight: 10,
   },
   phoneInput: {
     flex: 1,
     fontSize: 15,
-    color: '#333',
+    color: '#FFF',
   },
   roleContainer: {
     flexDirection: 'row',
@@ -348,22 +396,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
     alignItems: 'center',
     marginHorizontal: 5,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: INPUT_BG,
   },
   roleSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '15',
+    borderColor: ORANGE,
+    backgroundColor: ORANGE + '15',
   },
   roleText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#777',
     fontWeight: '600',
   },
   roleTextSelected: {
-    color: COLORS.primary,
+    color: ORANGE,
   },
   genderContainer: {
     flexDirection: 'row',
@@ -374,29 +422,29 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
     alignItems: 'center',
     marginHorizontal: 5,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: INPUT_BG,
   },
   genderSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '15',
+    borderColor: ORANGE,
+    backgroundColor: ORANGE + '15',
   },
   genderText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#777',
     fontWeight: '600',
   },
   genderTextSelected: {
-    color: COLORS.primary,
+    color: ORANGE,
   },
   row: {
     flexDirection: 'row',
     marginTop: 10,
   },
   registerButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: ORANGE,
     height: 60,
     borderRadius: 30,
     justifyContent: 'center',
@@ -404,7 +452,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.medium,
   },
   disabledButton: {
-    backgroundColor: COLORS.grey,
+    backgroundColor: '#333',
   },
   registerButtonText: {
     color: '#FFF',
@@ -417,14 +465,17 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerText: {
-    color: COLORS.textSecondary,
+    color: '#777',
     fontSize: 14,
+    width: '55%',
+    textAlign: 'center',
   },
   loginLink: {
-    color: COLORS.primary,
+    color: ORANGE,
     fontSize: 14,
     fontWeight: '700',
   },
 });
 
 export default RegistrationScreen;
+

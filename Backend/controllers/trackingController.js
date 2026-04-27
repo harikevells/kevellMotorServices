@@ -3,7 +3,11 @@ const Booking = require('../models/Booking');
 
 exports.getTrackingStatus = async (req, res, next) => {
   try {
-    const tracking = await Tracking.findOne({ booking: req.params.bookingId });
+    const tracking = await Tracking.findOne({ booking: req.params.bookingId })
+      .populate({
+        path: 'booking',
+        populate: { path: 'services' }
+      });
     if (!tracking) {
       return res.status(404).json({ success: false, message: 'No tracking data found' });
     }

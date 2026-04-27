@@ -8,27 +8,33 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
+  Image,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { fetchUserBookings } from '../services/api';
+import carImage from '../assets/leftcare1.png';
+
+const { width } = Dimensions.get('window');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TrackingRouteProp = RouteProp<RootStackParamList, 'LiveTracking'>;
 
 const STAGES = [
-  { id: 'pending', label: 'Booking Pending', icon: '⏳', desc: 'Awaiting confirmation.' },
-  { id: 'confirmed', label: 'Booking Confirmed', icon: '📝', desc: 'Your booking has been confirmed.' },
-  { id: 'on_the_way', label: 'On The Way', icon: '🛵', desc: 'Executive is on the way.' },
-  { id: 'received', label: 'Vehicle Received', icon: '📥', desc: 'Your vehicle has reached the center.' },
-  { id: 'inspected', label: 'Inspected', icon: '🔍', desc: 'Initial inspection complete.' },
-  { id: 'in_service', label: 'In Service', icon: '🛠️', desc: 'Services are being performed.' },
-  { id: 'quality_check', label: 'Quality Check', icon: '✅', desc: 'Final testing in progress.' },
-  { id: 'ready', label: 'Ready', icon: '🎁', desc: 'Vehicle is ready for pickup/delivery.' },
-  { id: 'out_for_delivery', label: 'Out for Delivery', icon: '🚀', desc: 'Vehicle is out for delivery.' },
-  { id: 'delivered', label: 'Delivered', icon: '🏁', desc: 'Vehicle has been securely delivered.' },
+  { id: 'pending', label: 'Booking pending' },
+  { id: 'confirmed', label: 'Booking confirmed' },
+  { id: 'on_the_way', label: 'On the way' },
+  { id: 'received', label: 'Vehicle received' },
+  { id: 'inspected', label: 'Initial inspection' },
+  { id: 'in_service', label: 'Service inprogress' },
+  { id: 'quality_check', label: 'Quality check' },
+  { id: 'ready', label: 'Ready for pickup' },
+  { id: 'out_for_delivery', label: 'Out for delivery' },
+  { id: 'delivered', label: 'Delivery' },
+  { id: 'cancelled', label: 'Cancelled' },
 ];
 
 const LiveTrackingPage = () => {
@@ -39,32 +45,12 @@ const LiveTrackingPage = () => {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
   const [currentStage, setCurrentStage] = useState('pending');
-  const [simulating, setSimulating] = useState(false);
 
   useEffect(() => {
-    let simInterval: any;
-    if (simulating) {
-      simInterval = setInterval(() => {
-        setCurrentStage(prev => {
-          const currentIndex = STAGES.findIndex(s => s.id === prev);
-          if (currentIndex < STAGES.length - 1) {
-            return STAGES[currentIndex + 1].id;
-          }
-          setSimulating(false);
-          return prev;
-        });
-      }, 5000);
-    }
-    return () => clearInterval(simInterval);
-  }, [simulating]);
-
-  useEffect(() => {
-    if (!simulating) {
-      loadTrackingData();
-      const interval = setInterval(loadTrackingData, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [simulating]);
+    loadTrackingData();
+    const interval = setInterval(loadTrackingData, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadTrackingData = async () => {
     try {
@@ -73,11 +59,9 @@ const LiveTrackingPage = () => {
       
       if (currentBooking) {
         setBooking(currentBooking);
-        if (currentBooking.status === 'completed') {
-          setCurrentStage('delivered');
-        } else {
-          setCurrentStage(currentBooking.status || 'pending');
-        }
+        let status = currentBooking.status || 'pending';
+        if (status === 'completed') status = 'delivered';
+        setCurrentStage(status);
       }
     } catch (error) {
       console.error('Tracking fetch error:', error);
@@ -88,8 +72,7 @@ const LiveTrackingPage = () => {
 
   if (loading || !booking) return (
     <View style={styles.loadingContainer}>
-       <ActivityIndicator size="large" color={COLORS.primary} />
-       <Text style={styles.loadingText}>Loading tracking details...</Text>
+       <ActivityIndicator size="large" color="#f28b2c" />
     </View>
   );
 
@@ -97,91 +80,30 @@ const LiveTrackingPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live Tracking</Text>
-        <TouchableOpacity 
-           style={[styles.demoButton, simulating && { backgroundColor: COLORS.primary }]} 
-           onPress={() => setSimulating(!simulating)}
-        >
-          <Text style={[styles.demoButtonText, simulating && { color: COLORS.white }]}>
-             {simulating ? 'Simulating...' : 'Demo Mode'}
-          </Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Live Tracking</Text>
+        </View>
+        <TouchableOpacity style={styles.helpButton}>
+          <Text style={styles.helpText}>Help</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statusCard}>
-          <Text style={styles.statusLabel}>Current Status</Text>
-          <Text style={styles.statusTitle}>
-             {STAGES[currentStageIndex]?.label || (currentStage.charAt(0).toUpperCase() + currentStage.slice(1).replace(/_/g, ' '))}
-          </Text>
-          <Text style={styles.estimatedTime}>
-             Booking ID: {booking.bookingRef}
-          </Text>
+        {/* Service Status Heading */}
+        <View style={styles.statusHeadingContainer}>
+          <Text style={styles.statusHeading}>Service Status</Text>
+          <Text style={styles.completionTime}>Completion: 04:30 PM</Text>
         </View>
 
-        <View style={styles.stepperContainer}>
-          {STAGES.map((stage, index) => {
-            const isCompleted = currentStageIndex > index;
-            const isCurrent = currentStage === stage.id;
-            
-            return (
-              <View key={stage.id} style={styles.stepRow}>
-                <View style={styles.stepIndicator}>
-                  <View style={[
-                    styles.stepCircle,
-                    isCompleted && styles.stepCompleted,
-                    isCurrent && styles.stepCurrent,
-                  ]}>
-                    <Text style={styles.stepIcon}>{stage.icon}</Text>
-                  </View>
-                  {index < STAGES.length - 1 && (
-                    <View style={[
-                      styles.stepLine,
-                      isCompleted && styles.stepLineCompleted,
-                    ]} />
-                  )}
-                </View>
-                <View style={styles.stepInfo}>
-                  <Text style={[
-                    styles.stepLabel,
-                    isCurrent && styles.stepLabelCurrent,
-                    isCompleted && styles.stepLabelCompleted,
-                  ]}>
-                    {stage.label}
-                  </Text>
-                  {isCurrent && (
-                    <Text style={styles.stepDesc}>{stage.desc}</Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
+        {/* Info Card */}
         <View style={styles.infoCard}>
-          {/* Vendor Details */}
-          <Text style={styles.sectionHeading}>Vendor Details</Text>
-          <View style={styles.infoRow}>
-            <View style={styles.infoCol}>
-              <Text style={styles.infoLabel}>Shop</Text>
-              <Text style={styles.infoValue}>{booking.vendorDetails?.shopName || booking.center?.shopName || booking.center?.center_name || 'N/A'}</Text>
-            </View>
-            <TouchableOpacity style={styles.callButton}>
-              <Text style={styles.callButtonText}>📞 Call {booking.vendorDetails?.phone || 'Vendor'}</Text>
-            </TouchableOpacity>
-          </View>
-          {booking.vendorDetails?.address ? <Text style={styles.addressText}>{booking.vendorDetails.address}</Text> : null}
-
-          <View style={styles.divider} />
-
-          {/* User & Vehicle Details */}
-          <Text style={styles.sectionHeading}>Service Target</Text>
           <View style={styles.infoRow}>
             <View style={styles.infoCol}>
               <Text style={styles.infoLabel}>Vehicle</Text>
@@ -190,45 +112,116 @@ const LiveTrackingPage = () => {
               </Text>
             </View>
             <View style={styles.infoCol}>
-              <Text style={styles.infoLabel}>Reg No</Text>
-              <Text style={styles.infoValue}>{booking.vehicleDetails?.registration_no || booking.vehicle?.registration_no}</Text>
+              <Text style={styles.infoLabel}>Booking Id</Text>
+              <Text style={styles.infoValue}>#{booking.bookingRef}</Text>
             </View>
-          </View>
-          <Text style={styles.addressText}>Address: {booking.userDetails?.address || 'N/A'}</Text>
-
-          <View style={styles.divider} />
-
-          {/* Services & Payment Details */}
-          <Text style={styles.sectionHeading}>Payment & Services</Text>
-          <View style={styles.servicesBox}>
-            {(booking.serviceNames || []).length > 0 ? (
-              booking.serviceNames.map((sName: string, i: number) => (
-                <Text key={i} style={styles.bulletItem}>• {sName}</Text>
-              ))
-            ) : (
-              (booking.services || []).map((sArr: any, i: number) => (
-                <Text key={i} style={styles.bulletItem}>• {sArr.name}</Text>
-              ))
-            )}
           </View>
           
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { marginTop: 20 }]}>
             <View style={styles.infoCol}>
-              <Text style={styles.infoLabel}>Method</Text>
-              <Text style={styles.infoValue}>{booking.paymentMethod} ({booking.paymentStatus})</Text>
+              <Text style={styles.infoLabel}>Center</Text>
+              <Text style={styles.infoValue}>{booking.vendorDetails?.shopName || booking.center?.center_name || 'N/A'}</Text>
             </View>
-            <View style={styles.infoCol}>
-              <Text style={styles.infoLabel}>Total Billed</Text>
-              <Text style={[styles.infoValue, { color: COLORS.primary }]}>₹{booking.totalAmount}</Text>
-            </View>
+            <TouchableOpacity style={styles.callCenterBtn}>
+              <Text style={styles.callCenterText}>📞 {booking.vendorDetails?.phone || booking.center?.phone || 'N/A'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Tracking Section */}
+        <View style={styles.trackingSection}>
+          {/* Left Side Car Image */}
+          <View style={styles.carContainer}>
+            <Image 
+              source={carImage} 
+              style={styles.carImage} 
+              resizeMode="contain"
+            />
           </View>
 
+          {/* Right Side Stepper */}
+          <View style={styles.stepperWrapper}>
+            <View style={styles.stepperContainer}>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {STAGES.map((stage, index) => {
+                  const isCompleted = currentStageIndex > index;
+                  const isCurrent = currentStage === stage.id;
+                  
+                  return (
+                    <View key={stage.id} style={styles.stepRow}>
+                      <View style={styles.indicatorContainer}>
+                        <View style={[
+                          styles.dot,
+                          isCompleted && styles.dotCompleted,
+                          isCurrent && (
+                            stage.id === 'cancelled' ? styles.dotCanceled : 
+                            stage.id === 'delivered' ? styles.dotCompleted : // Make delivery green when active
+                            styles.dotCurrent
+                          ),
+                          !isCompleted && !isCurrent && styles.dotPending
+                        ]} />
+                        {index < STAGES.length - 1 && (
+                          <View style={[
+                            styles.line,
+                            isCompleted && styles.lineCompleted,
+                            isCurrent && styles.lineCurrent
+                          ]} />
+                        )}
+                      </View>
+                      <View style={styles.stepInfo}>
+                        <Text style={[
+                          styles.stepLabel,
+                          (isCompleted || isCurrent) && styles.stepLabelActive
+                        ]}>
+                          {stage.label}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </View>
+
+        {/* Booking Details Section */}
+        <View style={styles.detailsSection}>
+          <Text style={styles.sectionTitle}>Booking Details</Text>
+          <View style={styles.detailsCard}>
+            <Text style={styles.detailLabel}>Services Selected:</Text>
+            <View style={styles.servicesList}>
+              {(booking.serviceNames || []).map((name: string, i: number) => (
+                <Text key={i} style={styles.serviceItem}>• {name}</Text>
+              )) || (booking.services || []).map((s: any, i: number) => (
+                <Text key={i} style={styles.serviceItem}>• {s.name}</Text>
+              ))}
+            </View>
+            
+            <View style={styles.detailDivider} />
+            
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Payment Method</Text>
+              <Text style={styles.detailValue}>{booking.paymentMethod}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Payment Status</Text>
+              <Text style={[styles.detailValue, { color: booking.paymentStatus === 'paid' ? '#00c853' : '#f28b2c' }]}>
+                {booking.paymentStatus.toUpperCase()}
+              </Text>
+            </View>
+            
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalValue}>₹ {booking.totalAmount}</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
+      {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.homeButton} onPress={() => navigation.navigate('HomeTabs')}>
-          <Text style={styles.homeButtonText}>Back to Dashboard</Text>
+        <TouchableOpacity style={styles.dashboardBtn} onPress={() => navigation.navigate('HomeTabs')}>
+          <Text style={styles.dashboardBtnText}>Back to dashboard</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -238,243 +231,267 @@ const LiveTrackingPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#000000',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  loadingText: {
-    marginTop: 10,
-    color: COLORS.textSecondary,
-    fontSize: 14,
+    backgroundColor: '#000000',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: COLORS.white,
-    ...SHADOWS.light,
+    paddingTop: 50,
+    paddingBottom: 20,
   },
-  backButton: {
-    padding: 5,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  backButtonText: {
+  backIcon: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFFFFF',
+    marginRight: 15,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
-  demoButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: COLORS.lightGrey,
-    borderRadius: 8,
+  helpButton: {
+    backgroundColor: '#f28b2c',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  demoButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 12,
+  helpText: {
+    color: '#000000',
+    fontWeight: '700',
+    fontSize: 14,
   },
   content: {
     flex: 1,
-    padding: 20,
   },
-  statusCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 20,
-    padding: 25,
-    marginBottom: 30,
-    ...SHADOWS.medium,
-  },
-  statusLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  statusTitle: {
-    color: COLORS.white,
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 12,
-  },
-  estimatedTime: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '600',
-    opacity: 0.9,
-  },
-  stepperContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 25,
+  statusHeadingContainer: {
+    alignItems: 'center',
+    marginTop: 20,
     marginBottom: 25,
-    ...SHADOWS.light,
   },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  statusHeading: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#f28b2c',
     marginBottom: 5,
   },
-  stepIndicator: {
-    width: 50,
-    alignItems: 'center',
-  },
-  stepCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.lightGrey,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  stepCurrent: {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.primary,
-    transform: [{ scale: 1.2 }],
-    ...SHADOWS.light,
-  },
-  stepCompleted: {
-    backgroundColor: COLORS.primary,
-  },
-  stepIcon: {
-    fontSize: 18,
-  },
-  stepLine: {
-    width: 3,
-    height: 45,
-    backgroundColor: COLORS.lightGrey,
-    marginTop: -5,
-    marginBottom: -5,
-    zIndex: 1,
-  },
-  stepLineCompleted: {
-    backgroundColor: COLORS.primary,
-  },
-  stepInfo: {
-    flex: 1,
-    marginLeft: 15,
-    paddingTop: 8,
-    paddingBottom: 25,
-  },
-  stepLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.grey,
-  },
-  stepLabelCurrent: {
-    color: COLORS.primary,
-    fontWeight: '800',
-  },
-  stepLabelCompleted: {
-    color: COLORS.text,
-  },
-  stepDesc: {
-    marginTop: 8,
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
+  completionTime: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.8,
   },
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: '#121212',
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 100,
-    ...SHADOWS.light,
+    padding: 25,
+    marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#f28b2c',
+    marginBottom: 30,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   infoCol: {
     flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
-    color: COLORS.grey,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 5,
   },
   infoValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: 13,
+    color: '#AAAAAA',
   },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.lightGrey,
-    marginVertical: 15,
+  callCenterBtn: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginLeft: -55,
   },
-  callButton: {
-    backgroundColor: COLORS.primary + '15',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-  },
-  callButtonText: {
-    color: COLORS.primary,
+  callCenterText: {
+    color: '#00c853',
     fontWeight: '700',
     fontSize: 14,
+    textAlign: 'left',
   },
-  sectionHeading: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 10,
-    marginTop: 5,
+  trackingSection: {
+    flexDirection: 'row',
+    height: 560,
+    marginTop: 20,
   },
-  addressText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 8,
-    lineHeight: 18,
+  carContainer: {
+    width: '50%',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    position: 'relative',
   },
-  servicesBox: {
-    backgroundColor: COLORS.background,
+  carImage: {
+    width: width * 1.1,
+    height: 555,
+    position: 'absolute',
+    right: -110,
+    zIndex: 1,
+  },
+  stepperWrapper: {
+    width: '50%',
+    paddingLeft: 10,
+    zIndex: 2,
+  },
+  stepperContainer: {
+    backgroundColor: 'rgba(26, 26, 26, 0.95)',
+    borderRadius: 25,
     padding: 12,
-    borderRadius: 8,
+    paddingVertical: 20,
+    height: '100%',
+  },
+  stepRow: {
+    flexDirection: 'row',
+    minHeight: 50,
+  },
+  indicatorContainer: {
+    alignItems: 'center',
+    width: 20,
+    marginRight: 10,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    zIndex: 2,
+  },
+  dotCompleted: {
+    backgroundColor: '#00c853',
+    borderColor: '#00c853',
+  },
+  dotCurrent: {
+    backgroundColor: '#03a9f4',
+    borderColor: '#03a9f4',
+  },
+  dotCanceled: {
+    backgroundColor: '#ff4444',
+    borderColor: '#ff4444',
+  },
+  dotPending: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  line: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#444444',
+    marginVertical: 4,
+  },
+  lineCompleted: {
+    backgroundColor: '#00c853',
+  },
+  lineCurrent: {
+    backgroundColor: '#444444',
+  },
+  stepInfo: {
+    flex: 1,
+    marginTop: -2,
+  },
+  stepLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#888888',
+  },
+  stepLabelActive: {
+    color: '#FFFFFF',
+  },
+  detailsSection: {
+    paddingHorizontal: 20,
+    marginTop: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#f28b2c',
     marginBottom: 15,
   },
-  bulletItem: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.grey,
+  detailsCard: {
+    backgroundColor: '#121212',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#AAAAAA',
+    marginBottom: 5,
+  },
+  servicesList: {
+    marginTop: 5,
+    marginBottom: 15,
+  },
+  serviceItem: {
+    color: '#FFFFFF',
+    fontSize: 14,
     marginBottom: 4,
   },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    ...SHADOWS.medium,
+  detailDivider: {
+    height: 1,
+    backgroundColor: '#333333',
+    marginVertical: 15,
   },
-  homeButton: {
-    backgroundColor: COLORS.primary,
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  detailValue: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#f28b2c',
+  },
+  footer: {
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+  },
+  dashboardBtn: {
+    backgroundColor: '#f28b2c',
     paddingVertical: 18,
-    borderRadius: 15,
+    borderRadius: 30,
     alignItems: 'center',
   },
-  homeButtonText: {
-    color: COLORS.white,
-    fontSize: 18,
-    fontWeight: 'bold',
+  dashboardBtnText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });
 

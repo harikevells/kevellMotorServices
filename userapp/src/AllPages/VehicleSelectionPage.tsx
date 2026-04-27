@@ -41,11 +41,11 @@ const VehicleSelectionPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'VehicleSelection'>>();
   const preSelectedCategory = route.params?.category;
-  
+
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Add Vehicle State
   const [showAddModal, setShowAddModal] = useState(false);
   const [addStep, setAddStep] = useState(1);
@@ -83,9 +83,9 @@ const VehicleSelectionPage = () => {
       setLoadingBrands(true);
       setBrands([]);
       console.log(`[BRAND-FETCH] Category: ${cat}, Fuel: ${fuel}`);
-      
+
       const res = await fetchBrands(cat, fuel);
-      
+
       // The backend returns { success: true, data: [...] }
       // api.ts interceptor returns response.data
       // So res is { success: true, data: [...] }
@@ -107,8 +107,8 @@ const VehicleSelectionPage = () => {
   const handleAddVehicle = async () => {
     try {
       if (!newVehicle.brand || !newVehicle.model || !newVehicle.registration_no || !newVehicle.year) {
-         Alert.alert('Error', 'Please fill all details including brand');
-         return;
+        Alert.alert('Error', 'Please fill all details including brand');
+        return;
       }
       setLoading(true);
       await addVehicle({
@@ -152,7 +152,7 @@ const VehicleSelectionPage = () => {
       <View style={styles.vehicleInfo}>
         <Text style={styles.vehicleName}>{item.brand} {item.model}</Text>
         <Text style={styles.vehicleDetails}>
-           {item.vehicle_category?.replace('_', '-').toUpperCase()} • {item.fuel_type?.toUpperCase()} • {item.registration_no}
+          {item.vehicle_category?.replace('_', '-').toUpperCase()} • {item.fuel_type?.toUpperCase()} • {item.registration_no}
         </Text>
       </View>
       <View style={[styles.radio, selectedVehicle?._id === item._id && styles.radioActive]}>
@@ -164,7 +164,7 @@ const VehicleSelectionPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
@@ -177,14 +177,14 @@ const VehicleSelectionPage = () => {
 
       <View style={styles.content}>
         <Text style={styles.subTitle}>Select your vehicle for booking</Text>
-        
+
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
         ) : vehicles.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No vehicles added.</Text>
             <TouchableOpacity style={styles.addInitialButton} onPress={() => setShowAddModal(true)}>
-               <Text style={styles.addInitialText}>Add a Vehicle</Text>
+              <Text style={styles.addInitialText}>Add a Vehicle</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -197,12 +197,13 @@ const VehicleSelectionPage = () => {
           />
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.nextButton, !selectedVehicle && styles.disabledButton]}
-          onPress={() => selectedVehicle && navigation.navigate('ServiceSelection', { 
-             vehicleId: selectedVehicle._id,
-             category: preSelectedCategory || selectedVehicle.vehicle_category,
-             fuel: selectedVehicle.fuel_type
+          onPress={() => selectedVehicle && navigation.navigate('ServiceSelection', {
+            vehicleId: selectedVehicle._id,
+            category: preSelectedCategory || '',
+            fuel: selectedVehicle.fuel_type,
+            vehicleCategory: selectedVehicle.vehicle_category
           })}
           disabled={!selectedVehicle}
         >
@@ -213,122 +214,122 @@ const VehicleSelectionPage = () => {
       {/* Add Vehicle Modal */}
       <Modal visible={showAddModal} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-           <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                 <Text style={styles.modalTitle}>New Vehicle</Text>
-                 <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                    <Text style={styles.closeText}>✕</Text>
-                 </TouchableOpacity>
-              </View>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>New Vehicle</Text>
+              <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                <Text style={styles.closeText}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
-                 {addStep === 1 && (
-                    <View>
-                       <Text style={styles.stepLabel}>Vehicle Category</Text>
-                       {['2_wheeler', '4_wheeler', 'heavy'].map(cat => (
-                          <TouchableOpacity 
-                             key={cat}
-                             style={[styles.optionItem, newVehicle.vehicle_category === cat && styles.selectedOption]}
-                             onPress={() => {
-                                setNewVehicle({...newVehicle, vehicle_category: cat});
-                                setAddStep(2);
-                             }}
-                          >
-                             <Text style={styles.optionText}>{cat.replace('_', ' ').toUpperCase()}</Text>
-                          </TouchableOpacity>
-                       ))}
-                    </View>
-                 )}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {addStep === 1 && (
+                <View>
+                  <Text style={styles.stepLabel}>Vehicle Category</Text>
+                  {['2_wheeler', '4_wheeler', 'heavy'].map(cat => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[styles.optionItem, newVehicle.vehicle_category === cat && styles.selectedOption]}
+                      onPress={() => {
+                        setNewVehicle({ ...newVehicle, vehicle_category: cat });
+                        setAddStep(2);
+                      }}
+                    >
+                      <Text style={styles.optionText}>{cat.replace('_', ' ').toUpperCase()}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
 
-                 {addStep === 2 && (
-                    <View>
-                       <Text style={styles.stepLabel}>Fuel Type</Text>
-                       {['electric', 'petrol', 'diesel', 'cng', 'hybrid'].map(fuel => (
-                          <TouchableOpacity 
-                             key={fuel}
-                             style={[styles.optionItem, newVehicle.fuel_type === fuel && styles.selectedOption]}
-                             onPress={() => {
-                                const selectedCat = newVehicle.vehicle_category;
-                                setNewVehicle(prev => ({...prev, fuel_type: fuel}));
-                                setAddStep(3);
-                                loadBrands(selectedCat, fuel);
-                             }}
-                          >
-                             <Text style={styles.optionText}>{fuel.toUpperCase()}</Text>
-                          </TouchableOpacity>
-                       ))}
-                       <TouchableOpacity onPress={() => setAddStep(1)}><Text style={styles.backLink}>← Back</Text></TouchableOpacity>
-                    </View>
-                 )}
+              {addStep === 2 && (
+                <View>
+                  <Text style={styles.stepLabel}>Fuel Type</Text>
+                  {['electric', 'petrol', 'diesel', 'cng', 'hybrid'].map(fuel => (
+                    <TouchableOpacity
+                      key={fuel}
+                      style={[styles.optionItem, newVehicle.fuel_type === fuel && styles.selectedOption]}
+                      onPress={() => {
+                        const selectedCat = newVehicle.vehicle_category;
+                        setNewVehicle(prev => ({ ...prev, fuel_type: fuel }));
+                        setAddStep(3);
+                        loadBrands(selectedCat, fuel);
+                      }}
+                    >
+                      <Text style={styles.optionText}>{fuel.toUpperCase()}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity onPress={() => setAddStep(1)}><Text style={styles.backLink}>← Back</Text></TouchableOpacity>
+                </View>
+              )}
 
-                 {addStep === 3 && (
-                    <View>
-                       <Text style={styles.stepLabel}>Choose Brand</Text>
-                       {loadingBrands ? (
-                         <View style={styles.loadingWrapper}>
-                           <ActivityIndicator color={COLORS.primary} size="large" />
-                           <Text style={styles.loadingText}>Fetching available brands...</Text>
-                         </View>
-                       ) : brands.length === 0 ? (
-                         <View style={styles.emptyBrands}>
-                           <Text style={styles.noBrandsText}>No brands found for this search.</Text>
-                           <TouchableOpacity onPress={() => setAddStep(2)}>
-                             <Text style={styles.backLink}>← Try another fuel</Text>
-                           </TouchableOpacity>
-                         </View>
-                       ) : (
-                          brands.map(b => (
-                             <TouchableOpacity 
-                                key={b._id}
-                                style={[styles.optionItem, newVehicle.brand === b.brand_name && styles.selectedOption]}
-                                onPress={() => {
-                                   setNewVehicle({...newVehicle, brand: b.brand_name});
-                                   setAddStep(4);
-                                }}
-                             >
-                                <Text style={styles.optionText}>{b.brand_name}</Text>
-                             </TouchableOpacity>
-                          ))
-                       )}
-                       {brands.length > 0 && <TouchableOpacity onPress={() => setAddStep(2)}><Text style={styles.backLink}>← Back</Text></TouchableOpacity>}
+              {addStep === 3 && (
+                <View>
+                  <Text style={styles.stepLabel}>Choose Brand</Text>
+                  {loadingBrands ? (
+                    <View style={styles.loadingWrapper}>
+                      <ActivityIndicator color={COLORS.primary} size="large" />
+                      <Text style={styles.loadingText}>Fetching available brands...</Text>
                     </View>
-                 )}
+                  ) : brands.length === 0 ? (
+                    <View style={styles.emptyBrands}>
+                      <Text style={styles.noBrandsText}>No brands found for this search.</Text>
+                      <TouchableOpacity onPress={() => setAddStep(2)}>
+                        <Text style={styles.backLink}>← Try another fuel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    brands.map(b => (
+                      <TouchableOpacity
+                        key={b._id}
+                        style={[styles.optionItem, newVehicle.brand === b.brand_name && styles.selectedOption]}
+                        onPress={() => {
+                          setNewVehicle({ ...newVehicle, brand: b.brand_name });
+                          setAddStep(4);
+                        }}
+                      >
+                        <Text style={styles.optionText}>{b.brand_name}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                  {brands.length > 0 && <TouchableOpacity onPress={() => setAddStep(2)}><Text style={styles.backLink}>← Back</Text></TouchableOpacity>}
+                </View>
+              )}
 
-                 {addStep === 4 && (
-                    <View>
-                       <Text style={styles.stepLabel}>Details for {newVehicle.brand}</Text>
-                       <TextInput 
-                          style={styles.input} 
-                          placeholder="Model (e.g. Model X, Activa)"
-                          value={newVehicle.model}
-                          onChangeText={v => setNewVehicle({...newVehicle, model: v})}
-                          placeholderTextColor={COLORS.grey}
-                       />
-                       <TextInput 
-                          style={styles.input} 
-                          placeholder="Reg. Number (e.g. KA01AB1234)"
-                          value={newVehicle.registration_no}
-                          onChangeText={v => setNewVehicle({...newVehicle, registration_no: v})}
-                          autoCapitalize="characters"
-                          placeholderTextColor={COLORS.grey}
-                       />
-                       <TextInput 
-                          style={styles.input} 
-                          placeholder="Year (e.g. 2023)"
-                          keyboardType="numeric"
-                          value={newVehicle.year}
-                          onChangeText={v => setNewVehicle({...newVehicle, year: v})}
-                          placeholderTextColor={COLORS.grey}
-                       />
-                       
-                       <TouchableOpacity style={styles.submitButton} onPress={handleAddVehicle}>
-                          <Text style={styles.submitButtonText}>Complete Setup</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity onPress={() => setAddStep(3)}><Text style={styles.backLink}>← Back</Text></TouchableOpacity>
-                    </View>
-                 )}
-              </ScrollView>
-           </View>
+              {addStep === 4 && (
+                <View>
+                  <Text style={styles.stepLabel}>Details for {newVehicle.brand}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Model (e.g. Model X, Activa)"
+                    value={newVehicle.model}
+                    onChangeText={v => setNewVehicle({ ...newVehicle, model: v })}
+                    placeholderTextColor={COLORS.grey}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Reg. Number (e.g. KA01AB1234)"
+                    value={newVehicle.registration_no}
+                    onChangeText={v => setNewVehicle({ ...newVehicle, registration_no: v })}
+                    autoCapitalize="characters"
+                    placeholderTextColor={COLORS.grey}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Year (e.g. 2023)"
+                    keyboardType="numeric"
+                    value={newVehicle.year}
+                    onChangeText={v => setNewVehicle({ ...newVehicle, year: v })}
+                    placeholderTextColor={COLORS.grey}
+                  />
+
+                  <TouchableOpacity style={styles.submitButton} onPress={handleAddVehicle}>
+                    <Text style={styles.submitButtonText}>Complete Setup</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setAddStep(3)}><Text style={styles.backLink}>← Back</Text></TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -338,37 +339,40 @@ const VehicleSelectionPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#060606',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    paddingTop: 50,
     paddingVertical: 15,
-    backgroundColor: COLORS.white,
-    ...SHADOWS.light,
+    backgroundColor: '#060606',
   },
   backButton: {
     padding: 5,
   },
   backButtonText: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   addButton: {
-    padding: 8,
-    backgroundColor: COLORS.lightGrey,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f28b2c33',
   },
   addButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
+    color: '#f28b2c',
+    fontWeight: '800',
   },
   content: {
     flex: 1,
@@ -376,8 +380,9 @@ const styles = StyleSheet.create({
   },
   subTitle: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     marginBottom: 20,
+    fontWeight: '600',
   },
   listContainer: {
     paddingBottom: 20,
@@ -385,24 +390,26 @@ const styles = StyleSheet.create({
   vehicleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: '#121212',
     padding: 15,
-    borderRadius: 15,
+    borderRadius: 20,
     marginBottom: 15,
-    ...SHADOWS.light,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#1A1A1A',
   },
   selectedCard: {
-    borderColor: COLORS.primary,
+    borderColor: '#f28b2c',
+    backgroundColor: '#1A1A1A',
   },
   vehicleIconContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: COLORS.lightGrey,
+    backgroundColor: '#1A1A1A',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   vehicleInfo: {
     flex: 1,
@@ -411,11 +418,11 @@ const styles = StyleSheet.create({
   vehicleName: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   vehicleDetails: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     marginTop: 4,
   },
   radio: {
@@ -423,34 +430,39 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: COLORS.grey,
+    borderColor: '#333333',
     justifyContent: 'center',
     alignItems: 'center',
   },
   radioActive: {
-    borderColor: COLORS.primary,
+    borderColor: '#f28b2c',
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
   },
   nextButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     paddingVertical: 18,
     borderRadius: 15,
     alignItems: 'center',
     marginTop: 20,
-    ...SHADOWS.medium,
+    shadowColor: '#f28b2c',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
   disabledButton: {
-    backgroundColor: COLORS.grey,
+    backgroundColor: '#333333',
+    opacity: 0.5,
   },
   nextButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   emptyContainer: {
     flex: 1,
@@ -459,112 +471,123 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     marginBottom: 20,
+    textAlign: 'center',
   },
   addInitialButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    backgroundColor: '#f28b2c',
     borderRadius: 12,
   },
   addInitialText: {
-    color: COLORS.white,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    backgroundColor: '#121212',
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
     padding: 25,
     maxHeight: '90%',
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   closeText: {
     fontSize: 24,
-    color: COLORS.grey,
+    color: '#AAAAAA',
+    padding: 5,
   },
   stepLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.textSecondary,
+    fontWeight: '700',
+    color: '#f28b2c',
     marginBottom: 15,
   },
   optionItem: {
     padding: 18,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightGrey,
-    marginBottom: 10,
+    borderRadius: 15,
+    backgroundColor: '#1A1A1A',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   selectedOption: {
-    backgroundColor: COLORS.primary + '20',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+    backgroundColor: '#f28b2c15',
+    borderColor: '#f28b2c',
   },
   optionText: {
     fontSize: 16,
-    color: COLORS.text,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   backLink: {
-    color: COLORS.primary,
-    marginTop: 15,
+    color: '#AAAAAA',
+    marginTop: 20,
     fontWeight: '600',
     textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   loadingWrapper: {
-    padding: 30,
+    padding: 40,
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 10,
-    color: COLORS.grey,
+    marginTop: 15,
+    color: '#f28b2c',
     fontSize: 14,
+    fontWeight: '600',
   },
   emptyBrands: {
-    padding: 30,
+    padding: 40,
     alignItems: 'center',
   },
   noBrandsText: {
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     fontSize: 14,
     textAlign: 'center',
+    lineHeight: 20,
   },
   input: {
-    backgroundColor: COLORS.lightGrey,
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 15,
+    padding: 18,
     fontSize: 16,
     marginBottom: 15,
-    color: COLORS.text,
+    color: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     padding: 18,
     borderRadius: 15,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 15,
   },
   submitButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
 });
+
 
 export default VehicleSelectionPage;

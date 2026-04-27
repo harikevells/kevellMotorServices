@@ -41,6 +41,30 @@ const Ordermanagement = () => {
         }
     };
 
+    const handleStatusChange = async (bookingId, newStatus) => {
+        const url = `${API_BASE_URL}/admin/${bookingId}/status`;
+        console.log('UPDATING STATUS AT:', url);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.patch(url, 
+                { status: newStatus },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            
+            if (response.data.success) {
+                setBookings(prev => prev.map(b => 
+                    b._id === bookingId ? { ...b, status: newStatus } : b
+                ));
+                if (selectedBooking && selectedBooking._id === bookingId) {
+                    setSelectedBooking(prev => ({ ...prev, status: newStatus }));
+                }
+            }
+        } catch (error) {
+            console.error('Error updating status:', error.response?.data || error.message);
+            alert(`Failed to update status: ${error.response?.data?.message || error.message}`);
+        }
+    };
+
     useEffect(() => {
         fetchBookings();
     }, [searchTerm, filterStatus]);
@@ -52,11 +76,8 @@ const Ordermanagement = () => {
     const totalPages = Math.ceil(bookings.length / rowsPerPage);
 
     const getStatusClass = (status) => {
-        const s = status.toLowerCase().replace(' ', '-');
-        if (s === 'delivered' || s === 'completed') return 'delivered';
-        if (s === 'pending') return 'pending';
-        if (s === 'in-progress') return 'in-progress';
-        return '';
+        if (!status) return '';
+        return status.toLowerCase().replace(/_/g, '-');
     };
 
     const getStatusStyle = (status) => {
@@ -131,14 +152,30 @@ const Ordermanagement = () => {
                                     <td>{booking.vendorDetails?.shopName || "N/A"}</td>
                                     <td>{booking.vehicleDetails?.vehicle_category || "N/A"}</td>
                                     <td>
-                                        <div className="text-truncate" style={{ maxWidth: '200px' }}>
-                                            {booking.serviceNames?.join(', ')}
+                                        <div className="text-truncate" style={{ maxWidth: '200px' }} title={booking.serviceNames?.length > 0 ? booking.serviceNames.join(', ') : booking.services?.map(s => s.serviceName).join(', ')}>
+                                            {booking.serviceNames?.length > 0 
+                                                ? booking.serviceNames.join(', ') 
+                                                : booking.services?.map(s => s.serviceName).join(', ') || "N/A"}
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`status-val ${getStatusClass(booking.status)}`}>
-                                            {booking.status}
-                                        </span>
+                                        <Form.Select 
+                                            size="sm"
+                                            className={`status-select-custom ${getStatusClass(booking.status)}`}
+                                            value={booking.status}
+                                            onChange={(e) => handleStatusChange(booking._id, e.target.value)}
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="confirmed">Confirmed</option>
+                                            <option value="received">Received</option>
+                                            <option value="inspected">Inspected</option>
+                                            <option value="in_service">In Service</option>
+                                            <option value="quality_check">Quality Check</option>
+                                            <option value="ready">Ready</option>
+                                            <option value="out_for_delivery">Out for Delivery</option>
+                                            <option value="delivered">Delivered</option>
+                                            <option value="cancelled">Cancelled</option>
+                                        </Form.Select>
                                     </td>
                                     <td>
                                         <div className="action-icons" style={{ display: 'flex', justifyContent: 'center' }}>
@@ -220,6 +257,19 @@ const Ordermanagement = () => {
                                     <p><strong>Name:</strong> {selectedBooking.userDetails?.name}</p>
                                     <p><strong>Phone:</strong> {selectedBooking.userDetails?.phone}</p>
                                     <p><strong>Address:</strong> {selectedBooking.userDetails?.address || 'N/A'}</p>
+                                    {selectedBooking.userDetails?.latitude !== undefined && (
+                                        <p><strong>Live Location:</strong> 
+                                            <a 
+                                                href={`https://www.google.com/maps?q=${selectedBooking.userDetails.latitude},${selectedBooking.userDetails.longitude}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="ms-2 text-warning"
+                                                style={{ textDecoration: 'none' }}
+                                            >
+                                                📍 {selectedBooking.userDetails.latitude.toFixed(4)}, {selectedBooking.userDetails.longitude.toFixed(4)}
+                                            </a>
+                                        </p>
+                                    )}
                                 </div>
                             </Col>
                             <Col md={6}>
@@ -247,7 +297,25 @@ const Ordermanagement = () => {
                                     <h6 className="section-title"><Calendar size={16} /> Booking Schedule</h6>
                                     <p><strong>Date:</strong> {new Date(selectedBooking.bookingDate).toLocaleDateString()}</p>
                                     <p><strong>Time Slot:</strong> {selectedBooking.timeSlot}</p>
-                                    <p><strong>Status:</strong> <Badge bg={getStatusStyle(selectedBooking.status).bg} text={getStatusStyle(selectedBooking.status).color}>{selectedBooking.status}</Badge></p>
+                                    <p><strong>Status:</strong> 
+                                        <Form.Select 
+                                            size="sm"
+                                            className={`mt-1 status-select-custom ${getStatusClass(selectedBooking.status)}`}
+                                            value={selectedBooking.status}
+                                            onChange={(e) => handleStatusChange(selectedBooking._id, e.target.value)}
+                                            style={{ width: 'fit-content', display: 'inline-block', marginLeft: '10px' }}
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="confirmed">Confirmed</option>
+                                            <option value="received">Received</option>
+                                            <option value="inspected">Inspected</option>
+                                            <option value="in_service">In Service</option>
+                                            <option value="quality_check">Quality Check</option>
+                                            <option value="ready">Ready</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="cancelled">Cancelled</option>
+                                        </Form.Select>
+                                    </p>
                                     <p><strong>Created:</strong> {new Date(selectedBooking.createdAt).toLocaleString()}</p>
                                 </div>
                             </Col>
@@ -257,8 +325,10 @@ const Ordermanagement = () => {
                                 <div className="detail-section">
                                     <h6 className="section-title"><Wrench size={16} /> Services Requested</h6>
                                     <div className="d-flex flex-wrap gap-2 mb-3">
-                                        {selectedBooking.serviceNames?.map((service, i) => (
-                                            <Badge key={i} bg="secondary" className="px-3 py-2">{service}</Badge>
+                                        {(selectedBooking.serviceNames?.length > 0 
+                                            ? selectedBooking.serviceNames 
+                                            : selectedBooking.services?.map(s => s.serviceName))?.map((service, i) => (
+                                            <Badge key={i} bg="warning" text="dark" className="px-3 py-2 fw-bold">{service}</Badge>
                                         ))}
                                     </div>
                                     <hr className="border-secondary" />

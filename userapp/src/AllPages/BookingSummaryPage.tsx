@@ -5,10 +5,13 @@ import {
   View,
   SafeAreaView,
   TouchableOpacity,
+  TextInput,
   ScrollView,
   StatusBar,
-  ActivityIndicator,
+  PermissionsAndroid,
+  Platform,
   Alert,
+  ActivityIndicator,
   Modal,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -23,13 +26,25 @@ type SummaryRouteProp = RouteProp<RootStackParamList, 'BookingSummary'>;
 const BookingSummaryPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SummaryRouteProp>();
-  const { centerId, serviceIds, slotDate, slotTime, vehicleId, category, fuel } = route.params;
+  const { 
+    centerId, serviceIds, slotDate, slotTime, vehicleId, 
+    category, fuel, vehicleCategory,
+    userName, userPhone, userAddress, latitude, longitude 
+  } = route.params;
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [summaryData, setSummaryData] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'GPay' | 'Card'>('Cash');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // API expects "2 Wheeler" instead of "2_wheeler"
+  const getApiVehicleCat = (cat: string) => {
+    if (cat === '2_wheeler') return '2 Wheeler';
+    if (cat === '4_wheeler') return '4 Wheeler';
+    if (cat === 'heavy') return 'Heavy';
+    return cat;
+  };
 
   useEffect(() => {
     loadSummary();
@@ -43,14 +58,14 @@ const BookingSummaryPage = () => {
       const centerRes = await fetchCenterDetails(centerId);
       
       // 2. Fetch Services (and filter by selected IDs)
-      const servicesRes = await fetchServices('', fuel); 
+      const servicesRes = await fetchServices('', getApiVehicleCat(vehicleCategory), fuel); 
       const selectedServices = servicesRes.data.filter((s: any) => serviceIds.includes(s._id));
       
       // 3. Fetch Vehicle
       const vehiclesRes = await fetchUserVehicles();
       const selectedVehicle = vehiclesRes.data.find((v: any) => v._id === vehicleId);
 
-      const subtotal = selectedServices.reduce((sum: number, s: any) => sum + s.base_price, 0);
+      const subtotal = selectedServices.reduce((sum: number, s: any) => sum + (s.price || 0), 0);
       const tax = Math.round(subtotal * 0.18 * 100) / 100;
 
       setSummaryData({
@@ -79,6 +94,11 @@ const BookingSummaryPage = () => {
         bookingDate: slotDate,
         timeSlot: slotTime,
         paymentMethod: paymentMethod,
+        userName,
+        userPhone,
+        userAddress,
+        latitude,
+        longitude
       });
       
       if (paymentMethod === 'Cash') {
@@ -105,7 +125,7 @@ const BookingSummaryPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -116,6 +136,29 @@ const BookingSummaryPage = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Delivery Details</Text>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Customer</Text>
+              <Text style={styles.infoValue}>{userName}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{userPhone}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Address</Text>
+              <Text style={[styles.infoValue, { fontSize: 13 }]}>{userAddress}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Live Location</Text>
+              <Text style={[styles.infoValue, { color: '#00d084' }]}>📍 {latitude.toFixed(4)}, {longitude.toFixed(4)}</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Vehicle & Center</Text>
           <View style={styles.card}>
@@ -158,8 +201,8 @@ const BookingSummaryPage = () => {
           <View style={styles.card}>
             {summaryData.services.map((service: any, index: number) => (
               <View key={index} style={styles.serviceRow}>
-                <Text style={styles.serviceName}>{service.name}</Text>
-                <Text style={styles.servicePrice}>₹{service.base_price}</Text>
+                <Text style={styles.serviceName}>{service.serviceName}</Text>
+                <Text style={styles.servicePrice}>₹{service.price}</Text>
               </View>
             ))}
             <View style={styles.divider} />
@@ -197,7 +240,6 @@ const BookingSummaryPage = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Payment Method Modal */}
         <Modal
           visible={showPaymentModal}
           transparent={true}
@@ -270,18 +312,18 @@ const BookingSummaryPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#060606',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: '#060606',
   },
   loadingText: {
     marginTop: 15,
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#f28b2c',
   },
   header: {
     flexDirection: 'row',
@@ -289,20 +331,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: COLORS.white,
-    ...SHADOWS.light,
+    backgroundColor: '#060606',
   },
   backButton: {
     padding: 5,
   },
   backButtonText: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -313,15 +354,16 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: '#f28b2c',
     marginBottom: 12,
   },
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: '#121212',
     borderRadius: 20,
     padding: 20,
-    ...SHADOWS.light,
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   infoRow: {
     flexDirection: 'row',
@@ -330,19 +372,19 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
   },
   infoValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
     textAlign: 'right',
     flex: 1,
     marginLeft: 20,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.lightGrey,
+    backgroundColor: '#333333',
     marginVertical: 15,
   },
   serviceRow: {
@@ -352,13 +394,14 @@ const styles = StyleSheet.create({
   },
   serviceName: {
     fontSize: 14,
-    color: COLORS.text,
+    color: '#FFFFFF',
     flex: 1,
+    fontWeight: '600',
   },
   servicePrice: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '700',
+    color: '#f28b2c',
   },
   priceRow: {
     flexDirection: 'row',
@@ -367,22 +410,22 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
   },
   priceValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   totalLabel: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.text,
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   totalValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#f28b2c',
   },
   paymentSection: {
     marginBottom: 120,
@@ -391,20 +434,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: '#121212',
     borderRadius: 15,
     padding: 18,
-    ...SHADOWS.light,
+    borderWidth: 1,
+    borderColor: '#f28b2c33',
   },
   paymentText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   changeText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontWeight: '800',
+    color: '#f28b2c',
   },
   footer: {
     position: 'absolute',
@@ -412,36 +456,45 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 20,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    ...SHADOWS.medium,
+    backgroundColor: '#121212',
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
   },
   confirmButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     paddingVertical: 18,
     borderRadius: 15,
     alignItems: 'center',
+    shadowColor: '#f28b2c',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
   disabledButton: {
-    backgroundColor: COLORS.grey,
+    backgroundColor: '#333333',
+    opacity: 0.5,
   },
   confirmButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    backgroundColor: '#121212',
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
     padding: 25,
     paddingBottom: 40,
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -450,28 +503,28 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.text,
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   closeButton: {
     fontSize: 24,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     padding: 5,
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    borderRadius: 15,
-    backgroundColor: COLORS.background,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#1A1A1A',
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#1A1A1A',
   },
   selectedOption: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '08',
+    borderColor: '#f28b2c',
+    backgroundColor: '#f28b2c15',
   },
   optionIcon: {
     fontSize: 24,
@@ -479,12 +532,12 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   optionSubLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     marginTop: 2,
   },
   paymentInfo: {

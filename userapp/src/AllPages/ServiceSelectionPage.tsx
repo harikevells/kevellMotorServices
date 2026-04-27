@@ -22,9 +22,9 @@ type ServiceRouteProp = RouteProp<RootStackParamList, 'ServiceSelection'>;
 
 interface Service {
   _id: string;
-  name: string;
-  base_price: number;
-  duration_minutes: number;
+  serviceName: string;
+  price: number;
+  duration: string;
   description: string;
   category: string;
 }
@@ -32,13 +32,21 @@ interface Service {
 const ServiceSelectionPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ServiceRouteProp>();
-  const { vehicleId, category: vehicleCat, fuel } = route.params;
+  const { vehicleId, category: serviceType, fuel, vehicleCategory } = route.params;
 
   // Sanitise route params — guard against undefined being sent as a literal string
   const VALID_VEHICLE_CATS = ['2_wheeler', '4_wheeler', 'heavy'];
-  const VALID_FUEL_TYPES   = ['electric', 'petrol', 'diesel', 'cng', 'hybrid'];
-  const safeCat  = VALID_VEHICLE_CATS.includes(vehicleCat) ? vehicleCat : '';
-  const safeFuel = VALID_FUEL_TYPES.includes(fuel)         ? fuel        : '';
+  const VALID_FUEL_TYPES = ['electric', 'petrol', 'diesel', 'cng', 'hybrid'];
+  const safeCat = VALID_VEHICLE_CATS.includes(vehicleCategory) ? vehicleCategory : '';
+  const safeFuel = VALID_FUEL_TYPES.includes(fuel) ? fuel : '';
+
+  // API expects "2 Wheeler" instead of "2_wheeler"
+  const getApiVehicleCat = (cat: string) => {
+    if (cat === '2_wheeler') return '2 Wheeler';
+    if (cat === '4_wheeler') return '4 Wheeler';
+    if (cat === 'heavy') return 'Heavy';
+    return cat;
+  };
 
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<string[]>(['all']);
@@ -66,10 +74,16 @@ const ServiceSelectionPage = () => {
       // Load category tabs and initial service list in sequence
       const catRes = await fetchCategories();
       const rawCats = catRes?.data ?? catRes;
-      const fetchedCats: string[] = Array.isArray(rawCats) ? rawCats : [];
+      const apiVehicleCat = getApiVehicleCat(safeCat);
+
+      const fetchedCats = Array.isArray(rawCats)
+        ? rawCats
+          .map((c: any) => typeof c === 'string' ? c : c.name)
+          .filter((name: string) => name === apiVehicleCat) // Only show current vehicle category tab
+        : [];
       setCategories(['all', ...fetchedCats]);
 
-      const res = await fetchServices('', safeCat, safeFuel);
+      const res = await fetchServices(apiVehicleCat, '', safeFuel); // Filter by vehicle category initially
       const rawServices = res?.data ?? res;
       setServices(Array.isArray(rawServices) ? rawServices : []);
 
@@ -86,8 +100,10 @@ const ServiceSelectionPage = () => {
     try {
       setLoading(true);
       setLoadError(false);
-      const serviceCat = cat === 'all' ? '' : cat;
-      const res = await fetchServices(serviceCat, safeCat, safeFuel);
+      const apiVehicleCat = getApiVehicleCat(safeCat);
+      // If 'all', use the vehicle category as the filter. If specific tab, use that tab's name.
+      const serviceCat = cat === 'all' ? apiVehicleCat : cat;
+      const res = await fetchServices(serviceCat, '', safeFuel);
       const rawServices = res?.data ?? res;
       setServices(Array.isArray(rawServices) ? rawServices : []);
     } catch (err) {
@@ -110,7 +126,7 @@ const ServiceSelectionPage = () => {
   const calculateTotal = () => {
     return services
       .filter(s => selectedServices.includes(s._id))
-      .reduce((sum, s) => sum + s.base_price, 0);
+      .reduce((sum, s) => sum + (s.price || 0), 0);
   };
 
   const renderServiceItem = ({ item }: { item: Service }) => (
@@ -123,12 +139,13 @@ const ServiceSelectionPage = () => {
     >
       <View style={styles.serviceRow}>
         <View style={styles.serviceInfo}>
-          <Text style={styles.serviceName}>{item.name}</Text>
+          <Text style={styles.serviceName}>{item.serviceName}</Text>
+          <Text style={styles.serviceCategory}>{item.category}</Text>
           <Text style={styles.serviceDesc}>{item.description}</Text>
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>⏱ {item.duration_minutes} mins</Text>
+            <Text style={styles.metaText}>⏱ {item.duration}</Text>
             <Text style={styles.metaDivider}>•</Text>
-            <Text style={styles.metaText}>₹ {item.base_price}</Text>
+            <Text style={styles.metaText}>₹ {item.price}</Text>
           </View>
         </View>
         <View style={[styles.checkbox, selectedServices.includes(item._id) && styles.checkboxActive]}>
@@ -141,7 +158,7 @@ const ServiceSelectionPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
@@ -172,10 +189,10 @@ const ServiceSelectionPage = () => {
           <EVCharging width={60} height={60} />
           <View style={styles.topCardText}>
             <Text style={styles.topTitle}>{fuel.toUpperCase()} Services</Text>
-            <Text style={styles.topSubtitle}>Categorized for {vehicleCat.replace('_', ' ')}</Text>
+            <Text style={styles.topSubtitle}>Categorized for {vehicleCategory?.replace('_', ' ')}</Text>
           </View>
         </View>
-        
+
         {/* DEBUG BANNER - remove after fix */}
         <View style={{ backgroundColor: services.length === 0 && !loading ? '#ff4444' : '#22aa44', padding: 6, borderRadius: 8, marginBottom: 8 }}>
           <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', fontWeight: 'bold' }}>
@@ -223,14 +240,15 @@ const ServiceSelectionPage = () => {
             <Text style={styles.priceLabel}>Subtotal:</Text>
             <Text style={styles.priceValue}>₹ {calculateTotal()}</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.nextButton, selectedServices.length === 0 && styles.disabledButton]}
-            onPress={() => selectedServices.length > 0 && navigation.navigate('CenterSelection', { 
-               // @ts-ignore
-               serviceIds: selectedServices,
-               vehicleId,
-               category: vehicleCat,
-               fuel
+            onPress={() => selectedServices.length > 0 && navigation.navigate('CenterSelection', {
+              // @ts-ignore
+              serviceIds: selectedServices,
+              vehicleId,
+              vehicleCategory: vehicleCategory,
+              category: serviceType,
+              fuel
             })}
             disabled={selectedServices.length === 0}
           >
@@ -245,7 +263,7 @@ const ServiceSelectionPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#060606',
   },
   header: {
     flexDirection: 'row',
@@ -253,20 +271,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: COLORS.white,
-    ...SHADOWS.light,
+    backgroundColor: '#060606',
   },
   backButton: {
     padding: 5,
   },
   backButtonText: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -281,33 +298,34 @@ const styles = StyleSheet.create({
   },
   categoryTab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
+    paddingVertical: 10,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
     marginRight: 10,
-    ...SHADOWS.light,
     borderWidth: 1,
-    borderColor: COLORS.lightGrey,
+    borderColor: '#333333',
   },
   activeTab: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
+    borderColor: '#f28b2c',
   },
   categoryTabText: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
   },
   activeTabText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
   },
   topCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary + '15',
+    backgroundColor: '#121212',
     padding: 20,
     borderRadius: 20,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#f28b2c33',
   },
   topCardText: {
     marginLeft: 15,
@@ -315,28 +333,28 @@ const styles = StyleSheet.create({
   },
   topTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontWeight: '800',
+    color: '#f28b2c',
   },
   topSubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     marginTop: 2,
   },
   listContainer: {
     paddingBottom: 150,
   },
   serviceCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: '#121212',
     padding: 18,
-    borderRadius: 15,
+    borderRadius: 20,
     marginBottom: 15,
-    ...SHADOWS.light,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#1A1A1A',
   },
   selectedCard: {
-    borderColor: COLORS.primary,
+    borderColor: '#f28b2c',
+    backgroundColor: '#1A1A1A',
   },
   serviceRow: {
     flexDirection: 'row',
@@ -347,113 +365,137 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   serviceName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
+  },
+  serviceCategory: {
+    fontSize: 11,
+    color: '#f28b2c',
+    fontWeight: '800',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   serviceDesc: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 6,
+    color: '#AAAAAA',
+    marginTop: 2,
     lineHeight: 18,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
   },
   metaText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontWeight: '700',
+    color: '#f28b2c',
   },
   metaDivider: {
     marginHorizontal: 8,
-    color: COLORS.grey,
+    color: '#333333',
   },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: COLORS.grey,
+    borderColor: '#333333',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 15,
   },
   checkboxActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
+    borderColor: '#f28b2c',
   },
   checkIcon: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
   },
   footer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: COLORS.white,
-    padding: 20,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    ...SHADOWS.medium,
+    backgroundColor: '#121212',
+    padding: 25,
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   priceLabel: {
     fontSize: 16,
-    width: '50%',
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
+    fontWeight: '600',
   },
   priceValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   nextButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     paddingVertical: 18,
     borderRadius: 15,
     alignItems: 'center',
-    ...SHADOWS.medium,
+    shadowColor: '#f28b2c',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
   disabledButton: {
-    backgroundColor: COLORS.grey,
+    backgroundColor: '#333333',
+    opacity: 0.5,
   },
   nextButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   emptyContainer: {
-    marginTop: 50,
+    marginTop: 60,
     alignItems: 'center',
     paddingHorizontal: 30,
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
+    lineHeight: 22,
   },
   retryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    backgroundColor: '#f28b2c',
     borderRadius: 12,
-    marginTop: 4,
   },
   retryButtonText: {
-    color: COLORS.white,
-    fontWeight: 'bold',
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#060606',
+  },
+  loadingText: {
+    marginTop: 15,
+    color: '#f28b2c',
   },
 });
 

@@ -39,10 +39,10 @@ interface Center {
 const CenterSelectionPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<CenterRouteProp>();
-  const { serviceIds, vehicleId, category, fuel } = route.params || {};
+  const { serviceIds, vehicleId, category, fuel, vehicleCategory } = route.params || {};
 
   // Safely guard against undefined parameters so string methods like .toUpperCase() don't crash
-  const safeCategory = typeof category === 'string' ? category : '';
+  const safeCategory = typeof vehicleCategory === 'string' ? vehicleCategory : '';
   const safeFuel = typeof fuel === 'string' ? fuel : '';
 
   const [centers, setCenters] = useState<Center[]>([]);
@@ -207,7 +207,8 @@ const CenterSelectionPage = () => {
             serviceIds,
             vehicleId,
             category,
-            fuel
+            fuel,
+            vehicleCategory
           })}
           disabled={!selectedCenter}
         >
@@ -221,7 +222,7 @@ const CenterSelectionPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#060606',
   },
   header: {
     flexDirection: 'row',
@@ -229,20 +230,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: COLORS.white,
-    ...SHADOWS.light,
+    backgroundColor: '#060606',
   },
   backButton: {
     padding: 5,
   },
   backButtonText: {
     fontSize: 24,
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -254,11 +254,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#BBDEFB',
-    backgroundColor: '#E3F2FD',
+    borderColor: '#333333',
+    backgroundColor: '#121212',
   },
   mapText: {
-    color: '#1976D2',
+    color: '#AAAAAA',
     fontWeight: '700',
     fontSize: 14,
   },
@@ -266,18 +266,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 20,
     height: 20,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     borderRadius: 10,
     borderWidth: 3,
-    borderColor: COLORS.white,
+    borderColor: '#FFFFFF',
   },
   userLocation: {
     width: 16,
     height: 16,
-    backgroundColor: COLORS.accent,
+    backgroundColor: '#3498db',
     borderRadius: 8,
     borderWidth: 3,
-    borderColor: COLORS.white,
+    borderColor: '#FFFFFF',
   },
   listHeader: {
     flexDirection: 'row',
@@ -287,37 +287,39 @@ const styles = StyleSheet.create({
   },
   listHeading: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: '#f28b2c',
   },
   listSubtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
   },
   listContainer: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   centerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: '#121212',
     padding: 15,
-    borderRadius: 15,
+    borderRadius: 20,
     marginBottom: 15,
-    ...SHADOWS.light,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#1A1A1A',
   },
   selectedCard: {
-    borderColor: COLORS.primary,
+    borderColor: '#f28b2c',
+    backgroundColor: '#1A1A1A',
   },
   centerIconContainer: {
     width: 50,
     height: 50,
-    borderRadius: 12,
-    backgroundColor: COLORS.lightGrey,
+    borderRadius: 15,
+    backgroundColor: '#1A1A1A',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   centerEmoji: {
     fontSize: 24,
@@ -329,18 +331,18 @@ const styles = StyleSheet.create({
   centerName: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
+    color: '#FFFFFF',
   },
   centerLocation: {
     fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: '#f28b2c',
+    fontWeight: '700',
     marginTop: 2,
     marginBottom: 2,
   },
   centerAddress: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
   },
   metaRow: {
     flexDirection: 'row',
@@ -349,61 +351,72 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   metaDivider: {
     marginHorizontal: 8,
-    color: COLORS.grey,
+    color: '#333333',
   },
   distanceText: {
     fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: '#f28b2c',
+    fontWeight: '700',
   },
   radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: COLORS.grey,
+    borderColor: '#333333',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,
   },
   radioActive: {
-    borderColor: COLORS.primary,
+    borderColor: '#f28b2c',
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
   },
   nextButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#f28b2c',
     paddingVertical: 18,
     borderRadius: 15,
     alignItems: 'center',
-    marginTop: 10,
-    ...SHADOWS.medium,
+    margin: 20,
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+    shadowColor: '#f28b2c',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
   disabledButton: {
-    backgroundColor: COLORS.grey,
+    backgroundColor: '#333333',
+    opacity: 0.5,
   },
   nextButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#AAAAAA',
+    textAlign: 'center',
   }
 });
 

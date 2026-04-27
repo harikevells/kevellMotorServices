@@ -166,7 +166,7 @@ const UserPage = () => {
 
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg" centered className="detail-modal">
         <Modal.Header closeButton className="bg-dark border-secondary">
-          <Modal.Title className="text-gold">User Details</Modal.Title>
+          <Modal.Title className="text-gold text-white">User Details</Modal.Title>
         </Modal.Header>
         <Modal.Body className="bg-dark text-white p-4">
           {selectedUser && (

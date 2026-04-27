@@ -8,23 +8,23 @@ import {
     ScrollView,
     StatusBar,
     ActivityIndicator,
-    FlatList,
     RefreshControl,
+    Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { EVCar } from '../assets/EVIcons';
+import { COLORS, SHADOWS } from '../constants/theme';
 import { fetchUserBookings } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type TabType = 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
+// Aligning with image tab names
+type TabType = 'Upcoming' | 'Completed' | 'Canceled';
 
 const BookingHistory = () => {
     const navigation = useNavigation<NavigationProp>();
-    const [selectedTab, setSelectedTab] = useState<TabType>('Pending');
+    const [selectedTab, setSelectedTab] = useState<TabType>('Upcoming');
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -49,69 +49,76 @@ const BookingHistory = () => {
     };
 
     const getFilteredBookings = () => {
-        if (selectedTab === 'Pending') {
-            return bookings.filter(b => b.status === 'pending');
-        } else if (selectedTab === 'Confirmed') {
-            return bookings.filter(b => ['confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(b.status));
-        } else if (selectedTab === 'Delivered') {
+        if (selectedTab === 'Upcoming') {
+            return bookings.filter(b => ['pending', 'confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(b.status));
+        } else if (selectedTab === 'Completed') {
             return bookings.filter(b => ['completed', 'delivered'].includes(b.status));
         } else {
             return bookings.filter(b => b.status === 'cancelled');
         }
     };
 
-    const renderBookingCard = (booking: any) => (
-        <View key={booking._id} style={styles.activeBookingCard}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.bookingRef}>Ref: {booking.bookingRef}</Text>
-                <View style={[
-                  styles.statusBadge, 
-                  booking.status === 'cancelled' && { backgroundColor: '#FFEEED' }
-                ]}>
-                    <Text style={[
-                      styles.statusBadgeText,
-                      booking.status === 'cancelled' && { color: '#FF4444' }
-                    ]}>
-                      {booking.status === 'completed' || booking.status === 'delivered' ? 'Delivered' : booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace(/_/g, ' ')}
-                    </Text>
-                </View>
-            </View>
-            <View style={styles.cardRow}>
-                <View style={styles.iconContainer}>
-                    <EVCar width={40} height={40} />
-                </View>
-                <View style={styles.cardDetails}>
-                    <Text style={styles.vehicleTitle}>
-                      {booking.vehicle.brand} {booking.vehicle.model}
-                    </Text>
-                    <Text style={styles.serviceText} numberOfLines={1}>
-                      {booking.services.map((s: any) => s.name).join(' • ')}
-                    </Text>
-                    <Text style={styles.bookingTime}>
-                      📅 {new Date(booking.bookingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {booking.timeSlot}
-                    </Text>
-                    <View style={styles.actionRow}>
-                        <Text style={styles.priceText}>₹{booking.totalAmount}</Text>
-                        {(selectedTab === 'Pending' || selectedTab === 'Confirmed') && (
-                          <TouchableOpacity 
-                              style={styles.trackButton}
-                              onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
-                          >
-                              <Text style={styles.trackButtonText}>Track Service</Text>
-                          </TouchableOpacity>
-                        )}
+    const renderBookingCard = (booking: any) => {
+        const isUpcoming = ['pending', 'confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(booking.status);
+        
+        return (
+            <View key={booking._id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <Text style={styles.bookingRef}>Ref :-{booking.bookingRef}</Text>
+                    <View style={styles.statusContainer}>
+                        <View style={[
+                            styles.statusDot, 
+                            { backgroundColor: booking.status === 'cancelled' ? '#ff4444' : '#00c853' }
+                        ]} />
+                        <Text style={[
+                            styles.statusText,
+                            { color: booking.status === 'cancelled' ? '#ff4444' : '#00c853' }
+                        ]}>
+                            {booking.status === 'completed' || booking.status === 'delivered' ? 'Completed' : booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace(/_/g, ' ')}
+                        </Text>
                     </View>
                 </View>
+
+                <Text style={styles.vehicleTitle}>
+                    {booking.vehicle.brand} {booking.vehicle.model}
+                </Text>
+                
+                <Text style={styles.serviceText} numberOfLines={1}>
+                    {booking.services.map((s: any) => s.name).join(' • ')}
+                </Text>
+                
+                <Text style={styles.bookingTime}>
+                    {new Date(booking.bookingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}-{booking.timeSlot}
+                </Text>
+
+                <View style={styles.actionRow}>
+                    <Text style={styles.priceText}>₹ {booking.totalAmount}</Text>
+                    {isUpcoming ? (
+                        <TouchableOpacity 
+                            style={styles.trackButton}
+                            onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
+                        >
+                            <Text style={styles.trackButtonText}>Track Service</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity 
+                            style={styles.viewDetailsButton}
+                            onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
+                        >
+                            <Text style={styles.viewDetailsText}>View details</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     const renderTab = (type: TabType) => (
         <TouchableOpacity
-            style={[styles.tabPill, selectedTab === type ? styles.tabSelected : styles.tabUnselected]}
+            style={[styles.tabItem, selectedTab === type && styles.tabItemActive]}
             onPress={() => setSelectedTab(type)}
         >
-            <Text style={[styles.tabText, selectedTab === type ? styles.tabTextSelected : styles.tabTextUnselected]}>
+            <Text style={[styles.tabText, selectedTab === type && styles.tabTextActive]}>
                 {type}
             </Text>
         </TouchableOpacity>
@@ -119,8 +126,8 @@ const BookingHistory = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" />
-            {/* Header */}
+            <StatusBar barStyle="light-content" />
+            
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Text style={styles.backIcon}>←</Text>
@@ -128,60 +135,36 @@ const BookingHistory = () => {
                 <Text style={styles.headerTitle}>My Bookings</Text>
             </View>
 
-            {/* Tabs */}
-            <View style={styles.tabContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                    {renderTab('Pending')}
-                    {renderTab('Confirmed')}
-                    {renderTab('Delivered')}
-                    {renderTab('Cancelled')}
-                </ScrollView>
+            <View style={styles.tabWrapper}>
+                <View style={styles.tabContainer}>
+                    {renderTab('Upcoming')}
+                    {renderTab('Completed')}
+                    {renderTab('Canceled')}
+                </View>
             </View>
 
             <ScrollView 
-              contentContainerStyle={styles.scrollContent} 
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadBookings(); }} />
-              }
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl 
+                        refreshing={refreshing} 
+                        onRefresh={() => { setRefreshing(true); loadBookings(); }}
+                        tintColor="#f28b2c"
+                    />
+                }
             >
                 {loading ? (
-                  <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 100 }} />
+                    <ActivityIndicator size="large" color="#f28b2c" style={{ marginTop: 100 }} />
                 ) : getFilteredBookings().length === 0 ? (
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyIcon}>📭</Text>
-                    <Text style={styles.emptyTextTitle}>No {selectedTab} Bookings</Text>
-                    <Text style={styles.emptyTextSub}>Your {selectedTab.toLowerCase()} service history will appear here.</Text>
-                  </View>
-                ) : (
-                  getFilteredBookings().map(renderBookingCard)
-                )}
-
-                {/* {!loading && bookings.length > 0 && (selectedTab === 'Pending' || selectedTab === 'Confirmed') && (
-                  <>
-                    <Text style={styles.historyHeading}>Recent History</Text>
-                    <View style={styles.historyList}>
-                        {bookings.filter(b => ['completed', 'delivered'].includes(b.status)).slice(0, 3).map((item, index, array) => (
-                           <View key={item._id} style={styles.historyRow}>
-                              <View style={styles.indicatorColumn}>
-                                  <View style={styles.indicatorCircle}>
-                                      <Text style={styles.indicatorIcon}>{index === 0 ? '🎁' : index === 1 ? '🛠️' : '⚙️'}</Text>
-                                  </View>
-                                  {index < array.length - 1 && <View style={styles.dashedLine} />}
-                              </View>
-                              <View style={styles.historyContent}>
-                                  <Text style={styles.historyDate}>
-                                    {new Date(item.bookingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                  </Text>
-                                  <Text style={styles.historyTitle}>{item.services[0]?.name || 'Auto Service'}</Text>
-                                  <Text style={styles.historyLocation}>{item.center.center_name}</Text>
-                                  <Text style={styles.historyPrice}>₹{item.totalAmount} • {item.status === 'completed' || item.status === 'delivered' ? 'Delivered' : item.status.charAt(0).toUpperCase() + item.status.slice(1).replace(/_/g, ' ')}</Text>
-                              </View>
-                          </View>
-                        ))}
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyIcon}>📭</Text>
+                        <Text style={styles.emptyTextTitle}>No {selectedTab} Bookings</Text>
+                        <Text style={styles.emptyTextSub}>Your {selectedTab.toLowerCase()} service history will appear here.</Text>
                     </View>
-                  </>
-                )} */}
+                ) : (
+                    getFilteredBookings().map(renderBookingCard)
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -190,70 +173,66 @@ const BookingHistory = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: '#000000',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
-        paddingTop:60,
-        backgroundColor: COLORS.white,
-        ...SHADOWS.light,
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+paddingTop:50,
+
     },
     backButton: {
         marginRight: 15,
     },
     backIcon: {
-        fontSize: 24,
-        color: COLORS.text,
+        fontSize: 26,
+        color: '#FFFFFF',
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: COLORS.text,
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    tabWrapper: {
+        paddingHorizontal: 20,
+        marginBottom: 20,
     },
     tabContainer: {
         flexDirection: 'row',
-        paddingHorizontal: 20,
-        marginVertical: 20,
-        gap: 10,
+        backgroundColor: '#1A1A1A',
+        borderRadius: 15,
+        padding: 5,
     },
-    tabPill: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 50,
-        borderWidth: 1,
+    tabItem: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderBottomWidth: 3,
+        borderBottomColor: 'transparent',
     },
-    tabSelected: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    tabUnselected: {
-        backgroundColor: COLORS.white,
-        borderColor: COLORS.border,
+    tabItemActive: {
+        borderBottomColor: '#f28b2c',
     },
     tabText: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: '600',
+        color: '#888888',
     },
-    tabTextSelected: {
-        color: COLORS.white,
-    },
-    tabTextUnselected: {
-        color: COLORS.textSecondary,
+    tabTextActive: {
+        color: '#f28b2c',
     },
     scrollContent: {
         paddingHorizontal: 20,
         paddingBottom: 40,
     },
-    activeBookingCard: {
-        backgroundColor: COLORS.white,
+    card: {
+        backgroundColor: '#121212',
         borderRadius: 20,
         padding: 20,
-        marginBottom: 30,
-        ...SHADOWS.light,
-        borderWidth: 1,
-        borderColor: COLORS.primary + '30',
+        marginBottom: 20,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -262,161 +241,96 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     bookingRef: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
+        fontSize: 16,
+        color: '#FFFFFF',
         fontWeight: '700',
     },
-    statusBadge: {
-        backgroundColor: COLORS.primary + '20',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    statusBadgeText: {
-        color: COLORS.primary,
-        fontSize: 11,
-        fontWeight: '800',
-    },
-    cardRow: {
+    statusContainer: {
         flexDirection: 'row',
-    },
-    iconContainer: {
-        width: 60,
-        height: 60,
-        backgroundColor: COLORS.lightGrey,
-        borderRadius: 15,
-        justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
     },
-    cardDetails: {
-        flex: 1,
+    statusDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginRight: 8,
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     vehicleTitle: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
-        color: COLORS.text,
+        color: '#FFFFFF',
     },
     serviceText: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginTop: 4,
+        fontSize: 13,
+        color: '#AAAAAA',
+        marginTop: 5,
     },
     bookingTime: {
         fontSize: 13,
-        color: COLORS.text,
-        fontWeight: '600',
-        marginTop: 8,
+        color: '#AAAAAA',
+        marginTop: 5,
     },
     actionRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 15,
+        marginTop: 20,
     },
     priceText: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: '800',
-        color: COLORS.text,
+        color: '#FFFFFF',
     },
     trackButton: {
-        backgroundColor: COLORS.primary,
-        borderRadius: 12,
+        backgroundColor: '#f28b2c',
+        borderRadius: 10,
         paddingVertical: 8,
-        paddingHorizontal: 15,
+        paddingHorizontal: 16,
     },
     trackButtonText: {
-        color: COLORS.white,
+        color: '#000000',
         fontSize: 12,
         fontWeight: '700',
     },
-    historyHeading: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: COLORS.text,
-        marginBottom: 15,
+    viewDetailsButton: {
+        backgroundColor: 'transparent',
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#333333',
     },
-    historyList: {
-        marginTop: 5,
-    },
-    historyRow: {
-        flexDirection: 'row',
-        minHeight: 100,
-    },
-    indicatorColumn: {
-        alignItems: 'center',
-        marginRight: 15,
-        width: 40,
-    },
-    indicatorCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.lightGrey,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-    },
-    indicatorIcon: {
-        fontSize: 18,
-    },
-    dashedLine: {
-        flex: 1,
-        width: 2,
-        borderLeftWidth: 2,
-        borderLeftColor: COLORS.border,
-        borderStyle: 'dashed',
-        marginTop: -5,
-        marginBottom: -5,
-    },
-    historyContent: {
-        flex: 1,
-        paddingTop: 5,
-    },
-    historyDate: {
+    viewDetailsText: {
+        color: '#FFFFFF',
         fontSize: 12,
-        color: COLORS.textSecondary,
-    },
-    historyTitle: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: COLORS.text,
-        marginTop: 2,
-    },
-    historyLocation: {
-        fontSize: 13,
-        color: COLORS.textSecondary,
-        marginTop: 2,
-    },
-    historyPrice: {
-        fontSize: 13,
         fontWeight: '600',
-        color: COLORS.primary,
-        marginTop: 4,
     },
     emptyContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 100,
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 100,
     },
     emptyIcon: {
-      fontSize: 50,
-      marginBottom: 20,
+        fontSize: 50,
+        marginBottom: 20,
     },
     emptyTextTitle: {
-      fontSize: 18,
-      fontWeight: '800',
-      color: COLORS.text,
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#FFFFFF',
     },
     emptyTextSub: {
-      fontSize: 14,
-      color: COLORS.textSecondary,
-      textAlign: 'center',
-      marginTop: 10,
-      paddingHorizontal: 40,
+        fontSize: 14,
+        color: '#888888',
+        textAlign: 'center',
+        marginTop: 10,
+        paddingHorizontal: 40,
     },
 });
 
 export default BookingHistory;
-
