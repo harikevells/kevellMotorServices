@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   pageBadge: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#FFF3E0',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 20,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#F5A623',
   },
   documentCard: {
     borderWidth: 1,
@@ -298,3 +298,4 @@ const styles = StyleSheet.create({
 });
 
 export default SelectPageScreen;
+

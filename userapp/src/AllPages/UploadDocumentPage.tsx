@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -4,
     right: -4,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#F5A623',
     width: 18,
     height: 18,
     borderRadius: 9,
@@ -429,3 +429,4 @@ const styles = StyleSheet.create({
 });
 
 export default UploadDocumentPage;
+

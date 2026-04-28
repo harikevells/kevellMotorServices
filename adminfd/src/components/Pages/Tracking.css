@@ -38,6 +38,48 @@
     border-radius: 4px;
 }
 
+/* Custom Tabs for Tracking */
+.custom-tracking-tabs {
+    display: flex;
+    background-color: #f8f9fa;
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+}
+
+.custom-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #a0aebc;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.custom-tab-btn:hover:not([class*="active"]) {
+    color: #637381;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.custom-tab-btn.active-live {
+    background-color: #f28b2c; /* Theme Orange */
+    color: white;
+    box-shadow: 0 4px 12px rgba(242, 139, 44, 0.3);
+}
+
+.custom-tab-btn.active-delivered {
+    background-color: #10b981; /* Vibrant Green */
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
 .search-box-container {
     position: relative;
     margin-top: 10px;

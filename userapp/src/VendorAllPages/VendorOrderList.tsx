@@ -11,9 +11,13 @@ import {
   ScrollView,
   Alert,
   StatusBar,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Geolocation from '@react-native-community/geolocation';
 import { COLORS, SHADOWS, SIZES } from '../constants/theme';
-import { fetchVendorOrders, updateOrderStatus } from '../services/api';
+import { fetchVendorOrders, updateOrderStatus, updateOrderLocation } from '../services/api';
 
 const STAGES = [
   { id: 'pending', label: 'Booking Pending', icon: '⏳', desc: 'Awaiting confirmation' },
@@ -30,6 +34,7 @@ const STAGES = [
 ];
 
 const VendorOrderList = () => {
+  const navigation = useNavigation<any>();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -70,6 +75,65 @@ const VendorOrderList = () => {
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleAcceptOrder = async (orderId: string) => {
+    try {
+      setUpdatingId(orderId);
+      
+      // 1. Request location permission first
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: "Location Permission",
+            message: "App needs access to your location for live tracking.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK"
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("Location permission denied");
+          Alert.alert("Permission Denied", "Location permission is required to accept orders.");
+          setUpdatingId(null);
+          return;
+        }
+      }
+
+      // 2. Fetch location
+      const position = await new Promise<any>((resolve, reject) => {
+        Geolocation.getCurrentPosition(resolve, reject, { 
+          enableHighAccuracy: true, 
+          timeout: 15000, 
+          maximumAge: 10000 
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // 3. Wait 3 seconds
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 4. Update status with location
+      const res = await updateOrderStatus(orderId, 'confirmed', { latitude, longitude });
+      
+      if (!res.success) {
+        Alert.alert('Error', res.message || 'Failed to accept order');
+        setUpdatingId(null);
+        return;
+      }
+      
+      // 5. Update UI
+      setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: 'confirmed' } : o));
+      Alert.alert("Success", "Booking Confirmed!");
+
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert('Error', error.message || 'Could not fetch location or update order');
     } finally {
       setUpdatingId(null);
     }
@@ -150,15 +214,19 @@ const VendorOrderList = () => {
           </View>
           {updatingId === item._id ? (
             <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : item.status === 'pending' ? (
+            <TouchableOpacity 
+              style={[styles.updateButton, { backgroundColor: '#F5A623' }]}
+              onPress={() => handleAcceptOrder(item._id)}
+            >
+              <Text style={styles.updateButtonText}>Accept</Text>
+            </TouchableOpacity>
           ) : (
             <TouchableOpacity 
-              style={styles.updateButton}
-              onPress={() => {
-                setSelectedOrder(item);
-                setShowStatusModal(true);
-              }}
+              style={[styles.updateButton, { backgroundColor: '#f28b2c' }]}
+              onPress={() => navigation.navigate('TrackingPageUs', { bookingId: item._id })}
             >
-              <Text style={styles.updateButtonText}>Update Status</Text>
+              <Text style={[styles.updateButtonText, { color: '#000' }]}>Track Live 📍</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -169,7 +237,7 @@ const VendorOrderList = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-      case 'delivered': return '#2E7D32';
+      case 'delivered': return '#F5A623';
       case 'pending': return '#EF6C00';
       case 'cancelled': return '#C62828';
       case 'confirmed': return '#1565C0';
@@ -369,3 +437,4 @@ const styles = StyleSheet.create({
 });
 
 export default VendorOrderList;
+

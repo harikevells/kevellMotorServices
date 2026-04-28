@@ -6,13 +6,10 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { EVCharging } from '../assets/EVIcons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ConfirmationRouteProp = RouteProp<RootStackParamList, 'BookingConfirmation'>;
@@ -24,40 +21,47 @@ const BookingConfirmationPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      
+      <StatusBar barStyle="light-content" />
+
       <View style={styles.content}>
         <View style={styles.successIconContainer}>
-          <Text style={styles.successEmoji}>✅</Text>
+          <Text style={styles.checkIcon}>✔</Text>
         </View>
-        
+
         <Text style={styles.title}>Booking Confirmed!</Text>
-        <Text style={styles.subtitle}>Your EV service has been scheduled successfully.</Text>
-        
+        <Text style={styles.subtitle}>Your Ev service has been scheduled</Text>
+
         <View style={styles.refCard}>
-          <Text style={styles.refLabel}>Booking Reference</Text>
+          <Text style={styles.refLabel}>Booking Id</Text>
           <Text style={styles.refValue}>{bookingRef}</Text>
-        </View>
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>📍 Please arrive 10 minutes early at the service center.</Text>
-        </View>
+          <View style={styles.reminderRow}>
+            <View style={styles.infoCircle}>
+              <Text style={styles.infoIcon}>i</Text>
+            </View>
+            <Text style={styles.reminderTitle}>IMPORTANT REMINDER</Text>
+          </View>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.trackButton}
-            onPress={() => navigation.navigate('LiveTracking', { bookingId: 'mock-id' })}
-          >
-            <Text style={styles.trackButtonText}>Track Service</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.homeButton}
-            onPress={() => navigation.navigate('HomeTabs')}
-          >
-            <Text style={styles.homeButtonText}>Back to Home</Text>
-          </TouchableOpacity>
+          <Text style={styles.reminderDesc}>
+            Please arrive 10 minutes early at the service center to complete initial inspection.
+          </Text>
         </View>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.trackButton}
+          onPress={() => navigation.navigate('LiveTracking', { bookingId: bookingRef })}
+        >
+          <Text style={styles.trackButtonText}>Track service</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('HomeTabs')}
+        >
+          <Text style={styles.homeButtonText}>Back to Home</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -66,101 +70,122 @@ const BookingConfirmationPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 30,
+    paddingHorizontal: 30,
+    paddingTop: 80,
   },
   successIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: COLORS.primary + '20',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F5A623',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 30,
   },
-  successEmoji: {
-    fontSize: 50,
+  checkIcon: {
+    fontSize: 60,
+    color: '#000000',
+    fontWeight: '900',
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: COLORS.text,
+    color: '#F5A623',
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
+    fontSize: 15,
+    color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 24,
+    fontWeight: '600',
     marginBottom: 40,
   },
   refCard: {
-    backgroundColor: COLORS.background,
-    padding: 20,
+    backgroundColor: '#1A1A1A',
+    padding: 30,
     borderRadius: 20,
     width: '100%',
     alignItems: 'center',
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: COLORS.lightGrey,
   },
   refLabel: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: '#AAAAAA',
     marginBottom: 8,
   },
   refValue: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: '#F5A623',
     letterSpacing: 1,
+    marginBottom: 35,
   },
-  infoBox: {
-    backgroundColor: '#FFF9C4',
-    padding: 15,
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  infoCircle: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
-    width: '100%',
-    marginBottom: 40,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
-  infoText: {
+  infoIcon: {
     fontSize: 14,
-    color: '#F57F17',
-    textAlign: 'center',
-    fontWeight: '600',
+    color: '#000000',
+    fontWeight: 'bold',
   },
-  buttonContainer: {
-    width: '100%',
-    gap: 15,
+  reminderTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  reminderDesc: {
+    color: '#F5A623',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 10,
+  },
+  footer: {
+    padding: 30,
+    paddingBottom: 50,
   },
   trackButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#F5A623',
     paddingVertical: 18,
-    borderRadius: 15,
+    borderRadius: 30,
     alignItems: 'center',
-    ...SHADOWS.medium,
+    width: '100%',
+    marginBottom: 15,
   },
   trackButtonText: {
-    color: COLORS.white,
-    fontSize: 18,
+    color: '#000000',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   homeButton: {
-    backgroundColor: COLORS.white,
+    backgroundColor: 'transparent',
     paddingVertical: 18,
-    borderRadius: 15,
+    borderRadius: 30,
     alignItems: 'center',
+    width: '100%',
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: '#F5A623',
   },
   homeButtonText: {
-    color: COLORS.primary,
-    fontSize: 18,
+    color: '#F5A623',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

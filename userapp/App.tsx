@@ -22,6 +22,8 @@ import AddressPage from './src/AllPages/AddressPage';
 import BookingSummaryPage from './src/AllPages/BookingSummaryPage';
 import BookingConfirmationPage from './src/AllPages/BookingConfirmationPage';
 import LiveTrackingPage from './src/AllPages/LiveTrackingPage';
+import TrackingPage from './src/AllPages/TrackingPage';
+import TrackingPageUs from './src/VendorAllPages/TrackingPageUs';
 import ReviewsRatingsPage from './src/AllPages/ReviewsAndRating';
 import NotificationPage from './src/AllPages/NotificationPage';
 import PaymentSimulationPage from './src/AllPages/PaymentSimulationPage';
@@ -58,6 +60,8 @@ export type RootStackParamList = {
 
   BookingConfirmation: { bookingRef: string };
   LiveTracking: { bookingId: string };
+  TrackingPage: { bookingId: string };
+  TrackingPageUs: { bookingId: string };
   Reviews: { bookingId: string };
   Notifications: undefined;
   PaymentSimulation: { amount: number; bookingData: any };
@@ -90,6 +94,8 @@ function App() {
           <Stack.Screen name="BookingSummary" component={BookingSummaryPage} />
           <Stack.Screen name="BookingConfirmation" component={BookingConfirmationPage} />
           <Stack.Screen name="LiveTracking" component={LiveTrackingPage} />
+          <Stack.Screen name="TrackingPage" component={TrackingPage} />
+          <Stack.Screen name="TrackingPageUs" component={TrackingPageUs} />
           <Stack.Screen name="Reviews" component={ReviewsRatingsPage} />
           <Stack.Screen name="Notifications" component={NotificationPage} />
           <Stack.Screen name="PaymentSimulation" component={PaymentSimulationPage} />

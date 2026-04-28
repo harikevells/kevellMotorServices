@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -12,6 +12,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
+import { useVendorNav } from './VendorSidebarNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -69,7 +70,7 @@ const getAvatarProps = (type: string, title: string) => {
     let initials = 'MS';
     if (title) {
         const words = title.split(' ');
-        initials = words.length > 1 ? (words[0][0] + words[1][0]) : title.substring(0, 2);
+        initials = words.length > 1 ? (words[0][0] + (words[1] ? words[1][0] : '')) : title.substring(0, 2);
         initials = initials.toUpperCase();
     }
     switch (type) {
@@ -84,6 +85,7 @@ const getAvatarProps = (type: string, title: string) => {
 
 const NotificationPage = () => {
     const navigation = useNavigation<NavigationProp>();
+    const vendorNav = useVendorNav();
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -117,7 +119,8 @@ const NotificationPage = () => {
         }
 
         if (notif.data?.bookingId) {
-            navigation.navigate('LiveTracking', { bookingId: notif.data.bookingId });
+            // For vendor, switch to the Orders tab
+            vendorNav.setActiveTab('Orders');
         }
     };
 
@@ -137,7 +140,7 @@ const NotificationPage = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Text style={styles.backIcon}>←</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notification</Text>
+                <Text style={styles.headerTitle}>Notifications</Text>
                 {notifications.some(n => !n.isRead) && (
                     <TouchableOpacity onPress={handleReadAll} style={styles.markAllBtn}>
                         <Text style={styles.markAllText}>Mark all as read</Text>
@@ -147,10 +150,10 @@ const NotificationPage = () => {
 
             {loading ? (
                 <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#F5A623" />
+                    <ActivityIndicator size="large" color="#1B4D6B" />
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {notifications.length > 0 ? (
                         <>
                             <Text style={styles.sectionLabel}>Recent</Text>
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
         marginLeft: 'auto',
     },
     markAllText: {
-        color: '#2196F3',
+        color: '#1B4D6B',
         fontSize: 14,
         fontWeight: '600',
     },
@@ -291,7 +294,7 @@ const styles = StyleSheet.create({
     blueDot: {
         width: 8,
         height: 8,
-        backgroundColor: '#2196F3',
+        backgroundColor: '#1B4D6B',
         borderRadius: 4,
     },
 });

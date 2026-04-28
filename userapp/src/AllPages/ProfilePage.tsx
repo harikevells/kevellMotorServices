@@ -103,7 +103,7 @@ const ProfilePage = () => {
 
   if (!user) return (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#1B5E20" />
+      <ActivityIndicator size="large" color="#F5A623" />
       <Text style={styles.loadingText}>Loading your profile...</Text>
     </View>
   );
@@ -117,9 +117,9 @@ const ProfilePage = () => {
         <Svg height="100%" width="100%">
           <Defs>
             <LinearGradient id="bg_grad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#1B5E20" stopOpacity="0.9" />
-              <Stop offset="0.3" stopColor="#E8F5E9" stopOpacity="1" />
-              <Stop offset="1" stopColor="#F1F8E9" stopOpacity="1" />
+              <Stop offset="0" stopColor="#F5A623" stopOpacity="0.9" />
+              <Stop offset="0.5" stopColor="#FFE0B2" stopOpacity="1" />
+              <Stop offset="1" stopColor="#FFF3E0" stopOpacity="1" />
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#bg_grad)" />
@@ -221,11 +221,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#FFF3E0',
   },
   loadingText: {
     marginTop: 10,
-    color: '#2E7D32',
+    color: '#F5A623',
     fontWeight: '700',
   },
   header: {
@@ -239,14 +239,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: COLORS.white,
+    color: '#1a1a2e',
     letterSpacing: 0.5,
   },
   settingsCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(18, 16, 16, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: '#f49612ff',
     padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 45,
-    backgroundColor: '#C8E6C9',
+    backgroundColor: '#FFE0B2',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -291,17 +291,17 @@ const styles = StyleSheet.create({
   avatarLetterBig: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#1B5E20',
+    color: '#1a1a2e',
   },
   completionPill: {
     position: 'absolute',
     bottom: -15,
-    backgroundColor: '#388E3C', // Forest Green
+    backgroundColor: '#F5A623', // Orange
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: '#f49612ff',
     ...SHADOWS.light,
   },
   completionText: {
@@ -321,16 +321,16 @@ const styles = StyleSheet.create({
   userNameText: {
     fontSize: 24,
     fontWeight: '900',
-    color: COLORS.white,
+    color: '#1a1a2e',
   },
   inlineEditIcon: {
     fontSize: 16,
     marginLeft: 10,
-    color: COLORS.white,
+    color: '#1a1a2e',
   },
   userEmailText: {
     fontSize: 14,
-    color: COLORS.white,
+    color: '#1a1a2e',
     marginTop: 4,
     fontWeight: '500',
     opacity: 0.9,
@@ -347,16 +347,16 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#1B5E20',
+    color: '#1a1a2e',
     marginBottom: 20,
   },
   addressCard: {
-    backgroundColor: '#F1F8E9',
+    backgroundColor: '#FFF3E0',
     borderRadius: 20,
     padding: 15,
     marginBottom: 30,
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: '#FFE0B2',
   },
   addressHeader: {
     flexDirection: 'row',
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#FFE0B2',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   addressTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#1B5E20',
+    color: '#1a1a2e',
   },
   addressActions: {
     flexDirection: 'row',
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   },
   addressContent: {
     fontSize: 13,
-    color: '#4CAF50',
+    color: '#555555',
     lineHeight: 18,
     paddingLeft: 34,
     fontWeight: '500',

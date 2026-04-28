@@ -38,7 +38,9 @@ const bookingSchema = new mongoose.Schema({
     vendorName: String,
     shopName: String,
     phone: String,
-    address: String
+    address: String,
+    latitude: Number,
+    longitude: Number
   },
   vehicleDetails: {
     vehicle_category: String,
@@ -95,4 +97,4 @@ const bookingSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Booking', bookingSchema);
+module.exports = mongoose.model('Booking', bookingSchema);

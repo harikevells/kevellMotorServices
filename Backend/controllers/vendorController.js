@@ -618,7 +618,7 @@ exports.getOrderById = async (req, res, next) => {
 // Update order status
 exports.updateOrderStatus = async (req, res, next) => {
   try {
-    const { status, estimatedCompletion } = req.body;
+    const { status, estimatedCompletion, location } = req.body;
     
     const validStatuses = [
       'pending', 'confirmed', 'on_the_way', 'received', 'inspected', 
@@ -663,6 +663,20 @@ exports.updateOrderStatus = async (req, res, next) => {
     if (estimatedCompletion) {
       order.estimatedCompletion = new Date(estimatedCompletion);
     }
+    
+    // ✅ Update vendor live location in the database when accepting an order
+    if (location && location.latitude && location.longitude) {
+      if (!order.vendorDetails) order.vendorDetails = {};
+      order.vendorDetails.latitude = location.latitude;
+      order.vendorDetails.longitude = location.longitude;
+      order.vendorDetails.vendorName = vendor.ownerName || vendor.shopName;
+      order.vendorDetails.shopName = vendor.shopName;
+      order.vendorDetails.phone = vendor.phone;
+      if (vendor.address) {
+        order.vendorDetails.address = `${vendor.address.street || ''}, ${vendor.address.city || ''}`;
+      }
+    }
+
     if (status === 'completed' || status === 'delivered') {
       order.completedAt = new Date();
 
@@ -1546,7 +1560,13 @@ exports.updateOrderLocation = async (req, res, next) => {
             latitude: parseFloat(latitude),
             longitude: parseFloat(longitude),
             updatedAt: new Date()
-          }
+          },
+          'vendorDetails.latitude': parseFloat(latitude),
+          'vendorDetails.longitude': parseFloat(longitude),
+          'vendorDetails.vendorName': vendor.ownerName || vendor.shopName,
+          'vendorDetails.shopName': vendor.shopName,
+          'vendorDetails.phone': vendor.phone,
+          'vendorDetails.address': vendor.address ? `${vendor.address.street || ''}, ${vendor.address.city || ''}` : ''
         }
       },
       { new: true }

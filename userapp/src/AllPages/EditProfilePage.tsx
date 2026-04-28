@@ -216,7 +216,7 @@ const EditProfilePage = () => {
                 <Text style={styles.editIconText}>📷</Text>
               </View>
             </TouchableOpacity>
-            {uploading && <ActivityIndicator style={{ marginTop: 10 }} color="#1B5E20" />}
+            {uploading && <ActivityIndicator style={{ marginTop: 10 }} color="#1a1a2e" />}
           </View>
 
           <Text style={styles.sectionTitle}>Personal Details</Text>
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
-    backgroundColor: '#1B5E20',
+    backgroundColor: '#1a1a2e',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#1B5E20',
+    backgroundColor: '#1a1a2e',
     width: 34,
     height: 34,
     borderRadius: 17,
@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9F9',
   },
   genderBtnActive: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#1B5E20',
+    backgroundColor: '#FFF3E0',
+    borderColor: '#1a1a2e',
   },
   genderBtnText: {
     fontSize: 14,
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   genderBtnTextActive: {
-    color: '#1B5E20',
+    color: '#1a1a2e',
   },
   footer: {
     padding: 20,
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
   },
   saveButton: {
-    backgroundColor: '#1B5E20',
+    backgroundColor: '#1a1a2e',
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: 'center',
@@ -461,3 +461,4 @@ const styles = StyleSheet.create({
 });
 
 export default EditProfilePage;
+

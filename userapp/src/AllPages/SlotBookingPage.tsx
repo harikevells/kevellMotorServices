@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop:30,
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,

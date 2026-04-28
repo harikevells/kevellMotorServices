@@ -54,32 +54,39 @@ const CenterSelectionPage = () => {
   }, []);
 
   const generateMapHTML = (mapCenters: Center[]) => {
-    // Default center point
-    let centerLat = 13.0827;
+    // Filter centers that have valid coordinates
+    const validCenters = mapCenters.filter(c => c.location && c.location.coordinates && c.location.coordinates.length === 2);
+    
+    let centerLat = 13.0827; // Chennai default
     let centerLng = 80.2116;
     
-    if (mapCenters.length > 0) {
-      let sumLat = 0, sumLng = 0, count = 0;
-      mapCenters.forEach(c => {
-         if (c.location?.coordinates) {
-           sumLng += c.location.coordinates[0];
-           sumLat += c.location.coordinates[1];
-           count++;
-         }
+    if (validCenters.length > 0) {
+      let sumLat = 0, sumLng = 0;
+      validCenters.forEach(c => {
+         sumLng += c.location!.coordinates[0];
+         sumLat += c.location!.coordinates[1];
       });
-      if (count > 0) {
-        centerLat = sumLat / count;
-        centerLng = sumLng / count;
-      }
+      centerLat = sumLat / validCenters.length;
+      centerLng = sumLng / validCenters.length;
     }
     
-    const markers = mapCenters.filter(c => c.location && c.location.coordinates).map(c => `
-      L.marker([${c.location?.coordinates[1]}, ${c.location?.coordinates[0]}]).addTo(map)
+    const markers = validCenters.map(c => `
+      L.marker([${c.location!.coordinates[1]}, ${c.location!.coordinates[0]}]).addTo(map)
+        .bindTooltip("${c.center_name}", { permanent: true, direction: "top", offset: [0, -35], className: "custom-tooltip" })
         .bindPopup("<b>${c.center_name}</b><br>${c.city}");
     `).join('\n');
 
-    // Make sure to replace the apiKey with actual Geoapify key if needed.
-    // Falling back to OSM tile if key is invalid, but structure is Geoapify-ready
+    const boundsArray = validCenters.map(c => `[${c.location!.coordinates[1]}, ${c.location!.coordinates[0]}]`).join(',');
+    const fitBoundsScript = validCenters.length > 0 
+      ? `
+        setTimeout(function() {
+          map.invalidateSize();
+          var bounds = L.latLngBounds([${boundsArray}]); 
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+        }, 500);
+      `
+      : '';
+
     return `
       <!DOCTYPE html>
       <html>
@@ -87,17 +94,36 @@ const CenterSelectionPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <style> body { padding: 0; margin: 0; } #map { height: 100vh; width: 100vw; } </style>
+        <style> 
+          body { padding: 0; margin: 0; } 
+          #map { height: 100vh; width: 100vw; } 
+          .custom-tooltip {
+            background-color: #121212;
+            color: #F5A623;
+            border: 1px solid #F5A623;
+            font-weight: 800;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 12px;
+          }
+          .leaflet-tooltip-top:before {
+            border-top-color: #F5A623;
+          }
+        </style>
       </head>
       <body>
         <div id="map"></div>
         <script>
           var map = L.map('map').setView([${centerLat}, ${centerLng}], 11);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; Geoapify &copy; OpenStreetMap',
+          
+          // Using CartoDB Dark Matter tiles
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
             maxZoom: 19
           }).addTo(map);
+          
           ${markers}
+          ${fitBoundsScript}
         </script>
       </body>
       </html>
@@ -166,6 +192,7 @@ const CenterSelectionPage = () => {
       <View style={styles.content}>
         <View style={styles.mapWrap}>
           <WebView 
+            key={centers.length}
             originWhitelist={['*']}
             source={{ html: generateMapHTML(centers) }} 
             style={{ width: '100%', height: '100%' }}
@@ -226,6 +253,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    paddingTop:40,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,

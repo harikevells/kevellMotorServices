@@ -16,6 +16,7 @@ import VendorDashboard from './VendorDashboard';
 import VendorOrderList from './VendorOrderList';
 import VendorDeliveryCreate from './VendorDeliveryCreate';
 import VendorDeliveryList from './VendorDeliveryList';
+import VendorNotificationPage from './NotificationPage';
 import VendorProfile from './VendorProfile';
 import api, { SafeStorage } from '../services/api';
 import { getImageUrl } from '../constants/config';
@@ -98,6 +99,7 @@ const VendorSidebarNavigator = () => {
     { id: 'Orders', title: 'Orders', icon: '📦' },
     { id: 'DeliveryCreate', title: 'Add Delivery Boy', icon: '👤+' },
     { id: 'DeliveryList', title: 'Delivery Boys', icon: '👥' },
+    { id: 'Notifications', title: 'Notifications', icon: '🔔' },
     { id: 'Profile', title: 'Profile', icon: '👤' },
   ];
 
@@ -107,6 +109,7 @@ const VendorSidebarNavigator = () => {
       case 'Orders': return <VendorOrderList />;
       case 'DeliveryCreate': return <VendorDeliveryCreate />;
       case 'DeliveryList': return <VendorDeliveryList />;
+      case 'Notifications': return <VendorNotificationPage />;
       case 'Profile': return <VendorProfile />;
       default: return <VendorDashboard />;
     }

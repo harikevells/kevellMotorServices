@@ -19,7 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { EVCar } from '../assets/EVIcons';
-import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles } from '../services/api';
+import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications } from '../services/api';
 import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
@@ -63,7 +63,7 @@ const BANNERS = [
     title: 'Get your checked for 999 only!',
     price: '999',
     type: 'Bike',
-    color: '#ff8c00', 
+    color: '#ff8c00',
     img: V1,
   },
   {
@@ -85,14 +85,28 @@ const HomeScreen = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const scrollRef = useRef<FlatList>(null);
   const intervalRef = useRef<any>(null);
 
   useFocusEffect(
     React.useCallback(() => {
       loadUser();
+      loadNotifications();
     }, [])
   );
+
+  const loadNotifications = async () => {
+    try {
+      const res: any = await fetchNotifications();
+      if (res.success && res.data) {
+        const unread = res.data.filter((n: any) => !n.isRead).length;
+        setUnreadCount(unread);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch notifications:', error);
+    }
+  };
 
   useEffect(() => {
     loadServicesByCategory('General Service');
@@ -164,12 +178,12 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
       <View style={styles.bannerRightImages}>
-         <Image source={V3} style={styles.floatImg1} />
-         <Image source={V2} style={styles.floatImg2} />
-         <Image source={V4} style={styles.floatImg3} />
-         <Image source={V1} style={styles.floatImg4} />
-         <Image source={V5} style={styles.floatImg5} />
-         <Image source={V6} style={styles.floatImg6} />
+        <Image source={V3} style={styles.floatImg1} />
+        <Image source={V2} style={styles.floatImg2} />
+        <Image source={V4} style={styles.floatImg3} />
+        <Image source={V1} style={styles.floatImg4} />
+        <Image source={V5} style={styles.floatImg5} />
+        <Image source={V6} style={styles.floatImg6} />
       </View>
     </View>
   );
@@ -193,26 +207,38 @@ const HomeScreen = () => {
               )}
             </View>
             <View style={styles.greetingBox}>
-               <Text style={styles.greetingTitle}>Good Morning</Text>
-               <Text style={styles.dateText}>{dateString}</Text>
+              <Text style={styles.greetingTitle}>
+                {`${(() => {
+                  const hour = new Date().getHours();
+                  if (hour < 12) return 'Good Morning';
+                  if (hour < 17) return 'Good Afternoon';
+                  return 'Good Evening';
+                })()}${user?.name ? `, ${user.name}` : ''}`}
+              </Text>
+              <Text style={styles.dateText}>{dateString}</Text>
             </View>
           </View>
-          <TouchableOpacity 
-             style={styles.locationCircle}
-             onPress={() => navigation.navigate('Profile' as any)}
+          <TouchableOpacity
+            style={styles.locationCircle}
+            onPress={() => navigation.navigate('Notifications' as any)}
           >
-            <Text style={{fontSize: 18}}>📍</Text>
+            <Text style={{ fontSize: 18 }}>🔔</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-           <TextInput 
-              placeholder="Search your services" 
-              placeholderTextColor="#666" 
-              style={styles.searchInput}
-           />
-           <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            placeholder="Search your services"
+            placeholderTextColor="#666"
+            style={styles.searchInput}
+          />
+          <Text style={styles.searchIcon}>🔍</Text>
         </View>
 
         {/* Sliding Promotional Banners */}
@@ -263,26 +289,26 @@ const HomeScreen = () => {
         {/* Exclusive Offers Section */}
         <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Exclusive Offers</Text>
         <View style={styles.offersGrid}>
-           {OFFERS.map(offer => (
-               <ImageBackground 
-                key={offer.id}
-                source={offer.image} 
-                style={styles.offerCardNew}
-                imageStyle={{ borderRadius: 20 }}
-              >
-                <View style={styles.offerOverlay}>
-                  <View style={styles.offerBadge}>
-                     <View style={styles.badgeIconBox}>
-                        <Text style={{fontSize: 12, color: '#fff'}}>%</Text>
-                     </View>
-                     <Text style={styles.badgeText}>{offer.title}</Text>
+          {OFFERS.map(offer => (
+            <ImageBackground
+              key={offer.id}
+              source={offer.image}
+              style={styles.offerCardNew}
+              imageStyle={{ borderRadius: 20 }}
+            >
+              <View style={styles.offerOverlay}>
+                <View style={styles.offerBadge}>
+                  <View style={styles.badgeIconBox}>
+                    <Text style={{ fontSize: 12, color: '#fff' }}>%</Text>
                   </View>
-                  <View style={styles.offerFooter}>
-                     <Text style={styles.offerSubtitle}>{offer.subtitle}</Text>
-                  </View>
+                  <Text style={styles.badgeText}>{offer.title}</Text>
                 </View>
-              </ImageBackground>
-           ))}
+                <View style={styles.offerFooter}>
+                  <Text style={styles.offerSubtitle}>{offer.subtitle}</Text>
+                </View>
+              </View>
+            </ImageBackground>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -353,6 +379,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#444',
   },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF5252',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   searchContainer: {
     backgroundColor: '#111',
     borderRadius: 15,
@@ -419,7 +461,7 @@ const styles = StyleSheet.create({
   floatImg4: { width: 35, height: 35, borderRadius: 17.5, position: 'absolute', top: 60, right: 50, borderWidth: 1.5, borderColor: '#fff', zIndex: 3 },
   floatImg5: { width: 40, height: 40, borderRadius: 20, position: 'absolute', top: 35, right: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 2 },
   floatImg6: { width: 55, height: 55, borderRadius: 27.5, position: 'absolute', bottom: -5, right: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 1 },
-  
+
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',

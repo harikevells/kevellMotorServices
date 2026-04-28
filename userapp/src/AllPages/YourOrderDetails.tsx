@@ -58,6 +58,22 @@ const BookingHistory = () => {
         }
     };
 
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'pending': return '#F5A623'; 
+            case 'confirmed': return '#2196F3'; 
+            case 'received': return '#9C27B0'; 
+            case 'inspected': return '#00BCD4'; 
+            case 'in_service': return '#FF9800'; 
+            case 'quality_check': return '#3F51B5'; 
+            case 'ready': return '#8BC34A'; 
+            case 'completed': return '#4CAF50'; 
+            case 'delivered': return '#4CAF50'; 
+            case 'cancelled': return '#f44336'; 
+            default: return '#1a1a2e'; 
+        }
+    };
+
     const renderBookingCard = (booking: any) => {
         const isUpcoming = ['pending', 'confirmed', 'received', 'inspected', 'in_service', 'quality_check', 'ready'].includes(booking.status);
         
@@ -68,11 +84,11 @@ const BookingHistory = () => {
                     <View style={styles.statusContainer}>
                         <View style={[
                             styles.statusDot, 
-                            { backgroundColor: booking.status === 'cancelled' ? '#ff4444' : '#00c853' }
+                            { backgroundColor: getStatusColor(booking.status) }
                         ]} />
                         <Text style={[
                             styles.statusText,
-                            { color: booking.status === 'cancelled' ? '#ff4444' : '#00c853' }
+                            { color: getStatusColor(booking.status) }
                         ]}>
                             {booking.status === 'completed' || booking.status === 'delivered' ? 'Completed' : booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace(/_/g, ' ')}
                         </Text>
@@ -98,7 +114,7 @@ const BookingHistory = () => {
                             style={styles.trackButton}
                             onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
                         >
-                            <Text style={styles.trackButtonText}>Track Service</Text>
+                            <Text style={styles.trackButtonText}>View Details</Text>
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity 
@@ -334,3 +350,4 @@ paddingTop:50,
 });
 
 export default BookingHistory;
+

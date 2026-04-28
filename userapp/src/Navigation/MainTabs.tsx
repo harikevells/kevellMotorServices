@@ -26,7 +26,7 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Home" component={HomePage} />
       <Tab.Screen name="Bookings" component={BookingHistory} />
-      <Tab.Screen name="Tracking" component={LiveTrackingPage} />
+      {/* <Tab.Screen name="Tracking" component={LiveTrackingPage} /> */}
       <Tab.Screen name="Bell" component={NotificationPage} />
       <Tab.Screen name="Profile" component={ProfilePage} />
     </Tab.Navigator>

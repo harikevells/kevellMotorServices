@@ -122,9 +122,28 @@ const LiveTrackingPage = () => {
               <Text style={styles.infoLabel}>Center</Text>
               <Text style={styles.infoValue}>{booking.vendorDetails?.shopName || booking.center?.center_name || 'N/A'}</Text>
             </View>
-            <TouchableOpacity style={styles.callCenterBtn}>
-              <Text style={styles.callCenterText}>📞 {booking.vendorDetails?.phone || booking.center?.phone || 'N/A'}</Text>
-            </TouchableOpacity>
+            <View style={styles.infoCol}>
+              <TouchableOpacity style={[styles.callCenterBtn, { marginLeft: 0, marginBottom: 10 }]}>
+                <Text style={styles.callCenterText}>📞 {booking.vendorDetails?.phone || booking.center?.phone || 'N/A'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={{ 
+                  backgroundColor: currentStage === 'delivered' || currentStage === 'cancelled' ? '#555555' : '#f28b2c', 
+                  paddingHorizontal: 16, 
+                  paddingVertical: 8, 
+                  borderRadius: 20, 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  alignSelf: 'flex-start',
+                  opacity: currentStage === 'delivered' || currentStage === 'cancelled' ? 0.6 : 1
+                }}
+                disabled={currentStage === 'delivered' || currentStage === 'cancelled'}
+                onPress={() => navigation.navigate('TrackingPage', { bookingId: booking._id })}
+              >
+                <Text style={{ color: currentStage === 'delivered' || currentStage === 'cancelled' ? '#cccccc' : '#000', fontWeight: 'bold', fontSize: 13 }}>Track Live </Text>
+                <Text style={{ fontSize: 13 }}>📍</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -184,6 +203,33 @@ const LiveTrackingPage = () => {
           </View>
         </View>
 
+        {/* Vendor Details Section */}
+        <View style={styles.detailsSection}>
+          <Text style={styles.sectionTitle}>Vendor Details</Text>
+          <View style={styles.detailsCard}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Shop Name</Text>
+              <Text style={styles.detailValue}>{booking.vendorDetails?.shopName || booking.center?.center_name || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Owner Name</Text>
+              <Text style={styles.detailValue}>{booking.vendorDetails?.vendorName || booking.center?.ownerName || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Email</Text>
+              <Text style={styles.detailValue}>{booking.vendorDetails?.email || booking.center?.email || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Phone No</Text>
+              <Text style={styles.detailValue}>{booking.vendorDetails?.phone || booking.center?.phone || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Address</Text>
+              <Text style={[styles.detailValue, { flex: 1, textAlign: 'right', marginLeft: 20 }]} numberOfLines={2}>{booking.vendorDetails?.address || booking.center?.address || 'N/A'}</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Booking Details Section */}
         <View style={styles.detailsSection}>
           <Text style={styles.sectionTitle}>Booking Details</Text>
@@ -205,7 +251,7 @@ const LiveTrackingPage = () => {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Payment Status</Text>
-              <Text style={[styles.detailValue, { color: booking.paymentStatus === 'paid' ? '#00c853' : '#f28b2c' }]}>
+              <Text style={[styles.detailValue, { color: booking.paymentStatus === 'paid' ? '#F5A623' : '#f28b2c' }]}>
                 {booking.paymentStatus.toUpperCase()}
               </Text>
             </View>
@@ -321,13 +367,13 @@ const styles = StyleSheet.create({
   callCenterBtn: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginLeft: -55,
+    // marginLeft: -55,
   },
   callCenterText: {
-    color: '#00c853',
+    color: '#F5A623',
     fontWeight: '700',
     fontSize: 14,
-    textAlign: 'left',
+    textAlign: 'center',
   },
   trackingSection: {
     flexDirection: 'row',
@@ -380,8 +426,8 @@ const styles = StyleSheet.create({
     borderColor: '#00c853',
   },
   dotCurrent: {
-    backgroundColor: '#03a9f4',
-    borderColor: '#03a9f4',
+    backgroundColor: '#00c853',
+    borderColor: '#00c853',
   },
   dotCanceled: {
     backgroundColor: '#ff4444',
@@ -436,6 +482,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#AAAAAA',
     marginBottom: 5,
+    width:'50%'
   },
   servicesList: {
     marginTop: 5,
@@ -459,6 +506,7 @@ const styles = StyleSheet.create({
   detailValue: {
     color: '#FFFFFF',
     fontWeight: '700',
+  
   },
   totalRow: {
     flexDirection: 'row',
@@ -496,3 +544,4 @@ const styles = StyleSheet.create({
 });
 
 export default LiveTrackingPage;
+

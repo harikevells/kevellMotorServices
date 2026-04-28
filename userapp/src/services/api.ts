@@ -129,10 +129,17 @@ export const fetchTracking = (bookingId: string) => api.get('/bookings/' + booki
 
 // Vendor
 export const fetchVendorOrders = () => api.get('/vendor/orders');
-export const updateOrderStatus = (bookingId: string, status: string) =>
-  api.patch(`/vendor/orders/${bookingId}/status`, { status });
+export const updateOrderStatus = (bookingId: string, status: string, location?: { latitude: number; longitude: number }) =>
+  api.patch(`/vendor/orders/${bookingId}/status`, { status, location });
+export const updateOrderLocation = (bookingId: string, latitude: number, longitude: number) =>
+  api.patch(`/vendor/orders/${bookingId}/location`, { latitude, longitude });
 export const fetchVendorDashboard = () => api.get('/vendor/dashboard');
 export const fetchOrderStatistics = (year: number) => api.get(`/vendor/orders/statistics?year=${year}`);
 export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
+
+// Notifications
+export const fetchNotifications = () => api.get('/notifications');
+export const markNotificationRead = (id: string) => api.put(`/notifications/mark-read/${id}`);
+export const markAllNotificationsRead = () => api.put('/notifications/mark-all-read');
 
 export default api;
