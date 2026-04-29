@@ -6,7 +6,7 @@ import { Search, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import './Review.css';
 
-const API_BASE_URL = 'http://localhost:5000/api/reviews';
+const API_BASE_URL = 'http://localhost:5000/api/bookings/admin/all';
 
 const dummyReviews = [
     { _id: '1', order: { bookingRef: 'EV2020234' }, user: { name: 'Vijay' }, shop: { center_name: 'Eva Bike shop' }, category: '2 wheeler', createdAt: '2026-03-13T11:00:00', comment: 'Fast & good service', rating: 4 },
@@ -33,15 +33,42 @@ const Reviews = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_BASE_URL}?search=${searchTerm}&page=${currentPage}&limit=${rowsPerPage}`, {
+            const response = await axios.get(API_BASE_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (response.data.success && response.data.reviews && response.data.reviews.length > 0) {
-                setReviews(response.data.reviews);
-                setTotalReviews(response.data.total);
+            if (response.data.success && response.data.data) {
+                // Filter only bookings that have a review
+                const bookingsWithReviews = response.data.data.filter(b => b.review && b.review.rating);
+                
+                // Format data for the table
+                const formattedReviews = bookingsWithReviews.map(b => ({
+                    _id: b._id,
+                    order: { bookingRef: b.bookingRef },
+                    user: { name: b.user?.name || b.userDetails?.name || 'Unknown' },
+                    shop: { center_name: b.center?.shopName || b.vendorDetails?.shopName || b.vendorDetails?.vendorName || 'Unknown' },
+                    category: b.vehicleDetails?.vehicle_category || b.vehicle?.vehicle_category || '2 wheeler',
+                    createdAt: b.review.createdAt,
+                    comment: b.review.comment || '',
+                    rating: b.review.rating
+                }));
+
+                // Apply search
+                const filteredReviews = searchTerm ? formattedReviews.filter(r => 
+                    r.order.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    r.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    r.shop.center_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    r.comment.toLowerCase().includes(searchTerm.toLowerCase())
+                ) : formattedReviews;
+
+                // Apply pagination
+                const startIdx = (currentPage - 1) * rowsPerPage;
+                const endIdx = currentPage * rowsPerPage;
+                
+                setReviews(filteredReviews.slice(startIdx, endIdx));
+                setTotalReviews(filteredReviews.length);
                 setFetchError(null);
             } else {
-                // If no live data, use dummy data
+                // If no data, use dummy data
                 setReviews(dummyReviews);
                 setTotalReviews(dummyReviews.length);
             }

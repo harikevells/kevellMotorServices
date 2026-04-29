@@ -42,14 +42,14 @@ export type RootStackParamList = {
   SlotBooking: { centerId: string; serviceIds: string[]; vehicleId: string; category: string; fuel: string; vehicleCategory: string };
   Address: { centerId: string; serviceIds: string[]; slotDate: string; slotTime: string; vehicleId: string; category: string; fuel: string; vehicleCategory: string };
 
-  BookingSummary: { 
-    centerId: string; 
-    serviceIds: string[]; 
-    slotDate: string; 
-    slotTime: string; 
-    vehicleId: string; 
-    category: string; 
-    fuel: string; 
+  BookingSummary: {
+    centerId: string;
+    serviceIds: string[];
+    slotDate: string;
+    slotTime: string;
+    vehicleId: string;
+    category: string;
+    fuel: string;
     vehicleCategory: string;
     userName: string;
     userPhone: string;

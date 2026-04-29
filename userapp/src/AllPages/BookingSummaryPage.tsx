@@ -27,7 +27,7 @@ const BookingSummaryPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SummaryRouteProp>();
   const { 
-    centerId, serviceIds, slotDate, slotTime, vehicleId, 
+    centerId, serviceIds, serviceNames, slotDate, slotTime, vehicleId, 
     category, fuel, vehicleCategory,
     userName, userPhone, userAddress, latitude, longitude 
   } = route.params;
@@ -91,6 +91,7 @@ const BookingSummaryPage = () => {
         vehicle: vehicleId,
         center: centerId,
         services: serviceIds,
+        serviceNames: serviceNames,
         bookingDate: slotDate,
         timeSlot: slotTime,
         paymentMethod: paymentMethod,
@@ -203,6 +204,12 @@ const BookingSummaryPage = () => {
               <View key={index} style={styles.serviceRow}>
                 <Text style={styles.serviceName}>{service.serviceName}</Text>
                 <Text style={styles.servicePrice}>₹{service.price}</Text>
+              </View>
+            ))}
+            {serviceNames && serviceNames.length > 0 && serviceNames.map((name: string, index: number) => (
+              <View key={`manual-${index}`} style={styles.serviceRow}>
+                <Text style={styles.serviceName}>{name} (Manual)</Text>
+                <Text style={styles.servicePrice}>₹0</Text>
               </View>
             ))}
             <View style={styles.divider} />

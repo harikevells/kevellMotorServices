@@ -59,15 +59,24 @@ exports.createBooking = async (req, res, next) => {
     }
 
     // 4. Calculate Pricing
-    const serviceDetails = await ServiceType.find({ _id: { $in: services } });
-    if (serviceDetails.length === 0) {
-      console.error('[Booking Error] No valid services selected:', services);
+    const { serviceNames: manualServiceNames } = req.body;
+    const serviceDetails = services && services.length > 0 
+      ? await ServiceType.find({ _id: { $in: services } }) 
+      : [];
+
+    if (serviceDetails.length === 0 && (!manualServiceNames || manualServiceNames.length === 0)) {
+      console.error('[Booking Error] No valid services selected:', { services, manualServiceNames });
       return res.status(400).json({ success: false, message: 'No valid services selected' });
     }
 
     const subtotal = serviceDetails.reduce((sum, s) => sum + s.price, 0);
     const tax = Math.round(subtotal * 0.18 * 100) / 100; // 18% GST
     const totalAmount = subtotal + tax;
+
+    const finalServiceNames = [
+      ...serviceDetails.map(s => s.serviceName),
+      ...(manualServiceNames || [])
+    ];
 
     // Build denormalized snapshots for historical context
     const fullUser = await User.findById(req.user.id);
@@ -76,8 +85,6 @@ exports.createBooking = async (req, res, next) => {
     const finalUserAddress = userAddress || (fullUser?.address?.street ? `${fullUser.address.street}, ${fullUser.address.city || ''}` : '');
     
     const vendorAddressString = centerExists.address?.street ? `${centerExists.address.street}, ${centerExists.address.city || ''}` : '';
-
-    const serviceNames = serviceDetails.map(s => s.serviceName);
 
     // 5. Create Booking
     const booking = await Booking.create({
@@ -109,7 +116,7 @@ exports.createBooking = async (req, res, next) => {
         registration_no: vehicleExists.registration_no,
         fuel_type: vehicleExists.fuel_type
       },
-      serviceNames: serviceNames,
+      serviceNames: finalServiceNames,
 
       bookingDate,
       timeSlot,
@@ -322,6 +329,59 @@ exports.updateBookingStatusAdmin = async (req, res, next) => {
       message: 'Booking status updated successfully',
       data: booking
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.addBookingReview = async (req, res, next) => {
+  try {
+    const { rating, comment } = req.body;
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (booking.user.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to review this booking' });
+    }
+
+    // Allow updating existing review
+    // if (booking.review && booking.review.rating) {
+    //   return res.status(400).json({ success: false, message: 'You have already reviewed this booking' });
+    // }
+
+    booking.review = {
+      rating,
+      comment,
+      createdAt: new Date()
+    };
+    
+    booking.markModified('review');
+
+    await booking.save();
+
+    // Optionally update the shop rating
+    const center = await Vendor.findById(booking.center);
+    if (center) {
+      const shopBookings = await Booking.find({ 
+        center: booking.center, 
+        'review.rating': { $exists: true } 
+      });
+      
+      const totalRating = shopBookings.reduce((sum, b) => sum + b.review.rating, 0);
+      center.rating = totalRating / shopBookings.length;
+      center.totalReviews = shopBookings.length; // Fixed from total_reviews
+      await center.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Review added successfully',
+      data: booking
+    });
+
   } catch (error) {
     next(error);
   }

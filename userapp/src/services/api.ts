@@ -127,6 +127,10 @@ export const createBooking = (data: any) => api.post('/bookings', data);
 export const fetchUserBookings = () => api.get('/bookings');
 export const fetchTracking = (bookingId: string) => api.get('/bookings/' + bookingId + '/track');
 
+// Reviews
+export const addReview = (data: { orderId: string, rating: number, comment: string }) => 
+  api.post(`/bookings/${data.orderId}/review`, { rating: data.rating, comment: data.comment });
+
 // Vendor
 export const fetchVendorOrders = () => api.get('/vendor/orders');
 export const updateOrderStatus = (bookingId: string, status: string, location?: { latitude: number; longitude: number }) =>

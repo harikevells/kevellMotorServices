@@ -16,6 +16,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
+import { fetchProfile } from '../services/api';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -26,7 +27,7 @@ const GEOAPIFY_API_KEY = '96f656418a7946a8923716c6138c8212';
 const AddressPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<AddressRouteProp>();
-  const { centerId, serviceIds, slotDate, slotTime, vehicleId, category, fuel, vehicleCategory } = route.params;
+  const { centerId, serviceIds, serviceNames, slotDate, slotTime, vehicleId, category, fuel, vehicleCategory } = route.params;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -44,6 +45,27 @@ const AddressPage = () => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const res: any = await fetchProfile();
+      // res is { success: true, user: { ... } } due to axios interceptor returning response.data
+      const userData = res?.user;
+      if (userData) {
+        setFormData(prev => ({
+          ...prev,
+          name: userData.name || '',
+          mobile: userData.phone || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
 
   const requestLocationPermission = async () => {
     if (Platform.OS === 'ios') {
@@ -78,7 +100,7 @@ const AddressPage = () => {
     // which is more reliable than the global navigator.
     // I will enable 'showsUserLocation' on the map temporarily to find you.
     setShowUserLoc(true);
-    
+
     // Fallback: If map doesn't trigger, we show a notice
     setTimeout(() => {
       setLoadingLocation(false);
@@ -125,6 +147,7 @@ const AddressPage = () => {
     navigation.navigate('BookingSummary', {
       centerId,
       serviceIds,
+      serviceNames,
       slotDate,
       slotTime,
       vehicleId,
@@ -142,7 +165,7 @@ const AddressPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
@@ -187,8 +210,8 @@ const AddressPage = () => {
         <View style={styles.locationSection}>
           <View style={styles.locationHeader}>
             <Text style={styles.label}>Live Location</Text>
-            <TouchableOpacity 
-              style={styles.locationBtn} 
+            <TouchableOpacity
+              style={styles.locationBtn}
               onPress={requestLocationPermission}
               disabled={loadingLocation}
             >
@@ -221,7 +244,7 @@ const AddressPage = () => {
                 }
               }}
             >
-              <Marker 
+              <Marker
                 coordinate={{ latitude: formData.latitude || region.latitude, longitude: formData.longitude || region.longitude }}
                 pinColor="#f28b2c"
               />
@@ -230,7 +253,7 @@ const AddressPage = () => {
               <View style={styles.markerDot} />
             </View>
           </View>
-          
+
           <View style={styles.coordsDisplay}>
             <Text style={styles.coordsText}>Lat: {formData.latitude.toFixed(6)}</Text>
             <Text style={styles.coordsText}>Long: {formData.longitude.toFixed(6)}</Text>
@@ -240,7 +263,7 @@ const AddressPage = () => {
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>Confirm & Review</Text>
         </TouchableOpacity>
-        
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>

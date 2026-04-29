@@ -9,12 +9,13 @@ import {
   StatusBar,
   ActivityIndicator,
   FlatList,
+  Image,
+  Platform,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { EVCharging } from '../assets/EVIcons';
 import { fetchServices, fetchCategories } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -54,6 +55,8 @@ const ServiceSelectionPage = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'select' | 'other'>('select');
+  const [manualServices, setManualServices] = useState('');
   const initialised = useRef(false);
 
   useEffect(() => {
@@ -101,7 +104,6 @@ const ServiceSelectionPage = () => {
       setLoading(true);
       setLoadError(false);
       const apiVehicleCat = getApiVehicleCat(safeCat);
-      // If 'all', use the vehicle category as the filter. If specific tab, use that tab's name.
       const serviceCat = cat === 'all' ? apiVehicleCat : cat;
       const res = await fetchServices(serviceCat, '', safeFuel);
       const rawServices = res?.data ?? res;
@@ -129,84 +131,83 @@ const ServiceSelectionPage = () => {
       .reduce((sum, s) => sum + (s.price || 0), 0);
   };
 
-  const renderServiceItem = ({ item }: { item: Service }) => (
-    <TouchableOpacity
-      style={[
-        styles.serviceCard,
-        selectedServices.includes(item._id) && styles.selectedCard
-      ]}
-      onPress={() => toggleService(item._id)}
-    >
-      <View style={styles.serviceRow}>
-        <View style={styles.serviceInfo}>
-          <Text style={styles.serviceName}>{item.serviceName}</Text>
-          <Text style={styles.serviceCategory}>{item.category}</Text>
-          <Text style={styles.serviceDesc}>{item.description}</Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaText}>⏱ {item.duration}</Text>
-            <Text style={styles.metaDivider}>•</Text>
-            <Text style={styles.metaText}>₹ {item.price}</Text>
+  const renderServiceItem = ({ item }: { item: Service }) => {
+    return (
+      <TouchableOpacity
+        style={styles.serviceCard}
+        onPress={() => toggleService(item._id)}
+        activeOpacity={0.8}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={[styles.radioCircle, selectedServices.includes(item._id) && styles.radioCircleActive, { marginRight: 12, marginTop: 2 }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.serviceName}>{item.serviceName}</Text>
+            {item.description ? <Text style={styles.serviceDesc} numberOfLines={2}>{item.description}</Text> : null}
+            <Text style={styles.metaText}>{item.duration}- {item.price}</Text>
           </View>
         </View>
-        <View style={[styles.checkbox, selectedServices.includes(item._id) && styles.checkboxActive]}>
-          {selectedServices.includes(item._id) && <Text style={styles.checkIcon}>✓</Text>}
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Select Services</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Choose Your Services</Text>
+        <Text style={styles.headerSubtitle}>{vehicleCategory?.replace('_', '-').toUpperCase()} SERVICES</Text>
       </View>
 
+      {/* Selection Toggle */}
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity 
+          style={[styles.toggleButton, selectionMode === 'select' && styles.toggleButtonActive]} 
+          onPress={() => setSelectionMode('select')}
+        >
+          <Text style={[styles.toggleText, selectionMode === 'select' && styles.toggleTextActive]}>Select</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.toggleButton, selectionMode === 'other' && styles.toggleButtonActive]} 
+          onPress={() => setSelectionMode('other')}
+        >
+          <Text style={[styles.toggleText, selectionMode === 'other' && styles.toggleTextActive]}>Other</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Fixed Background Image */}
+      <Image
+        source={require('../assets/servicesnamerightimage.png')}
+        style={styles.fixedImage}
+        resizeMode="contain"
+      />
+
       <View style={styles.content}>
-        {/* Categories Tabs */}
-        <View style={styles.categoryScrollContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
-            {categories.map(cat => (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.categoryTab, selectedCategory === cat && styles.activeTab]}
-                onPress={() => setSelectedCategory(cat)}
-              >
-                <Text style={[styles.categoryTabText, selectedCategory === cat && styles.activeTabText]}>
-                  {cat.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.topCard}>
-          <EVCharging width={60} height={60} />
-          <View style={styles.topCardText}>
-            <Text style={styles.topTitle}>{fuel.toUpperCase()} Services</Text>
-            <Text style={styles.topSubtitle}>Categorized for {vehicleCategory?.replace('_', ' ')}</Text>
+        {selectionMode === 'other' ? (
+          <View style={styles.manualContainer}>
+            <Text style={styles.manualLabel}>Type your services manually</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.manualInput}
+                placeholder="e.g. Engine work, Painting..."
+                placeholderTextColor="#666"
+                multiline
+                numberOfLines={6}
+                value={manualServices}
+                onChangeText={setManualServices}
+                textAlignVertical="top"
+              />
+            </View>
+            <Text style={styles.manualHint}>Type each service separated by commas</Text>
           </View>
-        </View>
-
-        {/* DEBUG BANNER - remove after fix */}
-        <View style={{ backgroundColor: services.length === 0 && !loading ? '#ff4444' : '#22aa44', padding: 6, borderRadius: 8, marginBottom: 8 }}>
-          <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', fontWeight: 'bold' }}>
-            {loading ? 'Loading...' : `Services: ${services.length} | Cat: ${selectedCategory} | Error: ${String(loadError)}`}
-          </Text>
-        </View>
-
-        {loading ? (
-          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+        ) : loading ? (
+          <ActivityIndicator size="large" color={'#f28b2c'} style={{ marginTop: 50 }} />
         ) : loadError ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Failed to load services. Check connection.</Text>
             <TouchableOpacity
-              style={[styles.retryButton]}
+              style={styles.retryButton}
               onPress={() => loadInitialData()}
             >
               <Text style={styles.retryButtonText}>Retry</Text>
@@ -234,27 +235,36 @@ const ServiceSelectionPage = () => {
             showsVerticalScrollIndicator={false}
           />
         )}
+      </View>
 
-        <View style={styles.footer}>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Subtotal:</Text>
-            <Text style={styles.priceValue}>₹ {calculateTotal()}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.nextButton, selectedServices.length === 0 && styles.disabledButton]}
-            onPress={() => selectedServices.length > 0 && navigation.navigate('CenterSelection', {
-              // @ts-ignore
-              serviceIds: selectedServices,
-              vehicleId,
-              vehicleCategory: vehicleCategory,
-              category: serviceType,
-              fuel
-            })}
-            disabled={selectedServices.length === 0}
-          >
-            <Text style={styles.nextButtonText}>Next: Select Center</Text>
-          </TouchableOpacity>
+      <View style={styles.footer}>
+        <View style={styles.divider} />
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>Subtotal</Text>
+          <Text style={styles.priceValue}>{calculateTotal()}</Text>
         </View>
+        <TouchableOpacity
+          style={[
+            styles.nextButton, 
+            (selectionMode === 'select' ? selectedServices.length === 0 : manualServices.trim().length === 0) && styles.disabledButton
+          ]}
+          onPress={() => {
+            const isReady = selectionMode === 'select' ? selectedServices.length > 0 : manualServices.trim().length > 0;
+            if (isReady) {
+              navigation.navigate('CenterSelection', {
+                serviceIds: selectionMode === 'select' ? selectedServices : [],
+                serviceNames: selectionMode === 'other' ? manualServices.split(',').map(s => s.trim()).filter(s => s) : [],
+                vehicleId,
+                vehicleCategory: vehicleCategory,
+                category: serviceType,
+                fuel
+              });
+            }
+          }}
+          disabled={selectionMode === 'select' ? selectedServices.length === 0 : manualServices.trim().length === 0}
+        >
+          <Text style={styles.nextButtonText}>Next Select center</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -263,239 +273,193 @@ const ServiceSelectionPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#060606',
+    backgroundColor: '#000000',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#060606',
-  },
-  backButton: {
-    padding: 5,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#FFFFFF',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    backgroundColor: '#000000',
+    zIndex: 10,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#00FF7F',
+    fontWeight: '600',
+    marginTop: 4,
+    letterSpacing: 1,
+  },
+  fixedImage: {
+    position: 'absolute',
+    right: -30, // Adjust to move image to the right and cut it in half like the design
+    top: '15%',
+    width: 260, // Large enough to act as background
+    height: '75%',
+    zIndex: 0,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  categoryScrollContainer: {
-    marginBottom: 15,
-  },
-  categoryList: {
-    paddingBottom: 10,
-  },
-  categoryTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#333333',
-  },
-  activeTab: {
-    backgroundColor: '#f28b2c',
-    borderColor: '#f28b2c',
-  },
-  categoryTabText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#AAAAAA',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-  },
-  topCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#121212',
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#f28b2c33',
-  },
-  topCardText: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  topTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#f28b2c',
-  },
-  topSubtitle: {
-    fontSize: 14,
-    color: '#AAAAAA',
-    marginTop: 2,
+    paddingLeft: 20,
+    paddingRight: '45%', // Drastically increased to push text completely to the left
+    zIndex: 5,
   },
   listContainer: {
-    paddingBottom: 150,
+    paddingBottom: 40,
+    paddingTop: 10,
   },
   serviceCard: {
-    backgroundColor: '#121212',
-    padding: 18,
-    borderRadius: 20,
-    marginBottom: 15,
-    borderWidth: 1.5,
-    borderColor: '#1A1A1A',
+    marginBottom: 25,
   },
-  selectedCard: {
-    borderColor: '#f28b2c',
-    backgroundColor: '#1A1A1A',
+  radioCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#DDDDDD',
   },
-  serviceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  serviceInfo: {
-    flex: 1,
+  radioCircleActive: {
+    backgroundColor: '#00FF7F', // vibrant green like the design
   },
   serviceName: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: 'bold',
     color: '#FFFFFF',
-  },
-  serviceCategory: {
-    fontSize: 11,
-    color: '#f28b2c',
-    fontWeight: '800',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginBottom: 5,
+    lineHeight: 20,
   },
   serviceDesc: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#AAAAAA',
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
+    lineHeight: 14,
+    marginBottom: 6,
   },
   metaText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 11,
     color: '#f28b2c',
-  },
-  metaDivider: {
-    marginHorizontal: 8,
-    color: '#333333',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#333333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 15,
-  },
-  checkboxActive: {
-    backgroundColor: '#f28b2c',
-    borderColor: '#f28b2c',
-  },
-  checkIcon: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#121212',
-    padding: 25,
-    borderTopLeftRadius: 35,
-    borderTopRightRadius: 35,
-    borderTopWidth: 1,
-    borderTopColor: '#333333',
+    paddingHorizontal: 25,
+    paddingBottom: Platform.OS === 'android' ? 40 : 30,
+    paddingTop: 10,
+    backgroundColor: '#000000',
+    zIndex: 10,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#222222',
+    marginBottom: 20,
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   priceLabel: {
-    fontSize: 16,
-    color: '#AAAAAA',
-    fontWeight: '600',
+    fontSize: 14,
+    color: '#FFFFFF',
   },
   priceValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#FFFFFF',
+    fontSize: 14,
+    color: '#f28b2c',
+    fontWeight: 'bold',
   },
   nextButton: {
     backgroundColor: '#f28b2c',
-    paddingVertical: 18,
-    borderRadius: 15,
+    paddingVertical: 14,
+    borderRadius: 25,
     alignItems: 'center',
-    shadowColor: '#f28b2c',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    alignSelf: 'center',
+    width: '80%',
   },
   disabledButton: {
-    backgroundColor: '#333333',
     opacity: 0.5,
   },
   nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '800',
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   emptyContainer: {
     marginTop: 60,
     alignItems: 'center',
-    paddingHorizontal: 30,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#AAAAAA',
     textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 22,
+    marginBottom: 20,
   },
   retryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
     backgroundColor: '#f28b2c',
-    borderRadius: 12,
+    borderRadius: 20,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 16,
+    color: '#000000',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
-  loadingContainer: {
+  toggleContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 30,
+    marginBottom: 10,
+    backgroundColor: '#111',
+    borderRadius: 25,
+    padding: 4,
+    zIndex: 10,
+  },
+  toggleButton: {
     flex: 1,
-    justifyContent: 'center',
+    paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#060606',
+    borderRadius: 22,
   },
-  loadingText: {
-    marginTop: 15,
-    color: '#f28b2c',
+  toggleButtonActive: {
+    backgroundColor: '#f28b2c',
+  },
+  toggleText: {
+    color: '#888',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  toggleTextActive: {
+    color: '#000',
+  },
+  manualContainer: {
+    marginTop: 30,
+    paddingRight: 10,
+  },
+  manualLabel: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 15,
+  },
+  inputWrapper: {
+    backgroundColor: '#121212',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#f28b2c44',
+    padding: 15,
+  },
+  manualInput: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    height: 120,
+  },
+  manualHint: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 10,
+    fontStyle: 'italic',
   },
 });
 

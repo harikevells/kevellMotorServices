@@ -125,7 +125,7 @@ const Tracking = () => {
 
     const activeVendorsList = allVendors.filter(v => {
         if (activeTab === 'live') {
-            return !['completed', 'cancelled', 'delivered'].includes(v.rawStatus);
+            return !['completed', 'cancelled', 'delivered', 'pending', 'PENDING'].includes(v.rawStatus);
         } else {
             return v.rawStatus === 'delivered' || v.rawStatus === 'completed';
         }

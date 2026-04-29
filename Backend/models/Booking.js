@@ -92,6 +92,19 @@ const bookingSchema = new mongoose.Schema({
   },
   specialInstructions: {
     type: String
+  },
+  review: {
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    comment: {
+      type: String
+    },
+    createdAt: {
+      type: Date
+    }
   }
 }, {
   timestamps: true

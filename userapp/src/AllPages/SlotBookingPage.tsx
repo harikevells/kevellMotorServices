@@ -27,15 +27,17 @@ interface Slot {
 }
 
 const DEFAULT_TIMES = [
-  '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', 
-  '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', 
-  '08:00 PM', '09:00 PM'
+  '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM',
+  '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
+  '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM',
+  '08:00 PM', '08:30 PM', '09:00 PM'
 ];
 
 const SlotBookingPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SlotRouteProp>();
-  const { centerId, serviceIds, vehicleId, category, fuel, vehicleCategory } = route.params;
+  const { centerId, serviceIds, serviceNames, vehicleId, category, fuel, vehicleCategory } = route.params;
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -49,12 +51,30 @@ const SlotBookingPage = () => {
       full: d.toISOString().split('T')[0],
       day: d.toLocaleDateString('en-US', { weekday: 'short' }),
       date: d.getDate(),
+      month: d.toLocaleDateString('en-US', { month: 'short' }),
     };
   });
 
   useEffect(() => {
     loadSlots();
   }, [selectedDate]);
+
+  const isPastTime = (timeStr: string) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (selectedDate !== todayStr) return false;
+    
+    const now = new Date();
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+    
+    const slotTimeEnd = new Date();
+    slotTimeEnd.setHours(hours, minutes + 30, 0, 0);
+    
+    return slotTimeEnd <= now;
+  };
 
   const loadSlots = async () => {
     try {
@@ -73,7 +93,8 @@ const SlotBookingPage = () => {
         };
       });
 
-      setSlots(mergedSlots);
+      const filteredSlots = mergedSlots.filter(item => !isPastTime(item.time));
+      setSlots(filteredSlots);
     } catch (error) {
       console.error(error);
     } finally {
@@ -83,16 +104,17 @@ const SlotBookingPage = () => {
 
   const renderSlotItem = ({ item }: { item: Slot }) => {
     const isFull = item.bookedCount >= item.maxCapacity;
+    const isPast = isPastTime(item.time);
     const isSelected = selectedTime === item.time;
     
     return (
       <TouchableOpacity
         style={[
           styles.slotItem,
-          isFull && styles.fullSlot,
+          (isFull || isPast) && styles.fullSlot,
           isSelected && styles.selectedSlot,
         ]}
-        disabled={isFull}
+        disabled={isFull || isPast}
         onPress={() => setSelectedTime(item.time)}
       >
         <Text style={[
@@ -125,23 +147,23 @@ const SlotBookingPage = () => {
 
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>Pick a Date</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          style={styles.dateList}
-          contentContainerStyle={{ paddingRight: 20 }}
-        >
-          {dates.map((item) => (
+        <FlatList
+          horizontal
+          data={dates}
+          keyExtractor={(item) => item.full}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.dateListContainer}
+          renderItem={({ item }) => (
             <TouchableOpacity 
-              key={item.full}
               style={[styles.dateItem, selectedDate === item.full && styles.selectedDateItem]}
               onPress={() => setSelectedDate(item.full)}
             >
               <Text style={[styles.dateDay, selectedDate === item.full && styles.selectedDateText]}>{item.day}</Text>
               <Text style={[styles.dateNumber, selectedDate === item.full && styles.selectedDateText]}>{item.date}</Text>
+              <Text style={[styles.dateMonth, selectedDate === item.full && styles.selectedDateText]}>{item.month}</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          )}
+        />
 
         <Text style={styles.sectionTitle}>Available Slots</Text>
         {loading ? (
@@ -166,6 +188,7 @@ const SlotBookingPage = () => {
           onPress={() => selectedTime && navigation.navigate('Address', { 
             centerId, 
             serviceIds, 
+            serviceNames,
             slotDate: selectedDate, 
             slotTime: selectedTime,
             vehicleId,
@@ -218,19 +241,19 @@ const styles = StyleSheet.create({
     color: '#f28b2c',
     marginBottom: 15,
   },
-  dateList: {
-    flexGrow: 0,
+  dateListContainer: {
+    paddingRight: 30,
     marginBottom: 30,
   },
   dateItem: {
-    width: 70,
-    height: 90,
+    width: 80,
+    height: 100,
     backgroundColor: '#121212',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
+    marginRight: 15,
+    borderWidth: 1.5,
     borderColor: '#333333',
   },
   selectedDateItem: {
@@ -247,6 +270,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: '#FFFFFF',
+    marginVertical: 2,
+  },
+  dateMonth: {
+    fontSize: 12,
+    color: '#f28b2c',
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   selectedDateText: {
     color: '#FFFFFF',

@@ -128,19 +128,19 @@ const LiveTrackingPage = () => {
               </TouchableOpacity>
               <TouchableOpacity 
                 style={{ 
-                  backgroundColor: currentStage === 'delivered' || currentStage === 'cancelled' ? '#555555' : '#f28b2c', 
+                  backgroundColor: currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending' ? '#555555' : '#f28b2c', 
                   paddingHorizontal: 16, 
                   paddingVertical: 8, 
                   borderRadius: 20, 
                   flexDirection: 'row', 
                   alignItems: 'center',
                   alignSelf: 'flex-start',
-                  opacity: currentStage === 'delivered' || currentStage === 'cancelled' ? 0.6 : 1
+                  opacity: currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending' ? 0.6 : 1
                 }}
-                disabled={currentStage === 'delivered' || currentStage === 'cancelled'}
+                disabled={currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending'}
                 onPress={() => navigation.navigate('TrackingPage', { bookingId: booking._id })}
               >
-                <Text style={{ color: currentStage === 'delivered' || currentStage === 'cancelled' ? '#cccccc' : '#000', fontWeight: 'bold', fontSize: 13 }}>Track Live </Text>
+                <Text style={{ color: currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending' ? '#cccccc' : '#000', fontWeight: 'bold', fontSize: 13 }}>Track Live </Text>
                 <Text style={{ fontSize: 13 }}>📍</Text>
               </TouchableOpacity>
             </View>

@@ -39,7 +39,7 @@ interface Center {
 const CenterSelectionPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<CenterRouteProp>();
-  const { serviceIds, vehicleId, category, fuel, vehicleCategory } = route.params || {};
+  const { serviceIds, serviceNames, vehicleId, category, fuel, vehicleCategory } = route.params || {};
 
   // Safely guard against undefined parameters so string methods like .toUpperCase() don't crash
   const safeCategory = typeof vehicleCategory === 'string' ? vehicleCategory : '';
@@ -232,6 +232,7 @@ const CenterSelectionPage = () => {
           onPress={() => selectedCenter && navigation.navigate('SlotBooking', { 
             centerId: selectedCenter, 
             serviceIds,
+            serviceNames,
             vehicleId,
             category,
             fuel,

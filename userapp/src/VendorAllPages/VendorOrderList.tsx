@@ -40,6 +40,7 @@ const VendorOrderList = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled'>('Pending');
 
   useEffect(() => {
@@ -207,6 +208,34 @@ const VendorOrderList = () => {
           </View>
         </View>
 
+        {/* Review Box for Delivered/Completed Orders */}
+        {['delivered', 'completed'].includes(item.status) && (
+          <View style={[styles.reviewBox, { marginBottom: 15 }]}>
+            {item.review && item.review.rating ? (
+              <>
+                <View style={styles.reviewHeader}>
+                  <Text style={styles.reviewTitle}>Customer Review</Text>
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Text key={star} style={{ color: star <= item.review.rating ? '#FFD700' : '#DDDDDD', fontSize: 16 }}>★</Text>
+                    ))}
+                  </View>
+                </View>
+                {item.review.comment ? (
+                  <Text style={styles.reviewComment}>"{item.review.comment}"</Text>
+                ) : (
+                  <Text style={[styles.reviewComment, { color: '#999' }]}>No written feedback provided.</Text>
+                )}
+              </>
+            ) : (
+              <View style={styles.reviewHeader}>
+                <Text style={[styles.reviewTitle, { color: '#888' }]}>No review yet</Text>
+                <Text style={{ fontSize: 12, color: '#999' }}>Awaiting customer rating</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={styles.footerRow}>
           <View>
             <Text style={styles.label}>TOTAL BILL</Text>
@@ -222,12 +251,33 @@ const VendorOrderList = () => {
               <Text style={styles.updateButtonText}>Accept</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
-              style={[styles.updateButton, { backgroundColor: '#f28b2c' }]}
-              onPress={() => navigation.navigate('TrackingPageUs', { bookingId: item._id })}
-            >
-              <Text style={[styles.updateButtonText, { color: '#000' }]}>Track Live 📍</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity 
+                style={[styles.updateButton, { backgroundColor: '#F0F0F0', borderColor: '#DDD', borderWidth: 1 }]}
+                onPress={() => {
+                  setSelectedOrder(item);
+                  setShowDetailsModal(true);
+                }}
+              >
+                <Text style={[styles.updateButtonText, { color: '#333' }]}>View Details</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.updateButton, 
+                  { backgroundColor: ['delivered', 'completed'].includes(item.status) ? '#E0E0E0' : '#f28b2c' }
+                ]}
+                onPress={() => navigation.navigate('TrackingPageUs', { bookingId: item._id })}
+                disabled={['delivered', 'completed'].includes(item.status)}
+              >
+                <Text style={[
+                  styles.updateButtonText, 
+                  { color: ['delivered', 'completed'].includes(item.status) ? '#888888' : '#000000' }
+                ]}>
+                  Track Live 📍
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
@@ -325,6 +375,80 @@ const VendorOrderList = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Details Modal */}
+      <Modal
+        visible={showDetailsModal}
+        animationType="slide"
+        onRequestClose={() => setShowDetailsModal(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+          <View style={styles.detailsHeaderContainer}>
+            <TouchableOpacity onPress={() => setShowDetailsModal(false)} style={{ padding: 10 }}>
+              <Text style={{ fontSize: 24, color: COLORS.text, fontWeight: 'bold' }}>←</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.text }}>Order Details</Text>
+            <View style={{ width: 44 }} />
+          </View>
+
+          {selectedOrder && (
+            <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 50 }} showsVerticalScrollIndicator={false}>
+              
+              <View style={styles.detailBox}>
+                <Text style={styles.detailBoxTitle}>Booking Information</Text>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Reference</Text><Text style={styles.detailValue}>#{selectedOrder.bookingRef || selectedOrder._id.slice(-6).toUpperCase()}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Status</Text><Text style={[styles.detailValue, { color: getStatusColor(selectedOrder.status), fontWeight: 'bold' }]}>{selectedOrder.status.replace(/_/g, ' ').toUpperCase()}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Booking Date</Text><Text style={styles.detailValue}>{selectedOrder.bookingDate}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Time Slot</Text><Text style={styles.detailValue}>{selectedOrder.timeSlot}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Created At</Text><Text style={styles.detailValue}>{new Date(selectedOrder.createdAt).toLocaleString()}</Text></View>
+              </View>
+
+              <View style={styles.detailBox}>
+                <Text style={styles.detailBoxTitle}>Customer Information</Text>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Name</Text><Text style={styles.detailValue}>{selectedOrder.userDetails?.name || selectedOrder.user?.name || 'Anonymous'}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Phone</Text><Text style={styles.detailValue}>{selectedOrder.userDetails?.phone || selectedOrder.user?.phone || 'N/A'}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Address</Text><Text style={styles.detailValue}>{selectedOrder.userDetails?.address || 'N/A'}</Text></View>
+              </View>
+
+              <View style={styles.detailBox}>
+                <Text style={styles.detailBoxTitle}>Vehicle Information</Text>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Brand & Model</Text><Text style={styles.detailValue}>{(selectedOrder.vehicleDetails || selectedOrder.vehicle)?.brand} {(selectedOrder.vehicleDetails || selectedOrder.vehicle)?.model}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Category</Text><Text style={styles.detailValue}>{(selectedOrder.vehicleDetails || selectedOrder.vehicle)?.vehicle_category?.replace('_', ' ')}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Fuel Type</Text><Text style={styles.detailValue}>{(selectedOrder.vehicleDetails || selectedOrder.vehicle)?.fuel_type}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Reg Number</Text><Text style={styles.detailValue}>{(selectedOrder.vehicleDetails || selectedOrder.vehicle)?.registration_no || (selectedOrder.vehicleDetails || selectedOrder.vehicle)?.number}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Year</Text><Text style={styles.detailValue}>{(selectedOrder.vehicleDetails || selectedOrder.vehicle)?.year || 'N/A'}</Text></View>
+              </View>
+
+              <View style={styles.detailBox}>
+                <Text style={styles.detailBoxTitle}>Services Requested</Text>
+                {(selectedOrder.serviceNames || selectedOrder.services?.map((s: any) => s.name) || []).map((s: string, i: number) => (
+                  <Text key={i} style={{ fontSize: 14, color: COLORS.text, marginBottom: 5 }}>• {s}</Text>
+                ))}
+                {selectedOrder.specialInstructions ? (
+                  <View style={{ marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE' }}>
+                    <Text style={[styles.detailLabel, { marginBottom: 5 }]}>Special Instructions</Text>
+                    <Text style={{ fontSize: 14, color: COLORS.text, fontStyle: 'italic' }}>{selectedOrder.specialInstructions}</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={styles.detailBox}>
+                <Text style={styles.detailBoxTitle}>Payment Summary</Text>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Payment Method</Text><Text style={styles.detailValue}>{selectedOrder.paymentMethod || 'N/A'}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Payment Status</Text><Text style={styles.detailValue}>{selectedOrder.paymentStatus || 'pending'}</Text></View>
+                {selectedOrder.couponCode ? <View style={styles.detailRow}><Text style={styles.detailLabel}>Coupon Applied</Text><Text style={styles.detailValue}>{selectedOrder.couponCode}</Text></View> : null}
+                <View style={styles.detailRow}><Text style={styles.detailLabel}>Tax</Text><Text style={styles.detailValue}>₹{selectedOrder.tax || 0}</Text></View>
+                <View style={[styles.detailRow, { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#EEE' }]}>
+                  <Text style={{ fontSize: 16, fontWeight: '800', color: COLORS.text }}>Total Amount</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color: COLORS.primary }}>₹{selectedOrder.totalAmount}</Text>
+                </View>
+              </View>
+              
+            </ScrollView>
+          )}
+        </SafeAreaView>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -434,6 +558,79 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: '#1B4D6B', borderColor: '#1B4D6B' },
   tabText: { fontSize: 13, fontWeight: '700', color: COLORS.grey },
   activeTabText: { color: COLORS.white },
+  
+  reviewBox: {
+    marginTop: 15,
+    padding: 15,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  reviewTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewComment: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 5,
+  },
+
+  detailsHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    backgroundColor: COLORS.white,
+    ...SHADOWS.light,
+  },
+  detailBox: {
+    backgroundColor: COLORS.white,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    ...SHADOWS.light,
+  },
+  detailBoxTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: COLORS.grey,
+    fontWeight: '600',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: COLORS.text,
+    fontWeight: '500',
+    maxWidth: '60%',
+    textAlign: 'right',
+  },
 });
 
 export default VendorOrderList;

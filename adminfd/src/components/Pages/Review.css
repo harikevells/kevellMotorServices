@@ -60,25 +60,25 @@
 .custom-reviews-table tbody tr {
     background-color: #000;
     transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #ffffff;
 }
 
 .custom-reviews-table td {
-    padding: 15px 20px;
+    padding: 19px 20px;
     font-size: 14px;
     color: #ffffff;
     vertical-align: middle;
     text-align: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
 }
 
 .custom-reviews-table td:first-child {
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid #ffffff;
 }
 
 .custom-reviews-table td:last-child {
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid #ffffff;
 }
 
 /* Selected/Hover Row highlight as per image */
