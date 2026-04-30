@@ -407,21 +407,40 @@ exports.completeVendorProfile = async (req, res, next) => {
     if (bloodGroup) vendor.bloodGroup = bloodGroup;
 
     if (languages) {
-      vendor.languages = Array.isArray(languages) ? languages : JSON.parse(languages);
+      try {
+        vendor.languages = Array.isArray(languages) ? languages : JSON.parse(languages);
+      } catch (e) {
+        console.warn('Failed to parse languages:', e);
+        vendor.languages = [];
+      }
     }
 
     // Update shop info
     if (shopName) vendor.shopName = shopName;
 
-    // Address
+    // Address - Ensure all required fields have at least a default value if any address field is provided
     if (street || city || state || pincode || country) {
-      if (!vendor.address) vendor.address = {};
-
-      if (street) vendor.address.street = street;
-      if (city) vendor.address.city = city;
-      if (state) vendor.address.state = state;
-      if (pincode) vendor.address.pincode = pincode;
-      if (country) vendor.address.country = country;
+      if (!vendor.address) {
+        vendor.address = {
+          street: street || 'Address not provided',
+          city: city || 'City',
+          state: state || 'State',
+          pincode: pincode || '000000',
+          country: country || 'India'
+        };
+      } else {
+        if (street) vendor.address.street = street;
+        if (city) vendor.address.city = city;
+        if (state) vendor.address.state = state;
+        if (pincode) vendor.address.pincode = pincode;
+        if (country) vendor.address.country = country;
+        
+        // Final fallback for required fields in case they were missing in existing document
+        vendor.address.street = vendor.address.street || 'Address not provided';
+        vendor.address.city = vendor.address.city || 'City';
+        vendor.address.state = vendor.address.state || 'State';
+        vendor.address.pincode = vendor.address.pincode || '000000';
+      }
     }
 
     // Location
@@ -1218,9 +1237,12 @@ exports.replyToReview = async (req, res, next) => {
 
 // Get dashboard data
 exports.getDashboardData = async (req, res, next) => {
+  console.log(`[DEBUG] getDashboardData hit for user: ${req.user.id}`);
   try {
+    console.log(`[DEBUG] Dashboard: Finding vendor for user ${req.user.id}`);
     const vendor = await Vendor.findOne({ user: req.user.id });
     if (!vendor) {
+      console.log(`[DEBUG] Dashboard: Vendor not found for user ${req.user.id}`);
       return res.status(404).json({
         success: false,
         message: 'Vendor profile not found'
@@ -1228,8 +1250,10 @@ exports.getDashboardData = async (req, res, next) => {
     }
 
     // Find shop
+    console.log(`[DEBUG] Dashboard: Finding shop for vendor ${vendor._id}`);
     const shop = await Shop.findOne({ vendor: vendor._id });
     if (!shop) {
+      console.log(`[DEBUG] Dashboard: Shop not found for vendor ${vendor._id}`);
       return res.json({
         success: true,
         dashboard: {
@@ -1252,6 +1276,7 @@ exports.getDashboardData = async (req, res, next) => {
     }
 
     // Get today's orders
+    console.log(`[DEBUG] Dashboard: Fetching orders for vendor ${vendor._id}`);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -1262,10 +1287,9 @@ exports.getDashboardData = async (req, res, next) => {
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
-    // Get total orders
     const totalOrders = await Order.countDocuments({ 'center': vendor._id });
 
-    // Get total earnings (from confirmed and beyond)
+    // Get total earnings
     const totalEarningsResult = await Order.aggregate([
       {
         $match: {
@@ -1277,32 +1301,29 @@ exports.getDashboardData = async (req, res, next) => {
     ]);
     const totalEarnings = totalEarningsResult.length > 0 ? totalEarningsResult[0].total : 0;
 
-    // Get pending orders
     const pendingOrdersCount = await Order.countDocuments({
       'center': vendor._id,
       status: { $in: ['pending', 'confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'] }
     });
 
-    // Get completed orders
     const completedOrdersCount = await Order.countDocuments({
       'center': vendor._id,
       status: { $in: ['completed', 'delivered'] }
     });
 
-    // Get cancelled orders
     const cancelledOrdersCount = await Order.countDocuments({
       'center': vendor._id,
       status: 'cancelled'
     });
 
-    // Get recent orders
     const recentOrders = await Order.find({ 'center': vendor._id })
       .populate('user', 'name')
       .populate('vehicle')
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // Get popular services (Aggregated from the serviceNames snapshot array)
+    // Get popular services
+    console.log(`[DEBUG] Dashboard: Aggregating popular services`);
     const popularServices = await Order.aggregate([
       { $match: { center: vendor._id } },
       { $unwind: '$serviceNames' },
@@ -1338,9 +1359,9 @@ exports.getDashboardData = async (req, res, next) => {
       { $limit: 6 }
     ]);
 
-    // Get delivery boy count
     const totalDeliveryBoys = await DeliveryBoy.countDocuments({ vendorId: req.user.id });
 
+    console.log(`[DEBUG] Dashboard: Sending response`);
     res.json({
       success: true,
       dashboard: {
@@ -1354,7 +1375,7 @@ exports.getDashboardData = async (req, res, next) => {
           rating: vendor.rating || 0,
           totalReviews: vendor.totalReviews || 0,
           todayOrders: todayOrders.length,
-          todayEarnings: todayOrders.reduce((sum, o) => sum + o.totalAmount, 0)
+          todayEarnings: todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
         },
         recentOrders,
         popularServices,
@@ -1363,6 +1384,7 @@ exports.getDashboardData = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error(`[DEBUG-ERROR] Dashboard failed:`, error);
     next(error);
   }
 };

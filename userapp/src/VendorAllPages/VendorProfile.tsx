@@ -199,12 +199,9 @@ const VendorProfile = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => setActiveTab('Dashboard')}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <View style={{ width: 45 }} />
-      </View>
+      {/* <View style={styles.header}> */}
+        {/* Header content removed to hide back arrow since it's now a tab */}
+      {/* </View> */}
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Profile Info */}
@@ -401,7 +398,7 @@ const styles = StyleSheet.create({
   },
   backArrow: { fontSize: 24, color: '#333' },
   logoutIcon: { fontSize: 24, color: '#333' },
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 20 },
   profileInfoSection: { alignItems: 'center', marginTop: 10 },
   avatarWrapper: { marginBottom: 20 },
   avatarContainer: {

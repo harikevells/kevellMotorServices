@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { COLORS, SHADOWS } from '../constants/theme';
 import api from '../services/api';
+import { useVendorNav } from './VendorSidebarNavigator';
 
 const VendorDeliveryList = () => {
+  const { setActiveTab } = useVendorNav();
   const [deliveryBoys, setDeliveryBoys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,12 +63,7 @@ const VendorDeliveryList = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Delivery Boys</Text>
-        <TouchableOpacity onPress={fetchDeliveryBoys}>
-          <Text style={styles.refreshText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Header handled by Navigator */}
       <FlatList
         data={deliveryBoys}
         renderItem={renderItem}
@@ -82,15 +79,7 @@ const VendorDeliveryList = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20
-  },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  refreshText: { color: '#1B4D6B', fontWeight: '600' },
-  list: { paddingHorizontal: 20, paddingBottom: 20 },
+  list: { paddingHorizontal: 20, paddingVertical: 20 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 15,

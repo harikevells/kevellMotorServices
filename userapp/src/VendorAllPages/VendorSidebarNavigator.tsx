@@ -20,6 +20,7 @@ import VendorNotificationPage from './NotificationPage';
 import VendorProfile from './VendorProfile';
 import api, { SafeStorage } from '../services/api';
 import { getImageUrl } from '../constants/config';
+import VendorFooter from './VendorFooter';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75;
@@ -120,11 +121,18 @@ const VendorSidebarNavigator = () => {
       <View style={styles.container}>
         {activeTab !== 'Dashboard' && (
           <SafeAreaView style={styles.header}>
-            <TouchableOpacity onPress={toggleDrawer} style={styles.menuButton}>
-              <Text style={styles.menuIcon}>☰</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{menuItems.find(i => i.id === activeTab)?.title || activeTab}</Text>
             <View style={{ width: 40 }} />
+            <Text style={styles.headerTitle}>{menuItems.find(i => i.id === activeTab)?.title || activeTab}</Text>
+            {activeTab === 'DeliveryList' ? (
+              <TouchableOpacity 
+                style={styles.headerAddBtn} 
+                onPress={() => setActiveTab('DeliveryCreate')}
+              >
+                <Text style={styles.headerAddBtnText}>Add +</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 40 }} />
+            )}
           </SafeAreaView>
         )}
 
@@ -132,67 +140,7 @@ const VendorSidebarNavigator = () => {
           {renderContent()}
         </View>
 
-        {/* Backdrop */}
-        {isDrawerOpen && (
-          <TouchableOpacity
-            style={styles.backdrop}
-            activeOpacity={1}
-            onPress={toggleDrawer}
-          />
-        )}
-
-        {/* Sidebar */}
-        <Animated.View style={[styles.sidebar, { transform: [{ translateX: drawerAnim }] }]}>
-          <SafeAreaView style={styles.sidebarContent}>
-            <View style={styles.sidebarHeader}>
-              <View style={styles.headerRow}>
-                <View style={styles.avatarContainer}>
-                  {profileImage ? (
-                    <Image source={{ uri: profileImage }} style={styles.avatar} />
-                  ) : (
-                    <Text style={styles.avatarPlaceholder}>👤</Text>
-                  )}
-                </View>
-                <View style={styles.headerText}>
-                  <Text style={styles.sidebarTitle} numberOfLines={1}>{shopName}</Text>
-                  <Text style={styles.sidebarSubtitle}>Shop Management</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.menuList}>
-              {menuItems.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.menuItem,
-                    activeTab === item.id && styles.activeMenuItem,
-                  ]}
-                  onPress={() => {
-                    setActiveTab(item.id);
-                    toggleDrawer();
-                  }}
-                >
-                  <Text style={styles.itemIcon}>{item.icon}</Text>
-                  <Text style={[
-                    styles.itemTitle,
-                    activeTab === item.id && styles.activeItemTitle,
-                  ]}>
-                    {item.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Logout at bottom */}
-            <View style={styles.logoutContainer}>
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutIcon}>🚪</Text>
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </Animated.View>
+        <VendorFooter />
       </View>
     </VendorNavContext.Provider>
   );
@@ -214,7 +162,14 @@ const styles = StyleSheet.create({
   menuButton: { padding: 10 },
   menuIcon: { fontSize: 24, color: '#1B4D6B', fontWeight: 'bold' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  content: { flex: 1 },
+  headerAddBtn: {
+    backgroundColor: '#1B4D6B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  headerAddBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
+  content: { flex: 1, paddingBottom: 90 },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',

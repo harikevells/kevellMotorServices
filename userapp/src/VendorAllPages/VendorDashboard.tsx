@@ -10,21 +10,40 @@ import {
   Dimensions,
   Modal,
   FlatList,
+  Image,
 } from 'react-native';
 import { COLORS, SHADOWS, SIZES } from '../constants/theme';
-import { fetchVendorDashboard, fetchOrderStatistics } from '../services/api';
+import { fetchVendorDashboard, fetchOrderStatistics, fetchProfile, fetchNotifications } from '../services/api';
 import { useVendorNav } from './VendorSidebarNavigator';
+import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 
 const VendorDashboard = () => {
-  const { toggleDrawer } = useVendorNav();
+  const { toggleDrawer, setActiveTab } = useVendorNav();
   const [stats, setStats] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('Today');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showYearPicker, setShowYearPicker] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getGreeting = () => {
+    const hour = currentDate.getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
 
   // Generate years from 2018 to current
   const years = Array.from(
@@ -39,9 +58,11 @@ const VendorDashboard = () => {
   const loadAllData = async () => {
     try {
       setLoading(true);
-      const [dashRes, statsRes]: any = await Promise.all([
+      const [dashRes, statsRes, profileRes, notifRes]: any = await Promise.all([
         fetchVendorDashboard(),
-        fetchOrderStatistics(selectedYear)
+        fetchOrderStatistics(selectedYear),
+        fetchProfile(),
+        fetchNotifications()
       ]);
 
       if (dashRes.success) {
@@ -49,6 +70,12 @@ const VendorDashboard = () => {
       }
       if (statsRes.success) {
         setStats(statsRes.statistics);
+      }
+      if (profileRes.success) {
+        setUser(profileRes.user);
+      }
+      if (notifRes.success) {
+        setNotifications(notifRes.notifications || []);
       }
     } catch (e) {
       console.warn(e);
@@ -164,22 +191,25 @@ const VendorDashboard = () => {
     </View>
   );
 
-  const RecentOrderCard = ({ order }: { order: any }) => (
-    <View style={styles.recentOrderCard}>
-      <View style={styles.recentOrderHeader}>
-        <Text style={styles.customerName}>{order.user?.name || 'Customer'}</Text>
-        <Text style={styles.orderAmount}>₹{order.totalAmount}</Text>
+  const RecentOrderCard = ({ order }: { order: any }) => {
+    const vehicle = order.vehicleDetails || order.vehicle || {};
+    return (
+      <View style={styles.recentOrderCard}>
+        <View style={styles.recentOrderHeader}>
+          <Text style={styles.customerName}>{order.user?.name || order.userDetails?.name || 'Customer'}</Text>
+          <Text style={styles.orderAmount}>₹{order.totalAmount}</Text>
+        </View>
+        <Text style={styles.vehicleInfo}>
+          {vehicle.brand} {vehicle.model}
+        </Text>
+        <View style={styles.statusRow}>
+          <Text style={styles.orderTime}>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+          <View style={[styles.statusDot, { backgroundColor: order.status === 'pending' ? '#EF6C00' : '#1B4D6B' }]} />
+          <Text style={styles.statusName}>{order.status.replace(/_/g, ' ')}</Text>
+        </View>
       </View>
-      <Text style={styles.vehicleInfo}>
-        {order.vehicleDetails?.brand} {order.vehicleDetails?.model}
-      </Text>
-      <View style={styles.statusRow}>
-        <Text style={styles.orderTime}>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <View style={[styles.statusDot, { backgroundColor: order.status === 'pending' ? '#EF6C00' : '#1B4D6B' }]} />
-        <Text style={styles.statusName}>{order.status.replace(/_/g, ' ')}</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   if (loading && !dashboardData) {
     return (
@@ -208,13 +238,47 @@ const VendorDashboard = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={toggleDrawer} style={styles.headerBtn}>
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Siva bike shop</Text>
-        <TouchableOpacity style={styles.headerBtn}>
-          <Text style={styles.searchIcon}>🔍</Text>
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            onPress={() => setActiveTab('Profile')}
+          >
+            {user?.profileImage ? (
+              <Image
+                source={{ uri: getImageUrl(user.profileImage) }}
+                style={styles.headerAvatar}
+              />
+            ) : (
+              <View style={styles.headerAvatarPlaceholder}>
+                <Text style={styles.avatarInitial}>{user?.name?.charAt(0) || 'V'}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <View style={styles.greetingRow}>
+              <Text style={styles.greetingText}>{getGreeting()}, </Text>
+              <Text style={styles.userNameText}>{user?.name || 'Vendor'}</Text>
+            </View>
+            <Text style={styles.dateDayText}>
+              {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}, {currentDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => setActiveTab('Notifications')}
+            style={styles.notifBtn}
+          >
+            <Text style={styles.notifIcon}>🔔</Text>
+            {notifications.filter(n => !n.read).length > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeText}>
+                  {notifications.filter(n => !n.read).length}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -277,22 +341,6 @@ const VendorDashboard = () => {
           <RevenueChart data={stats?.monthlyRevenue || Array(12).fill(0)} />
         </View>
 
-        <View style={styles.servicesSection}>
-          <Text style={styles.sectionTitle}>Popular Services</Text>
-          <View style={styles.servicesGrid}>
-            {popularServices.map((s: any, i: number) => (
-              <ServiceCard
-                key={i}
-                title={s._id}
-                count={s.count}
-                icon={getServiceIcon(s._id)}
-              />
-            ))}
-            {popularServices.length === 0 && (
-              <Text style={styles.emptyText}>No service data available yet.</Text>
-            )}
-          </View>
-        </View>
 
         <View style={styles.recentSection}>
           <Text style={styles.sectionTitle}>Recent Bookings</Text>
@@ -346,15 +394,93 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     paddingTop: 50,
     backgroundColor: '#F8F9FB',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerRight: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  notifBtn: {
+    padding: 10,
+    position: 'relative',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    ...SHADOWS.light,
+  },
+  notifIcon: {
+    fontSize: 20,
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: '#EB5757',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+  },
+  notifBadgeText: {
+    color: '#FFF',
+    fontSize: 8,
+    fontWeight: '800',
+  },
+  headerTextContainer: {
+    marginLeft: 15,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  greetingText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  userNameText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+  },
+  dateDayText: {
+    fontSize: 12,
+    color: '#1B4D6B',
+    fontWeight: '600',
+  },
   headerBtn: { padding: 8 },
   menuIcon: { fontSize: 22, color: '#000' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#000' },
-  searchIcon: { fontSize: 20, color: '#000' },
+  headerAvatar: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  headerAvatarPlaceholder: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: '#1B4D6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarInitial: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   scroll: { paddingVertical: 20 },
   dateRow: {
     flexDirection: 'row',
