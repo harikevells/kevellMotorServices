@@ -140,6 +140,7 @@ export const updateOrderLocation = (bookingId: string, latitude: number, longitu
 export const fetchVendorDashboard = () => api.get('/vendor/dashboard');
 export const fetchOrderStatistics = (year: number) => api.get(`/vendor/orders/statistics?year=${year}`);
 export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
+export const fetchSpareParts = () => api.get('/spare-parts');
 
 // Notifications
 export const fetchNotifications = () => api.get('/notifications');

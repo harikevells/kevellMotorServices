@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { COLORS, SHADOWS } from '../constants/theme';
@@ -18,6 +19,7 @@ import VendorDeliveryCreate from './VendorDeliveryCreate';
 import VendorDeliveryList from './VendorDeliveryList';
 import VendorNotificationPage from './NotificationPage';
 import VendorProfile from './VendorProfile';
+import ChallenBooking from './ChallenBooking';
 import api, { SafeStorage } from '../services/api';
 import { getImageUrl } from '../constants/config';
 import VendorFooter from './VendorFooter';
@@ -40,6 +42,7 @@ export const useVendorNav = () => {
 
 const VendorSidebarNavigator = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [tabHistory, setTabHistory] = useState<string[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [shopName, setShopName] = useState('Vendor Portal');
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -49,6 +52,43 @@ const VendorSidebarNavigator = () => {
   useEffect(() => {
     fetchVendorProfile();
   }, []);
+
+  // Handle hardware back button
+  useEffect(() => {
+    const backAction = () => {
+      if (tabHistory.length > 0) {
+        const previousTab = tabHistory[tabHistory.length - 1];
+        const newHistory = tabHistory.slice(0, -1);
+        setTabHistory(newHistory);
+        setActiveTab(previousTab);
+        return true; // Prevent default (exit app)
+      }
+      
+      // If no history but on a tab other than Dashboard, go to Dashboard
+      if (activeTab !== 'Dashboard') {
+        setActiveTab('Dashboard');
+        setTabHistory([]);
+        return true;
+      }
+
+      return false; // Let default behavior happen (exit app)
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [tabHistory, activeTab]);
+
+  const handleTabChange = (tab: string) => {
+    if (tab === activeTab) return;
+    
+    // Push current tab to history
+    setTabHistory(prev => [...prev, activeTab]);
+    setActiveTab(tab);
+  };
 
   const fetchVendorProfile = async () => {
     try {
@@ -102,6 +142,7 @@ const VendorSidebarNavigator = () => {
     { id: 'DeliveryList', title: 'Delivery Boys', icon: '👥' },
     { id: 'Notifications', title: 'Notifications', icon: '🔔' },
     { id: 'Profile', title: 'Profile', icon: '👤' },
+    { id: 'ChallenBooking', title: 'Challen', icon: '📝' },
   ];
 
   const renderContent = () => {
@@ -112,12 +153,13 @@ const VendorSidebarNavigator = () => {
       case 'DeliveryList': return <VendorDeliveryList />;
       case 'Notifications': return <VendorNotificationPage />;
       case 'Profile': return <VendorProfile />;
+      case 'ChallenBooking': return <ChallenBooking />;
       default: return <VendorDashboard />;
     }
   };
 
   return (
-    <VendorNavContext.Provider value={{ activeTab, setActiveTab, toggleDrawer }}>
+    <VendorNavContext.Provider value={{ activeTab, setActiveTab: handleTabChange, toggleDrawer }}>
       <View style={styles.container}>
         {activeTab !== 'Dashboard' && (
           <SafeAreaView style={styles.header}>
@@ -126,7 +168,7 @@ const VendorSidebarNavigator = () => {
             {activeTab === 'DeliveryList' ? (
               <TouchableOpacity 
                 style={styles.headerAddBtn} 
-                onPress={() => setActiveTab('DeliveryCreate')}
+                onPress={() => handleTabChange('DeliveryCreate')}
               >
                 <Text style={styles.headerAddBtnText}>Add +</Text>
               </TouchableOpacity>

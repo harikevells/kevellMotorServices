@@ -101,6 +101,7 @@ app.use('/api/offers', require('./routes/offerRoutes'));
 app.use('/api/master', require('./routes/masterRoutes'));
 app.use('/api/vendor', require('./routes/vendorRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/spare-parts', require('./routes/sparePartRoutes'));
 
 
 // Error handler

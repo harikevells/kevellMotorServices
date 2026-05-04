@@ -14,6 +14,7 @@ import Addvendor from './components/Pages/Addvendor';
 import Reviews from './components/Pages/Reviews';
 import Payment from './components/Pages/Payment';
 import Tracking from './components/Pages/Tracking';
+import SpareParts from './components/Pages/SpareParts';
 
 function App() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -73,6 +74,8 @@ function App() {
         return <Payment />;
       case 'Tracking':
         return <Tracking />;
+      case 'Spare Parts Management':
+        return <SpareParts />;
       case 'Car Management':
       case 'Transactions':
       case 'Content':

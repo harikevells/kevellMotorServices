@@ -5,7 +5,6 @@ import {
   ShoppingCart,
   Wrench,
   LogOut,
-  Bell,
   Star,
   CreditCard,
   Map
@@ -27,6 +26,7 @@ const Sidebar = ({ activePage, setActivePage, onLogout, collapsed }) => {
         { name: 'Reviews & Ratings', icon: <Star size={20} /> },
         { name: 'Payment', icon: <CreditCard size={20} /> },
         { name: 'Tracking', icon: <Map size={20} /> },
+        { name: 'Spare Parts Management', icon: <Wrench size={20} /> },
         // { name: 'Notification', icon: <Bell size={20} /> },
     ];
 

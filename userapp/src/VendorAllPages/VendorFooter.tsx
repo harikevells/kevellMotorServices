@@ -11,7 +11,7 @@ const VendorFooter: React.FC = () => {
   const tabs = [
     { id: 'Dashboard', name: 'Dashboard' },
     { id: 'Orders', name: 'Orders' },
-    { id: 'DeliveryList', name: 'Delivery' },
+    { id: 'ChallenBooking', name: 'Challen' },
     { id: 'Notifications', name: 'Notifications' },
     { id: 'Profile', name: 'Profile' },
   ];

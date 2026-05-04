@@ -342,6 +342,23 @@ const VendorDashboard = () => {
         </View>
 
 
+        <View style={styles.quickActions}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={() => setActiveTab('ChallenBooking')}
+          >
+            <View style={styles.actionIconContainer}>
+              <Text style={styles.actionEmoji}>🧾</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Create Service Bill</Text>
+              <Text style={styles.actionSubtitle}>Generate bill & QR code for payment</Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.recentSection}>
           <Text style={styles.sectionTitle}>Recent Bookings</Text>
           {recentOrders.map((order: any) => (
@@ -405,13 +422,13 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     justifyContent: 'center',
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
   notifBtn: {
     padding: 10,
     position: 'relative',
     backgroundColor: '#FFF',
-    borderRadius: 12,
+    borderRadius: '50%',
     ...SHADOWS.light,
   },
   notifIcon: {
@@ -686,6 +703,50 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
     ...SHADOWS.light,
+  },
+  quickActions: {
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  actionCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...SHADOWS.medium,
+    borderWidth: 1,
+    borderColor: '#E9F2FF',
+  },
+  actionIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#E9F2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  actionEmoji: {
+    fontSize: 24,
+  },
+  actionTextContainer: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1B4D6B',
+  },
+  actionSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  actionArrow: {
+    fontSize: 20,
+    color: '#1B4D6B',
+    fontWeight: 'bold',
   },
   recentOrderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   customerName: { fontSize: 14, fontWeight: '700', color: '#000' },

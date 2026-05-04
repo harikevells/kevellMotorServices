@@ -18,7 +18,7 @@ const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onP
       case 'Dashboard': return 'Dashboard';
       case 'Orders': return 'Orders';
       case 'Notifications': return 'Notification';
-      case 'DeliveryList': return 'Delivery';
+      case 'ChallenBooking': return 'Challen';
       case 'Profile': return 'Profile';
       default: return name;
     }
@@ -50,13 +50,14 @@ const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onP
             <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </Svg>
         );
-      case 'DeliveryList':
+      case 'ChallenBooking':
         return (
           <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <Circle cx="9" cy="7" r="4" />
-            <Path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <Path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <Path d="M14 2v6h6" />
+            <Path d="M16 13H8" />
+            <Path d="M16 17H8" />
+            <Path d="M10 9H8" />
           </Svg>
         );
       case 'Profile':

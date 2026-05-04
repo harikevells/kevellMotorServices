@@ -137,10 +137,6 @@ const NotificationPage = () => {
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Text style={styles.backIcon}>←</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notifications</Text>
                 {notifications.some(n => !n.isRead) && (
                     <TouchableOpacity onPress={handleReadAll} style={styles.markAllBtn}>
                         <Text style={styles.markAllText}>Mark all as read</Text>
@@ -191,23 +187,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9F9F9',
     },
     header: {
-        padding: 20,
+        padding: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 40,
+        paddingTop: 15,
+        paddingRight: 15,
         backgroundColor: '#fff',
-    },
-    backButton: {
-        marginRight: 15,
-    },
-    backIcon: {
-        fontSize: 28,
-        color: '#333',
-    },
-    headerTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
     },
     markAllBtn: {
         marginLeft: 'auto',

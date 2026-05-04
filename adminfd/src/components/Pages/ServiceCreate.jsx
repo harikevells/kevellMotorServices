@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Spinner, Table, Button, Form } from 'react-bootstrap';
-import { Search, Edit3, Trash2 } from 'lucide-react';
+import { Search, Edit3, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import AddService from './AddService';
 import './Viewservices.css';
@@ -14,7 +14,7 @@ const ServiceCreate = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const servicesPerPage = 8; // Match image pagination 1-8
+    const [rowsPerPage, setRowsPerPage] = useState(6);
 
     const [currentService, setCurrentService] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -79,10 +79,15 @@ const ServiceCreate = () => {
     };
 
     // Pagination constants
-    const indexOfLastService = currentPage * servicesPerPage;
-    const indexOfFirstService = indexOfLastService - servicesPerPage;
+    const indexOfLastService = currentPage * rowsPerPage;
+    const indexOfFirstService = indexOfLastService - rowsPerPage;
     const currentRows = services.slice(indexOfFirstService, indexOfLastService);
-    const totalPages = Math.ceil(services.length / servicesPerPage);
+    const totalPages = Math.ceil(services.length / rowsPerPage);
+
+    // Reset to first page on search/filter
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterCategory, filterStatus]);
 
     return (
         <div className="service-management-outer">
@@ -142,9 +147,9 @@ const ServiceCreate = () => {
                     </Form.Select>
                 </div>
 
-                {/* Table */}
-                <div className="table-container-custom">
-                    <Table responsive className="table-custom">
+                {/* Table matching custom-order-table */}
+                <div className="order-table-container">
+                    <table className="custom-order-table">
                         <thead>
                             <tr>
                                 <th>Service Name</th>
@@ -165,9 +170,9 @@ const ServiceCreate = () => {
                             ) : currentRows.length > 0 ? (
                                 currentRows.map((service) => (
                                     <tr key={service._id}>
-                                        <td>{service.serviceName}</td>
+                                        <td style={{ fontWeight: '600' }}>{service.serviceName}</td>
                                         <td>{service.category}</td>
-                                        <td>{service.price}</td>
+                                        <td className="amount-cell">₹{service.price}</td>
                                         <td>{service.duration || 'N/A'}</td>
                                         <td>
                                             <span className={service.status === 'Active' || service.status === true ? 'status-active-text' : 'text-danger'}>
@@ -175,51 +180,61 @@ const ServiceCreate = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            <button className="action-icon-btn" onClick={() => {
-                                                setCurrentService(service);
-                                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                            }}>
-                                                <Edit3 size={18} />
-                                            </button>
-                                            <button className="action-icon-btn" onClick={() => handleDelete(service._id)}>
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <div className="action-buttons">
+                                                <Edit3 
+                                                    size={18} 
+                                                    className="action-icon"
+                                                    onClick={() => {
+                                                        setCurrentService(service);
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    }} 
+                                                />
+                                                <Trash2 
+                                                    size={18} 
+                                                    className="action-icon delete-icon"
+                                                    onClick={() => handleDelete(service._id)} 
+                                                />
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-5">No services found.</td>
+                                    <td colSpan={6} className="text-center py-5 text-muted">No services found.</td>
                                 </tr>
                             )}
                         </tbody>
-                    </Table>
+                    </table>
                 </div>
 
-                {/* Footer / Pagination */}
-                <div className="pagination-footer">
-                    <div>
+                {/* Footer and Pagination matching theme */}
+                <div className="table-footer">
+                    <div className="rows-per-page">
                         Show rows per page 
-                        <select className="rows-per-page-select">
-                            <option>8</option>
+                        <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
+                            <option value={6}>6</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
                         </select>
                     </div>
-                    <div className="pagination-nav">
-                        <span>{indexOfFirstService + 1}-{Math.min(indexOfLastService, services.length)} of {services.length}</span>
-                        <div className="d-flex gap-2">
+                    <div className="pagination-controls">
+                        <div className="pagi-numbers">
+                            {services.length > 0 ? indexOfFirstService + 1 : 0}-{Math.min(indexOfLastService, services.length)} of {services.length}
+                        </div>
+                        <div className="pagi-arrows">
                             <button 
-                                className="nav-arrow-btn" 
+                                className="pagi-arrow" 
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(prev => prev - 1)}
                             >
-                                &lt;
+                                <ChevronLeft size={16} />
                             </button>
                             <button 
-                                className="nav-arrow-btn"
-                                disabled={currentPage === totalPages}
+                                className="pagi-arrow"
+                                disabled={currentPage === totalPages || totalPages === 0}
                                 onClick={() => setCurrentPage(prev => prev + 1)}
                             >
-                                &gt;
+                                <ChevronRight size={16} />
                             </button>
                         </div>
                     </div>
