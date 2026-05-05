@@ -63,7 +63,7 @@ const bookingSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
-      'pending', 'confirmed', 'on_the_way', 'received', 'inspected', 
+      'pending', 'confirmed', 'on_the_way', 'received', 'inspected',
       'in_service', 'quality_check', 'ready', 'out_for_delivery', 'completed', 'delivered', 'cancelled'
     ],
     default: 'pending'
@@ -105,6 +105,9 @@ const bookingSchema = new mongoose.Schema({
     createdAt: {
       type: Date
     }
+  },
+  bill: {
+    type: String
   }
 }, {
   timestamps: true

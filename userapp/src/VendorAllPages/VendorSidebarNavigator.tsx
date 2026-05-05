@@ -63,7 +63,7 @@ const VendorSidebarNavigator = () => {
         setActiveTab(previousTab);
         return true; // Prevent default (exit app)
       }
-      
+
       // If no history but on a tab other than Dashboard, go to Dashboard
       if (activeTab !== 'Dashboard') {
         setActiveTab('Dashboard');
@@ -84,7 +84,7 @@ const VendorSidebarNavigator = () => {
 
   const handleTabChange = (tab: string) => {
     if (tab === activeTab) return;
-    
+
     // Push current tab to history
     setTabHistory(prev => [...prev, activeTab]);
     setActiveTab(tab);
@@ -142,7 +142,7 @@ const VendorSidebarNavigator = () => {
     { id: 'DeliveryList', title: 'Delivery Boys', icon: '👥' },
     { id: 'Notifications', title: 'Notifications', icon: '🔔' },
     { id: 'Profile', title: 'Profile', icon: '👤' },
-    { id: 'ChallenBooking', title: 'Challen', icon: '📝' },
+    { id: 'ChallenBooking', title: 'Challen Service Bill', icon: '📝' },
   ];
 
   const renderContent = () => {
@@ -166,8 +166,8 @@ const VendorSidebarNavigator = () => {
             <View style={{ width: 40 }} />
             <Text style={styles.headerTitle}>{menuItems.find(i => i.id === activeTab)?.title || activeTab}</Text>
             {activeTab === 'DeliveryList' ? (
-              <TouchableOpacity 
-                style={styles.headerAddBtn} 
+              <TouchableOpacity
+                style={styles.headerAddBtn}
                 onPress={() => handleTabChange('DeliveryCreate')}
               >
                 <Text style={styles.headerAddBtnText}>Add +</Text>

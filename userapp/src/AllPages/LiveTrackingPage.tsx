@@ -11,12 +11,15 @@ import {
   Image,
   Dimensions,
   Platform,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { fetchUserBookings } from '../services/api';
 import carImage from '../assets/leftcare1.png';
+import RNFS from 'react-native-fs';
+import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 
@@ -56,7 +59,7 @@ const LiveTrackingPage = () => {
     try {
       const res = await fetchUserBookings();
       const currentBooking = res.data.find((b: any) => b._id === bookingId || b.bookingRef === bookingId);
-      
+
       if (currentBooking) {
         setBooking(currentBooking);
         let status = currentBooking.status || 'pending';
@@ -70,9 +73,49 @@ const LiveTrackingPage = () => {
     }
   };
 
+  const downloadBill = async () => {
+    if (!booking || !booking.bill) {
+      Alert.alert('Notice', 'No bill available for this booking yet.');
+      return;
+    }
+
+    try {
+      const fileUrl = getImageUrl(booking.bill);
+      if (!fileUrl) return;
+
+      const fileName = `${booking.bookingRef}_Bill.pdf`;
+      const downloadDest = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+
+      const options = {
+        fromUrl: fileUrl,
+        toFile: downloadDest,
+        background: true,
+        begin: (res: any) => {
+          console.log('Download has begun');
+        },
+        progress: (res: any) => {
+          let percentage = ((res.bytesWritten / res.contentLength) * 100).toFixed(2);
+          console.log(`Download Progress: ${percentage}%`);
+        },
+      };
+
+      const ret = RNFS.downloadFile(options);
+      const res = await ret.promise;
+
+      if (res.statusCode === 200) {
+        Alert.alert('Success', `Bill downloaded successfully to your Downloads folder as ${fileName}`);
+      } else {
+        Alert.alert('Error', 'Failed to download bill');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      Alert.alert('Error', 'An error occurred while downloading the bill.');
+    }
+  };
+
   if (loading || !booking) return (
     <View style={styles.loadingContainer}>
-       <ActivityIndicator size="large" color="#f28b2c" />
+      <ActivityIndicator size="large" color="#f28b2c" />
     </View>
   );
 
@@ -81,7 +124,7 @@ const LiveTrackingPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -98,8 +141,20 @@ const LiveTrackingPage = () => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Service Status Heading */}
         <View style={styles.statusHeadingContainer}>
-          <Text style={styles.statusHeading}>Service Status</Text>
-          <Text style={styles.completionTime}>Completion: 04:30 PM</Text>
+          <View>
+            <Text style={styles.statusHeading}>Service Status</Text>
+            <Text style={styles.completionTime}>Completion: 04:30 PM</Text>
+          </View>
+          <View style={styles.billDownloadSection}>
+            <Text style={styles.billLabel}>Bill Download</Text>
+            <TouchableOpacity
+              onPress={downloadBill}
+              disabled={!booking.bill}
+              style={[styles.downloadIconBtn, !booking.bill && { opacity: 0.3 }]}
+            >
+              <Text style={styles.downloadIcon}>{booking.bill ? '📥' : '🚫'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Info Card */}
@@ -116,7 +171,7 @@ const LiveTrackingPage = () => {
               <Text style={styles.infoValue}>#{booking.bookingRef}</Text>
             </View>
           </View>
-          
+
           <View style={[styles.infoRow, { marginTop: 20 }]}>
             <View style={styles.infoCol}>
               <Text style={styles.infoLabel}>Center</Text>
@@ -126,13 +181,13 @@ const LiveTrackingPage = () => {
               <TouchableOpacity style={[styles.callCenterBtn, { marginLeft: 0, marginBottom: 10 }]}>
                 <Text style={styles.callCenterText}>📞 {booking.vendorDetails?.phone || booking.center?.phone || 'N/A'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={{ 
-                  backgroundColor: currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending' ? '#555555' : '#f28b2c', 
-                  paddingHorizontal: 16, 
-                  paddingVertical: 8, 
-                  borderRadius: 20, 
-                  flexDirection: 'row', 
+              <TouchableOpacity
+                style={{
+                  backgroundColor: currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending' ? '#555555' : '#f28b2c',
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  flexDirection: 'row',
                   alignItems: 'center',
                   alignSelf: 'flex-start',
                   opacity: currentStage === 'delivered' || currentStage === 'cancelled' || currentStage === 'pending' ? 0.6 : 1
@@ -151,9 +206,9 @@ const LiveTrackingPage = () => {
         <View style={styles.trackingSection}>
           {/* Left Side Car Image */}
           <View style={styles.carContainer}>
-            <Image 
-              source={carImage} 
-              style={styles.carImage} 
+            <Image
+              source={carImage}
+              style={styles.carImage}
               resizeMode="contain"
             />
           </View>
@@ -165,7 +220,7 @@ const LiveTrackingPage = () => {
                 {STAGES.map((stage, index) => {
                   const isCompleted = currentStageIndex > index;
                   const isCurrent = currentStage === stage.id;
-                  
+
                   return (
                     <View key={stage.id} style={styles.stepRow}>
                       <View style={styles.indicatorContainer}>
@@ -173,9 +228,9 @@ const LiveTrackingPage = () => {
                           styles.dot,
                           isCompleted && styles.dotCompleted,
                           isCurrent && (
-                            stage.id === 'cancelled' ? styles.dotCanceled : 
-                            stage.id === 'delivered' ? styles.dotCompleted : // Make delivery green when active
-                            styles.dotCurrent
+                            stage.id === 'cancelled' ? styles.dotCanceled :
+                              stage.id === 'delivered' ? styles.dotCompleted : // Make delivery green when active
+                                styles.dotCurrent
                           ),
                           !isCompleted && !isCurrent && styles.dotPending
                         ]} />
@@ -242,9 +297,9 @@ const LiveTrackingPage = () => {
                 <Text key={i} style={styles.serviceItem}>• {s.name}</Text>
               ))}
             </View>
-            
+
             <View style={styles.detailDivider} />
-            
+
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Payment Method</Text>
               <Text style={styles.detailValue}>{booking.paymentMethod}</Text>
@@ -255,7 +310,7 @@ const LiveTrackingPage = () => {
                 {booking.paymentStatus.toUpperCase()}
               </Text>
             </View>
-            
+
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Amount</Text>
               <Text style={styles.totalValue}>₹ {booking.totalAmount}</Text>
@@ -322,7 +377,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusHeadingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
     marginTop: 20,
     marginBottom: 25,
   },
@@ -336,6 +394,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     opacity: 0.8,
+  },
+  billDownloadSection: {
+    alignItems: 'center',
+  },
+  billLabel: {
+    fontSize: 11,
+    color: '#f28b2c',
+    fontWeight: '700',
+    marginBottom: 5,
+    textTransform: 'uppercase',
+  },
+  downloadIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  downloadIcon: {
+    fontSize: 20,
   },
   infoCard: {
     backgroundColor: '#121212',
@@ -482,7 +561,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#AAAAAA',
     marginBottom: 5,
-    width:'50%'
+    width: '50%'
   },
   servicesList: {
     marginTop: 5,
@@ -506,7 +585,7 @@ const styles = StyleSheet.create({
   detailValue: {
     color: '#FFFFFF',
     fontWeight: '700',
-  
+
   },
   totalRow: {
     flexDirection: 'row',

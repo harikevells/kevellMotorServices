@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Container, Table, Button, Form, Modal, Badge, 
+import {
+    Container, Table, Button, Form, Modal, Badge,
     Pagination, InputGroup, Row, Col, Spinner, Card
 } from 'react-bootstrap';
 import { Search, Eye, Trash, Filter, ChevronLeft, ChevronRight, User, MapPin, Car, Calendar, Wrench, LocateFixed } from 'lucide-react';
@@ -46,13 +46,13 @@ const Ordermanagement = () => {
         console.log('UPDATING STATUS AT:', url);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.patch(url, 
+            const response = await axios.patch(url,
                 { status: newStatus },
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
-            
+
             if (response.data.success) {
-                setBookings(prev => prev.map(b => 
+                setBookings(prev => prev.map(b =>
                     b._id === bookingId ? { ...b, status: newStatus } : b
                 ));
                 if (selectedBooking && selectedBooking._id === bookingId) {
@@ -97,14 +97,14 @@ const Ordermanagement = () => {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div className="search-input-group">
                     <Search size={18} color="#888" />
-                    <input 
-                        type="text" 
-                        placeholder="Search by bookings" 
+                    <input
+                        type="text"
+                        placeholder="Search by bookings"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <select 
+                <select
                     className="status-filter-select"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
@@ -153,13 +153,13 @@ const Ordermanagement = () => {
                                     <td>{booking.vehicleDetails?.vehicle_category || "N/A"}</td>
                                     <td>
                                         <div className="text-truncate" style={{ maxWidth: '200px' }} title={booking.serviceNames?.length > 0 ? booking.serviceNames.join(', ') : booking.services?.map(s => s.serviceName).join(', ')}>
-                                            {booking.serviceNames?.length > 0 
-                                                ? booking.serviceNames.join(', ') 
+                                            {booking.serviceNames?.length > 0
+                                                ? booking.serviceNames.join(', ')
                                                 : booking.services?.map(s => s.serviceName).join(', ') || "N/A"}
                                         </div>
                                     </td>
                                     <td>
-                                        <Form.Select 
+                                        <Form.Select
                                             size="sm"
                                             className={`status-select-custom ${getStatusClass(booking.status)}`}
                                             value={booking.status}
@@ -179,20 +179,20 @@ const Ordermanagement = () => {
                                     </td>
                                     <td>
                                         <div className="action-icons" style={{ display: 'flex', justifyContent: 'center' }}>
-                                            <Eye 
-                                                size={20} 
-                                                className="action-icon" 
-                                                onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }} 
+                                            <Eye
+                                                size={20}
+                                                className="action-icon"
+                                                onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }}
                                             />
                                         </div>
                                     </td>
                                     <td>
                                         <div className="action-icons" style={{ display: 'flex', justifyContent: 'center' }}>
-                                            <LocateFixed 
-                                                size={20} 
-                                                className="action-icon" 
+                                            <LocateFixed
+                                                size={20}
+                                                className="action-icon"
                                                 style={{ color: 'var(--accent)' }}
-                                                onClick={() => { window.dispatchEvent(new CustomEvent('changePage', { detail: 'Tracking' })); }} 
+                                                onClick={() => { window.dispatchEvent(new CustomEvent('changePage', { detail: 'Tracking' })); }}
                                             />
                                         </div>
                                     </td>
@@ -210,7 +210,7 @@ const Ordermanagement = () => {
             {/* Footer and Pagination */}
             <div className="table-footer">
                 <div className="rows-per-page">
-                    Show rows per page 
+                    Show rows per page
                     <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
                         <option value={6}>6</option>
                         <option value={10}>10</option>
@@ -222,14 +222,14 @@ const Ordermanagement = () => {
                         {indexOfFirstRow + 1}-{Math.min(indexOfLastRow, bookings.length)} of {bookings.length}
                     </div>
                     <div className="pagi-arrows">
-                        <button 
-                            className="pagi-arrow" 
+                        <button
+                            className="pagi-arrow"
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => prev - 1)}
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        <button 
+                        <button
                             className="pagi-arrow"
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(prev => prev + 1)}
@@ -258,10 +258,10 @@ const Ordermanagement = () => {
                                     <p><strong>Phone:</strong> {selectedBooking.userDetails?.phone}</p>
                                     <p><strong>Address:</strong> {selectedBooking.userDetails?.address || 'N/A'}</p>
                                     {selectedBooking.userDetails?.latitude !== undefined && (
-                                        <p><strong>Live Location:</strong> 
-                                            <a 
-                                                href={`https://www.google.com/maps?q=${selectedBooking.userDetails.latitude},${selectedBooking.userDetails.longitude}`} 
-                                                target="_blank" 
+                                        <p><strong>Live Location:</strong>
+                                            <a
+                                                href={`https://www.google.com/maps?q=${selectedBooking.userDetails.latitude},${selectedBooking.userDetails.longitude}`}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="ms-2 text-warning"
                                                 style={{ textDecoration: 'none' }}
@@ -297,8 +297,8 @@ const Ordermanagement = () => {
                                     <h6 className="section-title"><Calendar size={16} /> Booking Schedule</h6>
                                     <p><strong>Date:</strong> {new Date(selectedBooking.bookingDate).toLocaleDateString()}</p>
                                     <p><strong>Time Slot:</strong> {selectedBooking.timeSlot}</p>
-                                    <p><strong>Status:</strong> 
-                                        <Form.Select 
+                                    <p><strong>Status:</strong>
+                                        <Form.Select
                                             size="sm"
                                             className={`mt-1 status-select-custom ${getStatusClass(selectedBooking.status)}`}
                                             value={selectedBooking.status}
@@ -325,16 +325,29 @@ const Ordermanagement = () => {
                                 <div className="detail-section">
                                     <h6 className="section-title"><Wrench size={16} /> Services Requested</h6>
                                     <div className="d-flex flex-wrap gap-2 mb-3">
-                                        {(selectedBooking.serviceNames?.length > 0 
-                                            ? selectedBooking.serviceNames 
+                                        {(selectedBooking.serviceNames?.length > 0
+                                            ? selectedBooking.serviceNames
                                             : selectedBooking.services?.map(s => s.serviceName))?.map((service, i) => (
-                                            <Badge key={i} bg="warning" text="dark" className="px-3 py-2 fw-bold">{service}</Badge>
-                                        ))}
+                                                <Badge key={i} bg="warning" text="dark" className="px-3 py-2 fw-bold">{service}</Badge>
+                                            ))}
                                     </div>
                                     <hr className="border-secondary" />
                                     <div className="d-flex justify-content-between align-items-center">
                                         <div>
                                             <p className="mb-1 text-white">Payment Method: <strong>{selectedBooking.paymentMethod}</strong></p>
+                                            {selectedBooking.bill && (
+                                                <p className="mb-1 text-white">Bill:
+                                                    <a
+                                                        href={`http://localhost:5000${selectedBooking.bill}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="ms-2 text-info"
+                                                        style={{ textDecoration: 'none' }}
+                                                    >
+                                                        📄 {selectedBooking.bill.split('/').pop()}
+                                                    </a>
+                                                </p>
+                                            )}
                                             {selectedBooking.specialInstructions && (
                                                 <p className="small italic text-warning">Note: {selectedBooking.specialInstructions}</p>
                                             )}

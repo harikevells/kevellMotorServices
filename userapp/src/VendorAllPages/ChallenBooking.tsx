@@ -13,13 +13,14 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  PermissionsAndroid,
 } from 'react-native';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import { useVendorNav } from './VendorSidebarNavigator';
 import { fetchVendorOrders, fetchSpareParts } from '../services/api';
 import RNFS from 'react-native-fs';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import { generatePDF } from 'react-native-html-to-pdf';
 import RNPrint from 'react-native-print';
 
 interface SparePart {
@@ -33,6 +34,389 @@ interface LaborCharge {
   name: string;
   amount: string;
 }
+
+const getInvoiceHTML = (data: any) => {
+  const {
+    total, subTotal, vendorName, vendorPhone, vendorEmail, vendorAddress,
+    logoBase64, logoUri, currentDate, customerName, vehicleNumber, vehicleDetails,
+    spareParts, laborCharges, selectedBooking
+  } = data;
+
+  return `
+    <html>
+      <head>
+        <style>
+          @page { size: auto; margin: 0mm; }
+          body { 
+            font-family: 'Helvetica', 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 40px; 
+            color: #333; 
+            background-color: #fff;
+          }
+          
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+          }
+          
+          .logo-section {
+            display: flex;
+            flex-direction: column;
+          }
+          
+          .logo-circle {
+            width: 80px;
+            height: 80px;
+            margin-left:40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+          }
+          
+          .logo-img {
+            width: 200px;
+            height: 100px;
+            object-fit: contain;
+          }
+
+          .invoice-title-section {
+            text-align: right;
+          }
+
+          .invoice-label {
+            font-size: 48px;
+            font-weight: 700;
+            color: #C13D10;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          }
+
+          .invoice-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 5px;
+          }
+
+          .shop-details {
+            margin-bottom: 40px;
+          }
+
+          .shop-name-styled {
+            font-size: 20px;
+            font-weight: bold;
+            color: #C13D10;
+            margin-bottom: 5px;
+          }
+
+          .address-text {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.5;
+            max-width: 250px;
+          }
+
+          .billing-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+          }
+
+          .bill-to-ship-to {
+            width: 50%;
+          }
+
+          .info-group {
+            margin-bottom: 25px;
+          }
+
+          .info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+          }
+
+          .info-value-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #C13D10;
+            margin-bottom: 5px;
+          }
+
+          .info-value-details {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+          }
+
+          .invoice-meta {
+            width: 40%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+          }
+
+          .meta-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+          }
+
+          .meta-label {
+            font-size: 14px;
+            color: #333;
+            width: 120px;
+            text-align: right;
+            margin-right: 20px;
+          }
+
+          .meta-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+          }
+
+          .balance-due-header {
+            margin-top: 15px;
+            text-align: right;
+          }
+
+          .balance-due-label {
+            font-size: 12px;
+            color: #666;
+          }
+
+          .balance-due-amount-header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+          }
+
+          th {
+            background-color: #C13D10;
+            color: #fff;
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+
+          td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            vertical-align: top;
+          }
+
+          .item-desc {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+          }
+
+          .item-subtext {
+            font-size: 11px;
+            color: #888;
+          }
+
+          .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+          }
+
+          .summary-table {
+            width: 300px;
+          }
+
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+          }
+
+          .summary-total {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 5px;
+            font-weight: bold;
+            font-size: 18px;
+          }
+
+          .balance-due-bar {
+            background-color: #C13D10;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            border-radius: 4px;
+            margin-top: 20px;
+          }
+
+          .bar-label {
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+          }
+
+          .bar-amount {
+            font-size: 22px;
+            font-weight: bold;
+          }
+
+          .footer-notes {
+            margin-top: 40px;
+          }
+
+          .notes-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+          }
+
+          .notes-text {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.5;
+          }
+
+          .terms-section {
+            margin-top: 25px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo-section">
+            <div class="logo-circle">
+              ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" class="logo-img" />` :
+      (logoUri ? `<img src="${logoUri}" class="logo-img" />` : '<span style="color:white;font-weight:bold;font-size:40px;">Z</span>')}
+            </div>
+            <div class="shop-name-styled">${vendorName}</div>
+            <div class="address-text">
+              ${vendorAddress}<br/>
+              Phone: ${vendorPhone}<br/>
+              Email: ${vendorEmail}
+            </div>
+          </div>
+          <div class="invoice-title-section">
+            <h1 class="invoice-label">INVOICE</h1>
+            <div class="invoice-number"># ${selectedBooking?.bookingRef || 'INV-000000'}</div>
+            <div class="balance-due-header">
+              <div class="balance-due-label">Balance Due</div>
+              <div class="balance-due-amount-header">₹${total}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="billing-section">
+          <div class="bill-to-ship-to">
+            <div class="info-group">
+              <div class="info-label">Bill To</div>
+              <div class="info-value-name">${customerName || 'Valued Customer'}</div>
+              <div class="info-value-details">
+                Phone: ${selectedBooking?.userDetails?.phone || 'N/A'}<br/>
+                Address: ${selectedBooking?.userDetails?.address || 'N/A'}<br/>
+                Reg No: ${vehicleNumber || 'N/A'}<br/>
+                Vehicle: ${vehicleDetails.brand} ${vehicleDetails.model}<br/>
+                Year: ${vehicleDetails.year || 'N/A'}
+              </div>
+            </div>
+          </div>
+          <div class="invoice-meta">
+            <div class="meta-row">
+              <div class="meta-label">Invoice Date:</div>
+              <div class="meta-value">${currentDate}</div>
+            </div>
+            <div class="meta-row">
+              <div class="meta-label">Terms:</div>
+              <div class="meta-value">Due on Receipt</div>
+            </div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th>Item & Description</th>
+              <th style="width: 60px; text-align: center;">Qty</th>
+              <th style="width: 100px; text-align: right;">Rate</th>
+              <th style="width: 120px; text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${spareParts.map((part: any, index: number) => `
+              <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td>
+                  <div class="item-desc">${part.name}</div>
+                  <div class="item-subtext">Automotive Spare Part</div>
+                </td>
+                <td style="text-align: center;">1.00</td>
+                <td style="text-align: right;">${part.amount}</td>
+                <td style="text-align: right;">${part.amount}</td>
+              </tr>
+            `).join('')}
+            ${laborCharges.map((charge: any, index: number) => `
+              <tr>
+                <td style="text-align: center;">${spareParts.length + index + 1}</td>
+                <td>
+                  <div class="item-desc">${charge.name}</div>
+                  <div class="item-subtext">Service Labor Charge</div>
+                </td>
+                <td style="text-align: center;">1.00</td>
+                <td style="text-align: right;">${charge.amount}</td>
+                <td style="text-align: right;">${charge.amount}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="summary-section">
+          <div class="summary-table">
+            <div class="summary-row">
+              <div style="color: #666;">Sub Total</div>
+              <div>${subTotal}</div>
+            </div>
+            <div class="summary-row">
+              <div style="color: #666;">Tax Rate</div>
+              <div>0.00%</div>
+            </div>
+            <div class="summary-row summary-total">
+              <div>Total</div>
+              <div>₹${total}</div>
+            </div>
+          </div>
+        </div>
+
+
+        <div style="text-align: center; margin-top: 30px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 296 296">
+            <path d="M32,236v-28h56v56H32V236L32,236z M80,236v-20H40v40h40V236L80,236z M48,236v-12h24v24H48V236L48,236z M104,260v-4h-8v-16h8v-24h8v-8H96v-8H64v-8h8v-8H56v16h-8v-8H32v-8h16v-16h-8v8h-8v-16h16v8h8v8h8v-8h8v8h16v-8h-8v-8H56v-8h24v-8H56v-8h-8v8H32v-24h8v8h48v-8h-8v-8H64v8h-8v-8H40V96h16v16h8v-8h16v-8h8v8h-8v8h8v8h8v-16h8v-8h-8V72h16v8h8v8h-8v8h8v48h-16v-8h-8v8h-8v8h-8v8h8v8h8v8h16v-8h-8v-8h-8v-8h16v16h8v-16h8v16h8v-24h8v-8h8v8h-8v8h8v8h24v-8h-8v-8h-8v-16h-8v-8h8v-8h8v-8h-8v-8h-8v16h-8v-8h-8v8h-8v-8h8v-8h-8V72h-8v-8h8v8h8V40h8v16h16v-8h-8V32h16v8h-8v8h16v-8h8v-8h16v24h-16v-8h-8v16h8v24h8v-8h8v40h16v-8h-8V96h16v24h16v-8h-8V96h8v16h8v-8h16v16h-8v-8h-8v8h-8v24h8v8h-8v8h-16v8h-8v8h-16v-8h-8v-8h-8v16h8v8h24v8h16v-8h-8v-8h8v-8h8v8h8v8h8v-16h-8v-8h16v24h-8v16h8v16h-8v24h8v8h-24v16h-24v-8h16v-8h-16v-16h-8v16h-8v8h8v8h-16v-24h-8v16h-8v-8h-8v-32h8v24h8v-24h8v-16h-8v-8h-8v-8h8v-8h-8v-8h-8v32h8v8h-16v16h-8v16h8v8h-8v8h16v8h-16v-8h-8v-8h-8v16h-32V260L104,260z M128,248v-8h8v-24h-16v8h8v8h-16v8h-8v8h8v8h16V248L128,248z M240,240v-8h8v-16h8v-8h-8v-24h-8v24h8v8h-8v8h-8v24h8V240L240,240z M200,236v-4h-8v8h8V236L200,236z M152,220v-4h-8v8h8V220L152,220z M224,212v-12h-24v24h24V212L224,212z M208,212v-4h8v8h-8V212L208,212z M144,204v-4h16v-8h-16v-8h-8v8h8v8h-16v-8h-8v8h-8v-8h-8v-8h-8v-8h-8v8h-8v8h8v-8h8v8h8v8h8v8h32V204L144,204z M120,180v-4h-8v8h8V180L120,180z M160,176v-8h-16v8h8v8h8V176L160,176z M208,164v-4h-8v8h8V164L208,164z M224,156v-4h8v-24h-8v8h-8v8h-8v-8h-16v-8h-8v-8h8V96h-8v-8h-8v-8h-8v8h-8V64h8v8h8v-8h-8v-8h-8v8h-8v24h8v8h8v-8h8v24h-8v8h-8v8h8v16h8v-8h16v8h8v8h16v8h8V156L224,156z M216,148v-4h8v8h-8V148L216,148z M88,140v-4h8v-8h-8v8h-8v8h8V140L88,140z M112,124v-4h-8v8h8V124L112,124z M112,84v-4h-8v8h8V84L112,84z M144,80v-8h-8v16h8V80L144,80z M192,44v-4h-8v8h8V44L192,44z M256,260v-4h8v8h-8V260L256,260z M256,144v-8h-8v-8h8v8h8v16h-8V144L256,144z M32,60V32h56v56H32V60L32,60zM80,60V40H40v40h40V60L80,60z M48,60V48h24v24H48V60L48,60z M208,60V32h56v56h-56V60L208,60z M256,60V40h-40v40h40V60L256,60zM224,60V48h24v24h-24V60L224,60z M96,60v-4h8v8h-8V60L96,60z M112,52v-4h-8V32h8v8h8v-8h8v8h-8v16h-8V52L112,52z" fill="#000"/>
+          </svg>
+          <div style="font-size: 12px; color: #666; margin-top: 5px; font-weight: bold;">SCAN TO PAY</div>
+        </div>
+
+
+      </body>
+    </html>
+  `;
+};
 
 const ChallenBooking = () => {
   const navigation = useNavigation();
@@ -62,6 +446,52 @@ const ChallenBooking = () => {
   const [newLaborCharge, setNewLaborCharge] = useState({ name: '', amount: '' });
   const [spareSearch, setSpareSearch] = useState('');
   const [bookingSearch, setBookingSearch] = useState('');
+  const [downloading, setDownloading] = useState(false);
+
+  const handleReset = () => {
+    setSelectedBooking(null);
+    setCustomerName('');
+    setVehicleNumber('');
+    setVehicleDetails({
+      brand: '',
+      model: '',
+      year: '',
+      category: 'Bike'
+    });
+    setSpareParts([]);
+    setLaborCharges([]);
+    setNewSparePart({ name: '', amount: '' });
+    setNewLaborCharge({ name: '', amount: '' });
+    setCategory('Bike');
+    setBookingSearch('');
+    setSpareSearch('');
+    alert('Form cleared successfully!');
+  };
+
+  const requestStoragePermission = async () => {
+    try {
+      if (Platform.OS !== 'android') return true;
+
+      // On Android 13 (API 33) and above, WRITE_EXTERNAL_STORAGE is deprecated and always returns denied.
+      // We skip it and try to write directly.
+      if (Number(Platform.Version) >= 33) return true;
+
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: "Storage Permission",
+          message: "App needs access to your storage to download PDFs.",
+          buttonNeutral: "Ask Me Later",
+          buttonNegative: "Cancel",
+          buttonPositive: "OK"
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
+      console.warn(err);
+      return false;
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -154,117 +584,46 @@ const ChallenBooking = () => {
     return (spareTotal + laborTotal).toFixed(2);
   };
 
+
   const generatePDF = async () => {
     try {
-      // 1. Prepare Data
       const total = calculateTotal();
       const safeCustomerName = (customerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-
-      // Vendor info from selected booking or defaults
       const vendorName = selectedBooking?.vendorDetails?.shopName || 'Kevell Motor Services';
       const vendorPhone = selectedBooking?.vendorDetails?.phone || 'N/A';
       const vendorEmail = selectedBooking?.vendorDetails?.email || 'N/A';
       const vendorAddress = selectedBooking?.vendorDetails?.address || 'N/A';
-
-      // 2. Read Logo as Base64
+      const logoAsset = Image.resolveAssetSource(require('../assets/logopdf.png'));
+      const logoUri = logoAsset ? logoAsset.uri : '';
       let logoBase64 = '';
-      try {
-        const logoPath = `${RNFS.MainBundlePath}/assets/src/assets/logo1-removebg-preview.png`;
-        // Note: MainBundlePath might vary, if it fails we'll just skip the logo
-        logoBase64 = await RNFS.readFile(logoPath, 'base64');
-      } catch (e) {
-        console.log('Logo path error, trying direct path:', e);
+      if (Platform.OS === 'android' && !logoUri.startsWith('http')) {
         try {
-          logoBase64 = await RNFS.readFile('d:/motorservice/kevellMotorServices/userapp/src/assets/logo1-removebg-preview.png', 'base64');
-        } catch (err) {
-          console.error('Failed to read logo file:', err);
+          logoBase64 = await RNFS.readFile(logoUri.replace('file://', ''), 'base64');
+        } catch (e) { }
+      }
+      if (!logoBase64 && Platform.OS === 'android') {
+        const logoAssets = ['src_assets_logopdf.png', 'assets_src_assets_logopdf.png', 'logopdf.png'];
+        for (const name of logoAssets) {
+          try {
+            logoBase64 = await RNFS.readFileAssets(name, 'base64');
+            if (logoBase64) break;
+          } catch (e) { }
         }
       }
+      const currentDate = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      const spareTotal = spareParts.reduce((sum, part) => sum + (parseFloat(part.amount) || 0), 0);
+      const laborTotal = laborCharges.reduce((sum, charge) => sum + (parseFloat(charge.amount) || 0), 0);
+      const subTotal = (spareTotal + laborTotal).toFixed(2);
 
-      const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; line-height: 1.4; }
-              .shop-name { font-size: 28px; font-weight: bold; color: #f28b2c; text-align: center; margin-bottom: 5px; }
-              .logo-container { text-align: center; margin-bottom: 20px; }
-              .logo { width: 150px; height: auto; }
-              
-              .details-container { display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 30px; border-top: 2px solid #f28b2c; padding-top: 15px; }
-              .details-column { width: 45%; }
-              .column-title { font-weight: bold; font-size: 14px; color: #f28b2c; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #eee; }
-              .info-text { font-size: 13px; margin-bottom: 3px; }
-              
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th { background-color: #f28b2c; color: white; padding: 12px 10px; text-align: left; font-size: 14px; }
-              td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-              
-              .total-container { margin-top: 20px; text-align: right; border-top: 2px solid #f28b2c; padding-top: 10px; }
-              .total-label { font-size: 16px; font-weight: normal; }
-              .total-amount { font-size: 22px; font-weight: bold; color: #f28b2c; }
-              
-              .footer { text-align: center; margin-top: 50px; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
-            </style>
-          </head>
-          <body>
-            <div class="shop-name">${vendorName}</div>
-            <div class="logo-container">
-              ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" class="logo" />` : '<div class="logo">DR. CHARLIE</div>'}
-            </div>
-
-            <div class="details-container">
-              <div class="details-column">
-                <div class="column-title">CUSTOMER & VEHICLE DETAILS</div>
-                <div class="info-text"><b>Name:</b> ${customerName || 'N/A'}</div>
-                <div class="info-text"><b>Reg No:</b> ${vehicleNumber || 'N/A'}</div>
-                <div class="info-text"><b>Vehicle:</b> ${vehicleDetails.brand} ${vehicleDetails.model}</div>
-                <div class="info-text"><b>Year:</b> ${vehicleDetails.year || 'N/A'}</div>
-              </div>
-              
-              <div class="details-column">
-                <div class="column-title">VENDOR DETAILS</div>
-                <div class="info-text"><b>Shop Name:</b> ${vendorName}</div>
-                <div class="info-text"><b>Phone:</b> ${vendorPhone}</div>
-                <div class="info-text"><b>Email:</b> ${vendorEmail}</div>
-                <div class="info-text"><b>Address:</b> ${vendorAddress}</div>
-              </div>
-            </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 70%;">DESCRIPTION</th>
-                  <th style="text-align: right; width: 30%;">AMOUNT</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${spareParts.map(part => `
-                  <tr>
-                    <td>${part.name} (Spare Part)</td>
-                    <td style="text-align: right;">₹${part.amount}</td>
-                  </tr>
-                `).join('')}
-                ${laborCharges.map(charge => `
-                  <tr>
-                    <td>${charge.name} (Labor)</td>
-                    <td style="text-align: right;">₹${charge.amount}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-
-            <div class="total-container">
-              <span class="total-label">Grand Total: </span>
-              <span class="total-amount">₹${total}</span>
-            </div>
-
-            <div class="footer">
-              Thank you for choosing Dr. Charlie Service!<br/>
-              This is a digital invoice. No signature required.
-            </div>
-          </body>
-        </html>
-      `;
+      const htmlContent = getInvoiceHTML({
+        total, subTotal, vendorName, vendorPhone, vendorEmail, vendorAddress,
+        logoBase64, logoUri, currentDate, customerName, vehicleNumber, vehicleDetails,
+        spareParts, laborCharges, selectedBooking
+      });
 
       const printer = RNPrint?.print ? RNPrint : (RNPrint as any)?.default || require('react-native-print');
 
@@ -272,14 +631,133 @@ const ChallenBooking = () => {
         throw new Error('Print module not found. Please ensure npx react-native run-android was successful.');
       }
 
+      const safeBookingRef = selectedBooking?.bookingRef || 'Booking';
       await printer.print({
         html: htmlContent,
-        jobName: `Bill_${safeCustomerName}`
+        jobName: `${safeCustomerName}_${safeBookingRef}`
       });
-
     } catch (error: any) {
       console.error('Print Error:', error);
       alert('Print Error: ' + (error.message || 'Check native module installation'));
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const total = calculateTotal();
+      const safeCustomerName = (customerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+
+      const vendorName = selectedBooking?.vendorDetails?.shopName || 'Kevell Motor Services';
+      const vendorPhone = selectedBooking?.vendorDetails?.phone || 'N/A';
+      const vendorEmail = selectedBooking?.vendorDetails?.email || 'N/A';
+      const vendorAddress = selectedBooking?.vendorDetails?.address || 'N/A';
+
+      const logoAsset = Image.resolveAssetSource(require('../assets/logopdf.png'));
+      const logoUri = logoAsset ? logoAsset.uri : '';
+      let logoBase64 = '';
+
+      if (Platform.OS === 'android' && !logoUri.startsWith('http')) {
+        try {
+          logoBase64 = await RNFS.readFile(logoUri.replace('file://', ''), 'base64');
+        } catch (e) { }
+      }
+
+      if (!logoBase64 && Platform.OS === 'android') {
+        const logoAssets = ['src_assets_logopdf.png', 'assets_src_assets_logopdf.png', 'logopdf.png'];
+        for (const name of logoAssets) {
+          try {
+            logoBase64 = await RNFS.readFileAssets(name, 'base64');
+            if (logoBase64) break;
+          } catch (e) { }
+        }
+      }
+
+      const currentDate = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      const spareTotal = spareParts.reduce((sum, part) => sum + (parseFloat(part.amount) || 0), 0);
+      const laborTotal = laborCharges.reduce((sum, charge) => sum + (parseFloat(charge.amount) || 0), 0);
+      const subTotal = (spareTotal + laborTotal).toFixed(2);
+
+      const htmlContent = getInvoiceHTML({
+        total, subTotal, vendorName, vendorPhone, vendorEmail, vendorAddress,
+        logoBase64, logoUri, currentDate, customerName, vehicleNumber, vehicleDetails,
+        spareParts, laborCharges, selectedBooking
+      });
+
+      const safeBookingRef = selectedBooking?.bookingRef || 'Booking';
+      const safeFileName = `${safeCustomerName}_${safeBookingRef}`;
+
+      const downloadOptions = {
+        html: htmlContent,
+        fileName: safeFileName,
+        directory: 'Documents',
+        base64: false,
+      };
+
+      if (typeof generatePDF !== 'function') {
+        throw new Error('PDF conversion function not found. Please ensure the library is correctly installed.');
+      }
+
+      const pdfFile = await generatePDF(downloadOptions);
+
+      if (!pdfFile || (!pdfFile.filePath && !pdfFile.base64)) {
+        throw new Error('PDF generation failed to return a result.');
+      }
+
+      setDownloading(true);
+      const hasPermission = await requestStoragePermission();
+      if (!hasPermission) {
+        alert('Storage permission is required to download the PDF.');
+        setDownloading(false);
+        return;
+      }
+
+      const finalFileName = `${safeFileName}.pdf`;
+      const pathsToTry = [
+        RNFS.DownloadDirectoryPath,
+        '/storage/emulated/0/Download',
+        '/storage/emulated/0/Downloads',
+        `${RNFS.ExternalStorageDirectoryPath}/Download`,
+        RNFS.ExternalDirectoryPath
+      ];
+
+      let savedPath = '';
+
+      for (const dir of pathsToTry) {
+        if (!dir) continue;
+        try {
+          const destPath = `${dir}/${finalFileName}`;
+
+          if (pdfFile.base64) {
+            await RNFS.writeFile(destPath, pdfFile.base64, 'base64');
+          } else if (pdfFile.filePath) {
+            await RNFS.copyFile(pdfFile.filePath, destPath);
+          }
+
+          await RNFS.scanFile(destPath).catch(() => { });
+          savedPath = destPath;
+          break;
+        } catch (err: any) {
+          console.log(`Failed to save to ${dir}:`, err.message);
+        }
+      }
+
+      if (savedPath) {
+        alert(`Invoice Downloaded!\n\nFile: ${finalFileName}\nLocation: ${savedPath}`);
+      } else if (pdfFile.filePath) {
+        alert('Could not move to Downloads. File is at: ' + pdfFile.filePath);
+      } else {
+        throw new Error('Could not save the PDF file to storage.');
+      }
+    } catch (error: any) {
+      console.error('Download Error:', error);
+      alert('Download Error: ' + (error.message || 'Check storage permissions.'));
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -340,13 +818,13 @@ const ChallenBooking = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <TouchableOpacity onPress={() => setActiveTab('Dashboard')}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Service Bill</Text>
+          <Text style={styles.headerTitle}>Challen Service Bill</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </View> */}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Booking Selection */}
@@ -523,12 +1001,21 @@ const ChallenBooking = () => {
             <Text style={styles.totalValue}>₹{calculateTotal()}</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.generateButton}
-            onPress={generatePDF}
-          >
-            <Text style={styles.generateButtonText}>Challen Done & Print Bill</Text>
-          </TouchableOpacity>
+          <View style={{ marginTop: 20 }}>
+            <TouchableOpacity
+              style={[styles.generateButton, { backgroundColor: '#C13D10' }]}
+              onPress={generatePDF}
+            >
+              <Text style={styles.generateButtonText}>Challen Done & Download Bill</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.generateButton, { backgroundColor: '#1B4D6B', marginTop: 10 }]}
+              onPress={handleReset}
+            >
+              <Text style={styles.generateButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
           <View style={{ height: 50 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -557,10 +1044,16 @@ const ChallenBooking = () => {
               />
             </View>
             <FlatList
-              data={Array.isArray(bookings) ? bookings.filter(b =>
-                b.bookingRef?.toLowerCase().includes(bookingSearch.toLowerCase()) ||
-                b.userDetails?.name?.toLowerCase().includes(bookingSearch.toLowerCase())
-              ) : []}
+              data={Array.isArray(bookings) ? bookings.filter(b => {
+                const matchesSearch = 
+                  b.bookingRef?.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+                  b.userDetails?.name?.toLowerCase().includes(bookingSearch.toLowerCase());
+                
+                const status = b.status?.toLowerCase();
+                const isExcludedStatus = status === 'delivered' || status === 'delivery' || status === 'cancelled';
+                
+                return matchesSearch && !isExcludedStatus;
+              }) : []}
               keyExtractor={(item) => item._id}
               renderItem={({ item }) => (
                 <TouchableOpacity

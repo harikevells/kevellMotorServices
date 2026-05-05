@@ -434,7 +434,7 @@ exports.completeVendorProfile = async (req, res, next) => {
         if (state) vendor.address.state = state;
         if (pincode) vendor.address.pincode = pincode;
         if (country) vendor.address.country = country;
-        
+
         // Final fallback for required fields in case they were missing in existing document
         vendor.address.street = vendor.address.street || 'Address not provided';
         vendor.address.city = vendor.address.city || 'City';
@@ -566,9 +566,9 @@ exports.getVendorOrders = async (req, res, next) => {
 
     const orders = await Order.find(filter)
       .populate('user', 'name email phone')
-      .populate('vehicle') 
-      .populate('services', 'serviceName price') 
-      .populate('center', 'shopName ownerName phone email') 
+      .populate('vehicle')
+      .populate('services', 'serviceName price')
+      .populate('center', 'shopName ownerName phone email')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -638,9 +638,9 @@ exports.getOrderById = async (req, res, next) => {
 exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { status, estimatedCompletion, location } = req.body;
-    
+
     const validStatuses = [
-      'pending', 'confirmed', 'on_the_way', 'received', 'inspected', 
+      'pending', 'confirmed', 'on_the_way', 'received', 'inspected',
       'in_service', 'quality_check', 'ready', 'out_for_delivery', 'completed', 'delivered', 'cancelled'
     ];
     if (!validStatuses.includes(status)) {
@@ -682,7 +682,7 @@ exports.updateOrderStatus = async (req, res, next) => {
     if (estimatedCompletion) {
       order.estimatedCompletion = new Date(estimatedCompletion);
     }
-    
+
     // ✅ Update vendor live location in the database when accepting an order
     if (location && location.latitude && location.longitude) {
       if (!order.vendorDetails) order.vendorDetails = {};
@@ -743,6 +743,64 @@ exports.updateOrderStatus = async (req, res, next) => {
   }
 };
 
+// Upload booking bill
+exports.uploadBookingBill = async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+    console.log(`[BACKEND-UPLOAD] Received upload request for Order: ${orderId}`);
+    console.log(`[BACKEND-UPLOAD] File info:`, req.file);
+
+    const vendor = await Vendor.findOne({ user: req.user.id });
+    if (!vendor) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({
+        success: false,
+        message: 'Vendor profile not found'
+      });
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      'center': vendor._id
+    });
+
+    if (!order) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please upload a bill file (PDF or Image)'
+      });
+    }
+
+    // Delete old bill if exists
+    if (order.bill) {
+      const oldPath = path.join(__dirname, '..', order.bill);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    order.bill = `/uploads/bills/${req.file.filename}`;
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Bill uploaded successfully',
+      bill: order.bill
+    });
+  } catch (error) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    next(error);
+  }
+};
+
 // Get order statistics
 exports.getOrderStatistics = async (req, res, next) => {
   console.log(`[DEBUG] getOrderStatistics hit for user: ${req.user?.id}`);
@@ -786,9 +844,9 @@ exports.getOrderStatistics = async (req, res, next) => {
     // Calculate statistics
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status)).length; 
-    const pendingOrders = orders.filter(o => !['completed', 'delivered', 'cancelled'].includes(o.status)).length; 
-    const cancelledOrders = orders.filter(o => o.status === 'cancelled').length; 
+    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status)).length;
+    const pendingOrders = orders.filter(o => !['completed', 'delivered', 'cancelled'].includes(o.status)).length;
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
 
     // Count Total Delivery Boys for this vendor
     const totalDeliveryBoys = await DeliveryBoy.countDocuments({ vendorId: req.user.id });
@@ -798,12 +856,12 @@ exports.getOrderStatistics = async (req, res, next) => {
     const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
 
     const monthlyAggregation = await Order.aggregate([
-      { 
-        $match: { 
-          center: vendor._id, 
+      {
+        $match: {
+          center: vendor._id,
           createdAt: { $gte: startOfYear, $lte: endOfYear },
-          status: { $nin: ['pending', 'cancelled'] } 
-        } 
+          status: { $nin: ['pending', 'cancelled'] }
+        }
       },
       {
         $group: {
@@ -1571,10 +1629,10 @@ exports.updateOrderLocation = async (req, res, next) => {
 
     // Update order with current location
     const order = await Order.findOneAndUpdate(
-      { 
+      {
         _id: orderId,
         'center': vendor._id,
-        status: { $in: ['confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'] } 
+        status: { $in: ['confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'] }
       },
       {
         $set: {
@@ -1624,7 +1682,7 @@ exports.createDeliveryBoy = async (req, res, next) => {
 
     const { name, email, phone, password, address, aadharNo } = req.body;
     console.log("[DEBUG] Form Data Received:", { name, email, phone, address, aadharNo, hasPassword: !!password });
-    
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {

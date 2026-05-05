@@ -3,7 +3,14 @@ const path = require('path');
 const fs = require('fs');
 
 // Create upload directories if not exists
-const uploadDirs = ['uploads/categories', 'uploads/services', 'uploads/shops', 'uploads/documents', 'uploads/profilePictures'];
+const uploadDirs = [
+  'uploads/categories',
+  'uploads/services',
+  'uploads/shops',
+  'uploads/documents',
+  'uploads/profilePictures',
+  'uploads/bills'
+];
 uploadDirs.forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -87,10 +94,17 @@ const uploadProfilePicture = multer({
   fileFilter: fileFilter
 });
 
+const uploadBill = multer({
+  storage: getStorage('bills'),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: fileFilter
+});
+
 module.exports = {
   uploadCategory,
   uploadService,
   uploadShop,
   uploadDocument,
-  uploadProfilePicture
-};
+  uploadProfilePicture,
+  uploadBill
+};

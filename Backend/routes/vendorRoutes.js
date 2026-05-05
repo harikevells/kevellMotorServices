@@ -1,7 +1,7 @@
 // routes/vendorRoutes.js
 const express = require('express');
 const router = express.Router();
-const { uploadShop, uploadService, uploadDocument, uploadProfilePicture } = require('../middleware/upload');
+const { uploadShop, uploadService, uploadDocument, uploadProfilePicture, uploadBill } = require('../middleware/upload');
 const {
   // Registration & Profile
   registerVendor,
@@ -32,7 +32,8 @@ const {
   getEarningsReport,
   exportOrders,
   completeVendorProfile,
-  updateOrderLocation
+  updateOrderLocation,
+  uploadBookingBill
 } = require('../controllers/vendorController');
 const verifyToken = require('../middleware/auth');
 
@@ -110,6 +111,12 @@ router.patch('/orders/:orderId/status',
 router.patch('/orders/:orderId/location',
   verifyToken,
   updateOrderLocation
+);
+
+router.post('/orders/:orderId/bill',
+  verifyToken,
+  uploadBill.single('bill'),
+  uploadBookingBill
 );
 
 

@@ -128,7 +128,7 @@ export const fetchUserBookings = () => api.get('/bookings');
 export const fetchTracking = (bookingId: string) => api.get('/bookings/' + bookingId + '/track');
 
 // Reviews
-export const addReview = (data: { orderId: string, rating: number, comment: string }) => 
+export const addReview = (data: { orderId: string, rating: number, comment: string }) =>
   api.post(`/bookings/${data.orderId}/review`, { rating: data.rating, comment: data.comment });
 
 // Vendor
@@ -141,6 +141,10 @@ export const fetchVendorDashboard = () => api.get('/vendor/dashboard');
 export const fetchOrderStatistics = (year: number) => api.get(`/vendor/orders/statistics?year=${year}`);
 export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
 export const fetchSpareParts = () => api.get('/spare-parts');
+export const uploadBookingBill = (bookingId: string, formData: FormData) =>
+  api.post(`/vendor/orders/${bookingId}/bill`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
 
 // Notifications
 export const fetchNotifications = () => api.get('/notifications');

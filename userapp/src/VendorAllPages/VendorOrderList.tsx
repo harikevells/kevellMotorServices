@@ -14,10 +14,11 @@ import {
   PermissionsAndroid,
   Platform,
 } from 'react-native';
+import { pick, isCancel, types } from '@react-native-documents/picker';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from '@react-native-community/geolocation';
 import { COLORS, SHADOWS, SIZES } from '../constants/theme';
-import { fetchVendorOrders, updateOrderStatus, updateOrderLocation } from '../services/api';
+import { fetchVendorOrders, updateOrderStatus, updateOrderLocation, uploadBookingBill } from '../services/api';
 
 const STAGES = [
   { id: 'pending', label: 'Booking Pending', icon: '⏳', desc: 'Awaiting confirmation' },
@@ -42,6 +43,7 @@ const VendorOrderList = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled'>('Pending');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -153,6 +155,60 @@ const VendorOrderList = () => {
         return orders.filter(o => o.status === 'cancelled');
       default:
         return orders;
+    }
+  };
+
+  const handleUploadBill = async () => {
+    if (!selectedOrder || uploading) return;
+
+    try {
+      console.log('Opening document picker...');
+      const results = await pick({
+        type: [types.pdf, types.images],
+      });
+
+      if (!results || results.length === 0) return;
+      const file = results[0];
+
+      console.log('File selected:', JSON.stringify(file, null, 2));
+      
+      const formData = new FormData();
+      formData.append('bill', {
+        uri: file.uri,
+        type: file.type || 'application/pdf',
+        name: file.name || `bill_${Date.now()}.pdf`,
+      } as any);
+
+      console.log('FormData bill field:', {
+        uri: file.uri,
+        type: file.type || 'application/pdf',
+        name: file.name || `bill_${Date.now()}.pdf`,
+      });
+
+      setUploading(true);
+      const response: any = await uploadBookingBill(selectedOrder._id, formData);
+      setUploading(false);
+
+      if (response.success) {
+        Alert.alert('Success', 'Bill uploaded successfully');
+        // Update local state
+        const updatedOrders = orders.map(o =>
+          o._id === selectedOrder._id ? { ...o, bill: response.bill } : o
+        );
+        setOrders(updatedOrders);
+        setSelectedOrder({ ...selectedOrder, bill: response.bill });
+      } else {
+        Alert.alert('Error', response.message || 'Failed to upload bill');
+      }
+    } catch (err: any) {
+      setUploading(false);
+      if (isCancel(err)) {
+        console.log('User cancelled the picker');
+      } else {
+        console.error('Picker Error:', err);
+        const errorMessage = err?.message || 'An unknown error occurred';
+        Alert.alert('Error', `Upload failed: ${errorMessage}\n\nPlease try rebuilding the app if the error persists.`);
+      }
     }
   };
 
@@ -443,6 +499,40 @@ const VendorOrderList = () => {
                   <Text style={{ fontSize: 20, fontWeight: '900', color: COLORS.primary }}>₹{selectedOrder.totalAmount}</Text>
                 </View>
               </View>
+
+              <View style={styles.detailBox}>
+                <Text style={styles.detailBoxTitle}>Bill Information</Text>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Bill Status</Text>
+                  <Text style={[styles.detailValue, { color: selectedOrder.bill ? '#28A745' : '#DC3545', fontWeight: 'bold' }]}>
+                    {selectedOrder.bill ? 'UPLOADED' : 'NOT UPLOADED'}
+                  </Text>
+                </View>
+                {selectedOrder.bill && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>File</Text>
+                    <Text style={[styles.detailValue, { color: COLORS.primary }]} numberOfLines={1}>
+                      {selectedOrder.bill.split('/').pop()}
+                    </Text>
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={[styles.uploadButton, uploading && { opacity: 0.7 }]}
+                  onPress={handleUploadBill}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Text style={styles.uploadIcon}>📤</Text>
+                      <Text style={styles.uploadButtonText}>
+                        {selectedOrder.bill ? 'Update Bill' : 'Upload Bill (PDF/Image)'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
               
             </ScrollView>
           )}
@@ -630,6 +720,24 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     maxWidth: '60%',
     textAlign: 'right',
+  },
+  uploadButton: {
+    backgroundColor: '#1B4D6B',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 15,
+  },
+  uploadButtonText: {
+    color: '#FFF',
+    fontWeight: '800',
+    fontSize: 14,
+    marginLeft: 10,
+  },
+  uploadIcon: {
+    fontSize: 18,
   },
 });
 
