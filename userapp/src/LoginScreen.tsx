@@ -12,7 +12,10 @@ import {
   Animated,
   Easing,
   StatusBar,
-  Dimensions
+  Dimensions,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform
 } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -135,81 +138,93 @@ const LoginScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={BG} />
       
-      <Animated.View style={[styles.topHalf, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <Animated.View style={[styles.illustrationContainer, { transform: [{ scale: logoScale }] }]}>
-          <Image source={SecondSVG} style={styles.logoImage} resizeMode="contain" />
-        </Animated.View>
-        <Text style={styles.heading}>
-          {'Welcome back'}
-        </Text>
-        <Text style={styles.subHeading}>
-          {'Login to continue your journey'}
-        </Text>
-      </Animated.View>
-
-      <Animated.View style={[styles.bottomHalf, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.roleContainer}>
-          <TouchableOpacity
-            style={[styles.roleOption, role === 'user' && styles.roleSelected]}
-            onPress={() => setRole('user')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.roleText, role === 'user' && styles.roleTextSelected]}>User</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.roleOption, role === 'vendor' && styles.roleSelected]}
-            onPress={() => setRole('vendor')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.roleText, role === 'vendor' && styles.roleTextSelected]}>Vendor</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor="#555"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
-        </Animated.View>
-
-        <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#555"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-              {showPassword ? <EyeIcon color={ORANGE} /> : <EyeOffIcon color="#555" />}
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        <TouchableOpacity
-          style={styles.verifyButton}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.9}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>LOG IN</Text>}
-        </TouchableOpacity>
+          <Animated.View style={[styles.topHalf, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <Animated.View style={[styles.illustrationContainer, { transform: [{ scale: logoScale }] }]}>
+              <Image source={SecondSVG} style={styles.logoImage} resizeMode="contain" />
+            </Animated.View>
+            <Text style={styles.heading}>
+              {'Welcome back'}
+            </Text>
+            <Text style={styles.subHeading}>
+              {'Login to continue your journey'}
+            </Text>
+          </Animated.View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Registration' as any)} style={{ alignSelf: 'center' }}>
-          <Text style={styles.backLink}>
-            Don't have an account? <Text style={{ fontWeight: '900', color: ORANGE }}>Register</Text>
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
+          <Animated.View style={[styles.bottomHalf, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            <View style={styles.roleContainer}>
+              <TouchableOpacity
+                style={[styles.roleOption, role === 'user' && styles.roleSelected]}
+                onPress={() => setRole('user')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.roleText, role === 'user' && styles.roleTextSelected]}>User</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.roleOption, role === 'vendor' && styles.roleSelected]}
+                onPress={() => setRole('vendor')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.roleText, role === 'vendor' && styles.roleTextSelected]}>Vendor</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email Address"
+                  placeholderTextColor="#555"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+            </Animated.View>
+
+            <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="#555"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                  {showPassword ? <EyeIcon color={ORANGE} /> : <EyeOffIcon color="#555" />}
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+
+            <TouchableOpacity
+              style={styles.verifyButton}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.9}
+            >
+              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>LOG IN</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Registration' as any)} style={{ alignSelf: 'center' }}>
+              <Text style={styles.backLink}>
+                Don't have an account? <Text style={{ fontWeight: '900', color: ORANGE }}>Register</Text>
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

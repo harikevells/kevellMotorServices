@@ -418,6 +418,19 @@ const getInvoiceHTML = (data: any) => {
   `;
 };
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear());
+    return `${day}/${month}/${year}`;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 const ChallenBooking = () => {
   const navigation = useNavigation();
   const { setActiveTab } = useVendorNav();
@@ -849,9 +862,21 @@ const ChallenBooking = () => {
               style={styles.dropdownButton}
               onPress={() => setBookingModalVisible(true)}
             >
-              <Text style={selectedBooking ? styles.dropdownTextActive : styles.dropdownText}>
-                {selectedBooking ? selectedBooking.bookingRef : 'Select Booking ID'}
-              </Text>
+              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginRight: 10 }}>
+                <Text style={selectedBooking ? styles.dropdownTextActive : styles.dropdownText}>
+                  {selectedBooking ? selectedBooking.bookingRef : 'Select Booking ID'}
+                </Text>
+                {selectedBooking && (
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={{ fontSize: 13, color: '#F28B2C', fontWeight: 'bold' }}>
+                      {formatDate(selectedBooking.bookingDate)}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#F28B2C', fontWeight: '500' }}>
+                      {selectedBooking.timeSlot || selectedBooking.timeslot || selectedBooking.slotTime || selectedBooking.time}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.dropdownArrow}>▼</Text>
             </TouchableOpacity>
           </View>
@@ -883,6 +908,7 @@ const ChallenBooking = () => {
             <TextInput
               style={styles.input}
               placeholder="Enter name"
+              placeholderTextColor="#999"
               value={customerName}
               onChangeText={setCustomerName}
             />
@@ -893,6 +919,7 @@ const ChallenBooking = () => {
             <TextInput
               style={styles.input}
               placeholder="e.g. TN 01 AB 1234"
+              placeholderTextColor="#999"
               value={vehicleNumber}
               onChangeText={setVehicleNumber}
               autoCapitalize="characters"
@@ -906,6 +933,7 @@ const ChallenBooking = () => {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Honda"
+                placeholderTextColor="#999"
                 value={vehicleDetails.brand}
                 onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, brand: val })}
               />
@@ -915,6 +943,7 @@ const ChallenBooking = () => {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Activa"
+                placeholderTextColor="#999"
                 value={vehicleDetails.model}
                 onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, model: val })}
               />
@@ -926,6 +955,7 @@ const ChallenBooking = () => {
             <TextInput
               style={styles.input}
               placeholder="e.g. 2022"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={vehicleDetails.year}
               onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, year: val })}
@@ -1048,6 +1078,7 @@ const ChallenBooking = () => {
               <TextInput
                 style={styles.modalInput}
                 placeholder="Search Booking ID or Customer..."
+                placeholderTextColor="#999"
                 value={bookingSearch}
                 onChangeText={setBookingSearch}
               />
@@ -1069,11 +1100,16 @@ const ChallenBooking = () => {
                   style={styles.selectionItem}
                   onPress={() => handleSelectBooking(item)}
                 >
-                  <View>
-                    <Text style={styles.selectionTitle}>{item.bookingRef}</Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={styles.selectionTitle}>{item.bookingRef}</Text>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ fontSize: 12, color: '#F28B2C', fontWeight: 'bold' }}>{formatDate(item.bookingDate)}</Text>
+                        <Text style={{ fontSize: 11, color: '#F28B2C', fontWeight: '500' }}>{item.timeSlot || item.timeslot || item.slotTime || item.time}</Text>
+                      </View>
+                    </View>
                     <Text style={styles.selectionSubTitle}>{item.userDetails?.name} • {item.vehicleDetails?.registration_no}</Text>
                   </View>
-                  <Text style={styles.selectionArrow}>→</Text>
                 </TouchableOpacity>
               )}
               ListEmptyComponent={

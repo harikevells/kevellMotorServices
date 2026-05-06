@@ -13,11 +13,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { fetchProfile } from '../services/api';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
+// import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'; // Removing since it's black without API key
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type AddressRouteProp = RouteProp<RootStackParamList, 'Address'>;
@@ -45,6 +47,7 @@ const AddressPage = () => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const webViewRef = React.useRef<WebView>(null);
 
   useEffect(() => {
     loadUserProfile();
@@ -96,16 +99,25 @@ const AddressPage = () => {
 
   const getCurrentLocation = () => {
     setLoadingLocation(true);
-    // We will now rely on MapView's 'showsUserLocation' property 
-    // which is more reliable than the global navigator.
-    // I will enable 'showsUserLocation' on the map temporarily to find you.
-    setShowUserLoc(true);
-
-    // Fallback: If map doesn't trigger, we show a notice
-    setTimeout(() => {
-      setLoadingLocation(false);
-      Alert.alert('Locating...', 'The map is fetching your GPS position. Please wait a moment.');
-    }, 2000);
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        updateLocation(latitude, longitude);
+        
+        // Sync to WebView
+        const js = `if(window.updateCenter) window.updateCenter(${latitude}, ${longitude});`;
+        webViewRef.current?.injectJavaScript(js);
+        
+        setLoadingLocation(false);
+        Alert.alert('Location Found', 'Your current location has been updated on the map.');
+      },
+      (error) => {
+        console.error(error);
+        setLoadingLocation(false);
+        Alert.alert('Error', 'Could not fetch your live location. Please check your GPS settings.');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
   };
 
   const reverseGeocode = async (lat: number, lng: number) => {
@@ -131,6 +143,55 @@ const AddressPage = () => {
       longitude: lng,
     }));
     reverseGeocode(lat, lng);
+  };
+
+  const generateMapHTML = (lat: number, lng: number) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style> 
+          body { padding: 0; margin: 0; background: #FFFFFF; } 
+          #map { height: 100vh; width: 100vw; } 
+          .leaflet-control-attribution { display: none; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          var map = L.map('map', {
+            zoomControl: false
+          }).setView([${lat}, ${lng}], 15);
+          
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20
+          }).addTo(map);
+
+          var marker = L.marker([${lat}, ${lng}], {
+            draggable: false
+          }).addTo(map);
+
+          map.on('move', function() {
+            var center = map.getCenter();
+            marker.setLatLng(center);
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              latitude: center.lat,
+              longitude: center.lng
+            }));
+          });
+
+          // Function to update center from outside
+          window.updateCenter = function(newLat, newLng) {
+            map.setView([newLat, newLng], 15);
+            marker.setLatLng([newLat, newLng]);
+          };
+        </script>
+      </body>
+      </html>
+    `;
   };
 
   const handleNext = () => {
@@ -224,32 +285,26 @@ const AddressPage = () => {
           </View>
 
           <View style={styles.mapContainer}>
-            <MapView
+            <WebView
+              ref={webViewRef}
+              originWhitelist={['*']}
+              source={{ html: generateMapHTML(region.latitude, region.longitude) }}
               style={styles.map}
-              region={region}
-              showsUserLocation={showUserLoc}
-              followsUserLocation={showUserLoc}
-              onUserLocationChange={(event) => {
-                if (showUserLoc && event.nativeEvent.coordinate) {
-                  const { latitude, longitude } = event.nativeEvent.coordinate;
-                  updateLocation(latitude, longitude);
-                  setShowUserLoc(false); // Stop tracking after finding
-                  setLoadingLocation(false);
+              scrollEnabled={true}
+              onMessage={(event) => {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.latitude && data.longitude) {
+                  // Only update if not currently fetching user location to avoid loops
+                  if (!loadingLocation) {
+                    setFormData(prev => ({ ...prev, latitude: data.latitude, longitude: data.longitude }));
+                    setRegion(prev => ({ ...prev, latitude: data.latitude, longitude: data.longitude }));
+                    // Debounce geocoding or only do it on stop? 
+                    // For now let's just update local state
+                  }
                 }
               }}
-              onRegionChangeComplete={(newRegion) => {
-                // Update marker position to center of map
-                if (!showUserLoc) {
-                  updateLocation(newRegion.latitude, newRegion.longitude);
-                }
-              }}
-            >
-              <Marker
-                coordinate={{ latitude: formData.latitude || region.latitude, longitude: formData.longitude || region.longitude }}
-                pinColor="#f28b2c"
-              />
-            </MapView>
-            <View style={styles.markerFixed}>
+            />
+            <View style={styles.markerFixed} pointerEvents="none">
               <View style={styles.markerDot} />
             </View>
           </View>
@@ -280,6 +335,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    marginTop: 30,
     paddingVertical: 15,
   },
   backButton: {
