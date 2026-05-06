@@ -113,6 +113,7 @@ const NotificationPage = () => {
             try {
                 await markNotificationRead(notif._id);
                 setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+                vendorNav.refreshNotifications();
             } catch (error) {
                 console.error(error);
             }
@@ -128,6 +129,7 @@ const NotificationPage = () => {
         try {
             await markAllNotificationsRead();
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            vendorNav.refreshNotifications();
         } catch (error) {
             console.error(error);
         }

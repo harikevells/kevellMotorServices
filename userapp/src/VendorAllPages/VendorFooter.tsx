@@ -28,7 +28,7 @@ const VendorFooter: React.FC = () => {
             };
 
             return (
-              <VendorFooterIcon 
+              <VendorFooterIcon
                 key={tab.id}
                 name={tab.id}
                 isActive={isFocused}

@@ -22,37 +22,49 @@ const Payment = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(8);
+    const [rowsPerPage, setRowsPerPage] = useState(6);
     const [totalPayments, setTotalPayments] = useState(0);
 
     const fetchPayments = useCallback(async () => {
         setLoading(true);
         try {
-            // Simulated API call - swapping to live data if endpoint existed
-            // const token = localStorage.getItem('token');
-            // const response = await axios.get(`http://localhost:5000/api/payments?search=${searchTerm}&status=${filterStatus}&page=${currentPage}&limit=${rowsPerPage}`, {
-            //     headers: { 'Authorization': `Bearer ${token}` }
-            // });
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:5000/api/admin/bookings', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             
-            // For now, use dummy data
-            let filtered = dummyPayments;
-            if (searchTerm) {
-                filtered = filtered.filter(p => 
-                    p.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    p.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    p.vendor.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-            }
-            if (filterStatus !== 'All') {
-                filtered = filtered.filter(p => p.status === filterStatus);
-            }
+            if (response.data.success) {
+                const liveData = response.data.bookings.map(booking => ({
+                    _id: booking._id,
+                    paymentId: booking._id.slice(-6).toUpperCase(), // Fallback ID
+                    bookingRef: booking.bookingRef || `REF-${booking._id.slice(-4).toUpperCase()}`,
+                    customer: booking.userDetails?.name || booking.user?.name || 'Anonymous',
+                    vendor: booking.vendorDetails?.shopName || booking.center?.shopName || 'N/A',
+                    services: booking.serviceNames?.join(', ') || 'N/A',
+                    amount: booking.totalAmount,
+                    status: booking.paymentStatus || 'Pending',
+                    paymentMethod: booking.paymentMethod || 'N/A'
+                }));
 
-            setPayments(filtered);
-            setTotalPayments(filtered.length);
+                let filtered = liveData;
+                if (searchTerm) {
+                    filtered = filtered.filter(p => 
+                        p.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.vendor.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                }
+                if (filterStatus !== 'All') {
+                    filtered = filtered.filter(p => p.status.toLowerCase() === filterStatus.toLowerCase());
+                }
+
+                setPayments(filtered);
+                setTotalPayments(filtered.length);
+            }
         } catch (error) {
             console.error('Error fetching payments:', error);
-            setPayments(dummyPayments);
-            setTotalPayments(dummyPayments.length);
+            setPayments([]);
+            setTotalPayments(0);
         } finally {
             setLoading(false);
         }
@@ -69,12 +81,12 @@ const Payment = () => {
     return (
         <div className="payment-page-container">
             {/* Header / Search Row */}
-            <div className="payment-search-row mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
                 <div className="search-input-group">
                     <Search size={18} color="#888" />
                     <input 
                         type="text" 
-                        placeholder="Search" 
+                        placeholder="Search by ID, Customer or Vendor" 
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -82,69 +94,63 @@ const Payment = () => {
                         }}
                     />
                 </div>
-                <div className="status-filter-group">
-                    <select 
-                        value={filterStatus} 
-                        onChange={(e) => {
-                            setFilterStatus(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                    >
-                        <option value="All">All Status</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Failed">Failed</option>
-                    </select>
-                </div>
+                <select 
+                    className="status-filter-select"
+                    value={filterStatus} 
+                    onChange={(e) => {
+                        setFilterStatus(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                >
+                    <option value="All">All Status</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Not Received">Not Received</option>
+                </select>
             </div>
 
             {/* Table */}
-            <div className="payment-table-container">
-                <table className="custom-payment-table">
+            <div className="order-table-container">
+                <table className="custom-order-table">
                     <thead>
                         <tr>
                             <th>Payment ID</th>
-                            <th>Booking ID</th>
+                            <th>Booking REF</th>
                             <th>Customer</th>
                             <th>Vendor</th>
-                            <th>Services</th>
+                            <th>Method</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-5">
+                                <td colSpan={7} className="text-center py-5">
                                     <Spinner animation="border" variant="warning" />
                                 </td>
                             </tr>
                         ) : payments.length > 0 ? (
-                            payments.map((payment) => (
-                                <tr key={payment._id}>
-                                    <td>{payment.paymentId}</td>
-                                    <td>{payment.bookingRef}</td>
-                                    <td>{payment.customer}</td>
-                                    <td>{payment.vendor}</td>
-                                    <td>{payment.services}</td>
-                                    <td>{payment.amount}</td>
-                                    <td>
-                                        <span className={`status-text ${payment.status.toLowerCase()}`}>
-                                            {payment.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="action-icons">
-                                            <Eye size={20} className="action-icon" />
-                                            <Trash size={20} className="action-icon" />
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
+                            payments
+                                .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                                .map((payment) => (
+                                    <tr key={payment._id}>
+                                        <td className="td-booking-id">{payment.paymentId}</td>
+                                        <td>{payment.bookingRef}</td>
+                                        <td>{payment.customer}</td>
+                                        <td>{payment.vendor}</td>
+                                        <td>{payment.paymentMethod}</td>
+                                        <td className="fw-bold">₹{payment.amount}</td>
+                                        <td>
+                                            <span className={`status-val ${payment.status.toLowerCase().replace(' ', '-')}`}>
+                                                {payment.status.toUpperCase()}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
                         ) : (
                             <tr>
-                                <td colSpan={8} className="text-center py-5 text-muted">No payments found.</td>
+                                <td colSpan={7} className="text-center py-5 text-muted">No payments found.</td>
                             </tr>
                         )}
                     </tbody>
@@ -159,14 +165,14 @@ const Payment = () => {
                         setRowsPerPage(Number(e.target.value));
                         setCurrentPage(1);
                     }}>
-                        <option value={8}>8</option>
+                        <option value={6}>6</option>
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                     </select>
                 </div>
                 <div className="pagination-controls">
                     <div className="pagi-numbers">
-                        {totalPayments > 0 ? `${startRow}-${endRow} of ${totalPayments}` : "0-0 of 0"}
+                        {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, totalPayments)} of {totalPayments}
                     </div>
                     <div className="pagi-arrows">
                         <button 

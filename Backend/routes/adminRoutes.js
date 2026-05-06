@@ -7,7 +7,8 @@ const {
   updateUserRole,
   getStudentsWithOrders,    
   getStudentById,           
-  exportStudentsData        
+  exportStudentsData,
+  getAllBookings        
 } = require('../controllers/adminController');
 const verifyToken = require('../middleware/auth');
 const { isAdmin } = require('../middleware/roleCheck');
@@ -22,5 +23,6 @@ router.put('/users/:id/role', verifyToken, isAdmin, updateUserRole);
 router.get('/students-with-orders', verifyToken, isAdmin, getStudentsWithOrders);
 router.get('/students/:userId', verifyToken, isAdmin, getStudentById);
 router.get('/students/export/csv', verifyToken, isAdmin, exportStudentsData);
+router.get('/bookings', verifyToken, isAdmin, getAllBookings);
 
 module.exports = router;

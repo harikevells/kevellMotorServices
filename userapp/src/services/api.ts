@@ -131,14 +131,23 @@ export const fetchTracking = (bookingId: string) => api.get('/bookings/' + booki
 export const addReview = (data: { orderId: string, rating: number, comment: string }) =>
   api.post(`/bookings/${data.orderId}/review`, { rating: data.rating, comment: data.comment });
 
+export const fetchCenterReviews = (shopId: string) => api.get(`bookings/center/${shopId}/reviews`);
+
 // Vendor
 export const fetchVendorOrders = () => api.get('/vendor/orders');
 export const updateOrderStatus = (bookingId: string, status: string, location?: { latitude: number; longitude: number }) =>
   api.patch(`/vendor/orders/${bookingId}/status`, { status, location });
 export const updateOrderLocation = (bookingId: string, latitude: number, longitude: number) =>
   api.patch(`/vendor/orders/${bookingId}/location`, { latitude, longitude });
+export const updateOrderPaymentStatus = (bookingId: string, paymentStatus: string) =>
+  api.patch(`/vendor/orders/${bookingId}/payment-status`, { paymentStatus });
 export const fetchVendorDashboard = () => api.get('/vendor/dashboard');
-export const fetchOrderStatistics = (year: number) => api.get(`/vendor/orders/statistics?year=${year}`);
+export const fetchOrderStatistics = (year?: number, period?: string) => {
+  const params: any = {};
+  if (year) params.year = year;
+  if (period) params.period = period.toLowerCase();
+  return api.get('/vendor/orders/statistics', { params });
+};
 export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
 export const fetchSpareParts = () => api.get('/spare-parts');
 export const uploadBookingBill = (bookingId: string, formData: FormData) =>

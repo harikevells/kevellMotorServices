@@ -297,9 +297,7 @@ export default function IWSSplashScreen() {
                     style={[styles.lineSide, { transform: [{ scaleX: lineScale }] }]}
                 />
                 <Text style={styles.tagline}>
-                    <Text style={{ color: ORANGE }}>ANYTIME</Text>
-                    {' · '}
-                    <Text style={{ color: ORANGE }}>ANYWHERE</Text>
+                    ANYTIME ANYWHERE
                 </Text>
                 <Animated.View
                     style={[styles.lineSide, { transform: [{ scaleX: lineScale }] }]}
@@ -346,17 +344,10 @@ const styles = StyleSheet.create({
         width: 140,
         height: 140,
         borderRadius: 70,
-        backgroundColor: 'transparent', // Transparent background for the logo
+        backgroundColor: 'transparent',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: ORANGE,
         overflow: 'hidden',
-        shadowColor: ORANGE,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 15,
-        elevation: 10,
     },
     logoImage: {
         width: '90%',
@@ -366,7 +357,7 @@ const styles = StyleSheet.create({
         fontFamily: 'System',
         fontSize: 58,
         fontWeight: '900',
-        color: ORANGE,
+        color: '#FFF',
         letterSpacing: 10,
         marginTop: 22,
         textShadowColor: '#E8640066',
@@ -387,7 +378,7 @@ const styles = StyleSheet.create({
     tagline: {
         fontFamily: 'System',
         fontSize: 10,
-        color: '#999',
+        color: '#FFF',
         letterSpacing: 4,
     },
     loaderWrap: {

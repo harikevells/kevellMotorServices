@@ -18,7 +18,7 @@ import { pick, isCancel, types } from '@react-native-documents/picker';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from '@react-native-community/geolocation';
 import { COLORS, SHADOWS, SIZES } from '../constants/theme';
-import { fetchVendorOrders, updateOrderStatus, updateOrderLocation, uploadBookingBill } from '../services/api';
+import { fetchVendorOrders, updateOrderStatus, updateOrderLocation, uploadBookingBill, updateOrderPaymentStatus } from '../services/api';
 
 const STAGES = [
   { id: 'pending', label: 'Booking Pending', icon: '⏳', desc: 'Awaiting confirmation' },
@@ -44,6 +44,60 @@ const VendorOrderList = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled'>('Pending');
   const [uploading, setUploading] = useState(false);
+  const [showPaymentPicker, setShowPaymentPicker] = useState(false);
+  const [updatingPayment, setUpdatingPayment] = useState(false);
+
+  const handleUpdatePaymentStatus = async (newStatus: string) => {
+    if (!selectedOrder) return;
+    try {
+      setUpdatingPayment(true);
+      const res: any = await updateOrderPaymentStatus(selectedOrder._id, newStatus);
+      if (res.success) {
+        Alert.alert('Success', 'Payment status updated successfully');
+        setSelectedOrder({ ...selectedOrder, paymentStatus: newStatus });
+        // Update in list
+        setOrders(orders.map(o => o._id === selectedOrder._id ? { ...o, paymentStatus: newStatus } : o));
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to update payment status');
+    } finally {
+      setUpdatingPayment(false);
+      setShowPaymentPicker(false);
+    }
+  };
+
+  const PaymentStatusModal = () => (
+    <Modal
+      visible={showPaymentPicker}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowPaymentPicker(false)}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay} 
+        activeOpacity={1} 
+        onPress={() => setShowPaymentPicker(false)}
+      >
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerTitle}>Update Payment Status</Text>
+          {['pending', 'completed', 'Not Received'].map((status) => (
+            <TouchableOpacity
+              key={status}
+              style={styles.pickerItem}
+              onPress={() => handleUpdatePaymentStatus(status)}
+            >
+              <Text style={[
+                styles.pickerItemText, 
+                selectedOrder?.paymentStatus === status && { color: COLORS.primary, fontWeight: 'bold' }
+              ]}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
 
   useEffect(() => {
     loadOrders();
@@ -490,8 +544,32 @@ const VendorOrderList = () => {
 
               <View style={styles.detailBox}>
                 <Text style={styles.detailBoxTitle}>Payment Summary</Text>
-                <View style={styles.detailRow}><Text style={styles.detailLabel}>Payment Method</Text><Text style={styles.detailValue}>{selectedOrder.paymentMethod || 'N/A'}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.detailLabel}>Payment Status</Text><Text style={styles.detailValue}>{selectedOrder.paymentStatus || 'pending'}</Text></View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Payment Method</Text>
+                  <Text style={styles.detailValue}>{selectedOrder.paymentMethod || 'N/A'}</Text>
+                </View>
+                <View style={[styles.detailRow, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 }]}>
+                  <Text style={styles.detailLabel}>Payment Status</Text>
+                  <TouchableOpacity 
+                    style={[styles.paymentStatusDropdown, { width: '50%', justifyContent: 'space-between', paddingVertical: 8, paddingHorizontal: 12 }]}
+                    onPress={() => setShowPaymentPicker(true)}
+                    disabled={updatingPayment}
+                  >
+                    {updatingPayment ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                    ) : (
+                      <>
+                        <Text style={[
+                          styles.detailValue, 
+                          { color: selectedOrder.paymentStatus === 'completed' ? '#28A745' : '#FFC107', textAlign: 'right', fontSize: 13 }
+                        ]}>
+                          {(selectedOrder.paymentStatus || 'pending').toUpperCase()}
+                        </Text>
+                        <Text style={{ fontSize: 10, color: COLORS.grey, marginLeft: 5 }}>▼</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
                 {selectedOrder.couponCode ? <View style={styles.detailRow}><Text style={styles.detailLabel}>Coupon Applied</Text><Text style={styles.detailValue}>{selectedOrder.couponCode}</Text></View> : null}
                 <View style={styles.detailRow}><Text style={styles.detailLabel}>Tax</Text><Text style={styles.detailValue}>₹{selectedOrder.tax || 0}</Text></View>
                 <View style={[styles.detailRow, { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#EEE' }]}>
@@ -538,6 +616,8 @@ const VendorOrderList = () => {
           )}
         </SafeAreaView>
       </Modal>
+
+      <PaymentStatusModal />
 
     </SafeAreaView>
   );
@@ -698,7 +778,7 @@ const styles = StyleSheet.create({
   detailBoxTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.primary,
+    color: '#FF8C00',
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 1,
@@ -738,6 +818,43 @@ const styles = StyleSheet.create({
   },
   uploadIcon: {
     fontSize: 18,
+  },
+  pickerContainer: {
+    width: '80%',
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    // marginTop:30,
+    padding: 20,
+    marginBottom:180,
+    marginLeft:60,
+    ...SHADOWS.medium,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  pickerItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGrey,
+  },
+  pickerItemText: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  paymentStatusDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
 });
 

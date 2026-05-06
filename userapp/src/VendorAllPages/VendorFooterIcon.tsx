@@ -6,9 +6,10 @@ interface VendorFooterIconProps {
   name: string;
   isActive: boolean;
   onPress: () => void;
+  badgeCount?: number;
 }
 
-const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onPress }) => {
+const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onPress, badgeCount = 0 }) => {
   const activeColor = '#f28b2c';
   const inactiveColor = '#FFFFFF';
   const color = isActive ? activeColor : inactiveColor;
@@ -76,6 +77,11 @@ const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onP
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.container}>
       <View style={styles.iconBox}>
         {renderIcon()}
+        {badgeCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badgeCount > 99 ? '99+' : badgeCount}</Text>
+          </View>
+        )}
       </View>
       <Text style={[styles.label, isActive && styles.labelActive]}>
         {getLabel()}
@@ -106,6 +112,25 @@ const styles = StyleSheet.create({
   labelActive: {
     color: '#f28b2c',
     fontWeight: '700',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    backgroundColor: '#EB5757',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1,
+    borderColor: '#0A0A0A',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 8,
+    fontWeight: 'bold',
   },
 });
 

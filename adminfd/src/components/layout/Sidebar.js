@@ -21,12 +21,13 @@ const Sidebar = ({ activePage, setActivePage, onLogout, collapsed }) => {
         { name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
         { name: 'Order Management', icon: <ShoppingCart size={20} /> },
         { name: 'Service Management', icon: <Wrench size={20} /> },
+         { name: 'Spare Parts Management', icon: <Wrench size={20} /> },
         { name: 'Vendor Management', icon: <ShoppingCart size={20} /> },
         { name: 'User Management', icon: <Users size={20} /> },
         { name: 'Reviews & Ratings', icon: <Star size={20} /> },
         { name: 'Payment', icon: <CreditCard size={20} /> },
         { name: 'Tracking', icon: <Map size={20} /> },
-        { name: 'Spare Parts Management', icon: <Wrench size={20} /> },
+       
         // { name: 'Notification', icon: <Bell size={20} /> },
     ];
 

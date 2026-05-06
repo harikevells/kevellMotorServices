@@ -539,6 +539,21 @@ const ChallenBooking = () => {
       category: uiCategory
     });
 
+    // Auto-fill labor charges from booking services
+    const services = booking.serviceNames || (booking.services || []).map((s: any) => s.name || s.serviceName);
+    const laborDescription = Array.isArray(services) && services.length > 0 ? services.join(', ') : 'Service Charge';
+    
+    // Calculate amount without tax
+    const totalAmountValue = parseFloat(booking.totalAmount) || 0;
+    const taxAmountValue = parseFloat(booking.tax) || 0;
+    const amountWithoutTax = totalAmountValue - taxAmountValue;
+
+    setLaborCharges([{
+      id: Date.now(),
+      name: laborDescription,
+      amount: amountWithoutTax.toFixed(2)
+    }]);
+
     setBookingModalVisible(false);
   };
 
@@ -958,7 +973,7 @@ const ChallenBooking = () => {
 
           <View style={styles.laborInputRow}>
             <TextInput
-              style={[styles.laborInput, { flex: 2 }]}
+              style={[styles.laborInput, { flex: 1 }]}
               placeholder="Labor Description"
               placeholderTextColor="#999"
               value={newLaborCharge.name}
@@ -972,12 +987,6 @@ const ChallenBooking = () => {
               value={newLaborCharge.amount}
               onChangeText={(val) => setNewLaborCharge({ ...newLaborCharge, amount: val })}
             />
-            <TouchableOpacity
-              style={[styles.addButton, { marginLeft: 10, alignSelf: 'center' }]}
-              onPress={addLaborCharge}
-            >
-              <Text style={styles.addButtonText}>ADD</Text>
-            </TouchableOpacity>
           </View>
 
           {laborCharges.map((charge) => (
@@ -1003,20 +1012,20 @@ const ChallenBooking = () => {
 
           <View style={{ marginTop: 20 }}>
             <TouchableOpacity
-              style={[styles.generateButton, { backgroundColor: '#C13D10' }]}
+              style={[styles.generateButton, { backgroundColor: '#F28B2C' }]}
               onPress={generatePDF}
             >
-              <Text style={styles.generateButtonText}>Challen Done & Download Bill</Text>
+              <Text style={styles.generateButtonText}>Challen View & Download Bill</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.generateButton, { backgroundColor: '#1B4D6B', marginTop: 10 }]}
+              style={[styles.generateButton, { backgroundColor: '#000000', marginTop: 10 }]}
               onPress={handleReset}
             >
               <Text style={styles.generateButtonText}>Done</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ height: 50 }} />
+
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -1204,12 +1213,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1B4D6B',
+    color: '#000000',
     marginBottom: 15,
   },
   categoryContainer: {
@@ -1270,7 +1279,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   addButton: {
-    backgroundColor: '#1B4D6B',
+    backgroundColor: '#F28B2C',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
@@ -1314,7 +1323,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1B4D6B',
+    backgroundColor: '#000000',
     padding: 20,
     borderRadius: 12,
     marginTop: 25,
@@ -1335,7 +1344,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 0,
     ...SHADOWS.light,
   },
   generateButtonText: {
@@ -1514,7 +1523,7 @@ const styles = StyleSheet.create({
   },
   modalAddBtn: {
     flex: 2,
-    backgroundColor: '#1B4D6B',
+    backgroundColor: '#F28B2C',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',

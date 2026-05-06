@@ -71,7 +71,7 @@ function LogoComponent({ anim }: { anim: Animated.Value }) {
     <Animated.View style={{ transform: [{ scale }] }}>
       <Image
         source={LOGO_IMG}
-        style={{ width: 300, height: 150 }}
+        style={{ width: 200, height: 150, marginTop: 40 }}
         resizeMode="contain"
       />
     </Animated.View>
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   whoBlock: {
     alignItems: 'center',
     marginBottom: 22,
-    marginTop: 10,
+    marginTop: -40,
   },
   whoTitle: {
     fontSize: 22,
@@ -350,6 +350,7 @@ const styles = StyleSheet.create({
     color: '#555',
     letterSpacing: 2,
     marginTop: 3,
+    width: 180,
   },
   cardsRow: {
     flexDirection: 'row',

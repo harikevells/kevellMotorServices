@@ -20,12 +20,12 @@ import { getImageUrl } from '../constants/config';
 const { width } = Dimensions.get('window');
 
 const VendorDashboard = () => {
-  const { toggleDrawer, setActiveTab } = useVendorNav();
+  const { toggleDrawer, setActiveTab, unreadCount } = useVendorNav();
   const [stats, setStats] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('Today');
+  const [period, setPeriod] = useState('Year');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -53,29 +53,31 @@ const VendorDashboard = () => {
 
   useEffect(() => {
     loadAllData();
-  }, [selectedYear]);
+  }, [selectedYear, period]);
 
   const loadAllData = async () => {
     try {
       setLoading(true);
       const [dashRes, statsRes, profileRes, notifRes]: any = await Promise.all([
         fetchVendorDashboard(),
-        fetchOrderStatistics(selectedYear),
+        fetchOrderStatistics(selectedYear, period),
         fetchProfile(),
         fetchNotifications()
       ]);
 
       if (dashRes.success) {
         setDashboardData(dashRes.dashboard);
+        console.log('[DEBUG] Full Dashboard Object:', JSON.stringify(dashRes.dashboard, null, 2));
       }
       if (statsRes.success) {
         setStats(statsRes.statistics);
+        console.log(`[DEBUG] Stats for ${period}:`, statsRes.statistics);
       }
       if (profileRes.success) {
         setUser(profileRes.user);
       }
       if (notifRes.success) {
-        setNotifications(notifRes.notifications || []);
+        setNotifications(notifRes.data || []);
       }
     } catch (e) {
       console.warn(e);
@@ -192,21 +194,37 @@ const VendorDashboard = () => {
   );
 
   const RecentOrderCard = ({ order }: { order: any }) => {
-    const vehicle = order.vehicleDetails || order.vehicle || {};
+    const userImg = order.user?.profileImage || order.userDetails?.profileImage;
+    const services = order.serviceNames || [];
+    const serviceText = services.length > 0 ? services.join(', ') : 'General Service';
+
     return (
       <View style={styles.recentOrderCard}>
-        <View style={styles.recentOrderHeader}>
-          <Text style={styles.customerName}>{order.user?.name || order.userDetails?.name || 'Customer'}</Text>
-          <Text style={styles.orderAmount}>₹{order.totalAmount}</Text>
+        <View style={styles.orderLeft}>
+          {userImg ? (
+            <Image source={{ uri: getImageUrl(userImg) }} style={styles.orderUserImg} />
+          ) : (
+            <View style={styles.orderUserPlaceholder}>
+              <Text style={styles.orderUserInitial}>
+                {(order.user?.name || order.userDetails?.name || 'C').charAt(0)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.orderMid}>
+            <Text style={styles.orderUserName} numberOfLines={1}>
+              {order.user?.name || order.userDetails?.name || 'Customer'}
+            </Text>
+            <Text style={styles.orderServices} numberOfLines={1}>
+              {serviceText}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.vehicleInfo}>
-          {vehicle.brand} {vehicle.model}
-        </Text>
-        <View style={styles.statusRow}>
-          <Text style={styles.orderTime}>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-          <View style={[styles.statusDot, { backgroundColor: order.status === 'pending' ? '#EF6C00' : '#1B4D6B' }]} />
-          <Text style={styles.statusName}>{order.status.replace(/_/g, ' ')}</Text>
-        </View>
+        <TouchableOpacity 
+          style={styles.viewBtn}
+          onPress={() => setActiveTab('Orders')}
+        >
+          <Text style={styles.viewBtnText}>View</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -270,10 +288,10 @@ const VendorDashboard = () => {
             style={styles.notifBtn}
           >
             <Text style={styles.notifIcon}>🔔</Text>
-            {notifications.filter(n => !n.read).length > 0 && (
+            {unreadCount > 0 && (
               <View style={styles.notifBadge}>
                 <Text style={styles.notifBadgeText}>
-                  {notifications.filter(n => !n.read).length}
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </Text>
               </View>
             )}
@@ -283,13 +301,18 @@ const VendorDashboard = () => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.dateRow}>
-          <TouchableOpacity style={styles.datePicker}>
-            <Text style={styles.dateText}>Wed, 9 Nov</Text>
-            <Text style={styles.downArrow}>▼</Text>
+          <TouchableOpacity 
+            style={styles.datePicker}
+            onPress={() => period === 'Year' && setShowYearPicker(true)}
+          >
+            <Text style={styles.dateText}>
+              {period === 'Year' ? selectedYear : currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            </Text>
+            {period === 'Year' && <Text style={styles.downArrow}> ▼</Text>}
           </TouchableOpacity>
 
           <View style={styles.tabBar}>
-            {['Today', 'Week', 'Month'].map((p) => (
+            {['Today', 'Week', 'Month','Year'].map((p) => (
               <TouchableOpacity
                 key={p}
                 onPress={() => setPeriod(p)}
@@ -342,31 +365,37 @@ const VendorDashboard = () => {
         </View>
 
 
-        <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <TouchableOpacity 
-            style={styles.actionCard}
-            onPress={() => setActiveTab('ChallenBooking')}
-          >
-            <View style={styles.actionIconContainer}>
-              <Text style={styles.actionEmoji}>🧾</Text>
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Create Service Bill</Text>
-              <Text style={styles.actionSubtitle}>Generate bill & QR code for payment</Text>
-            </View>
-            <Text style={styles.actionArrow}>→</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>Recent Bookings</Text>
-          {recentOrders.map((order: any) => (
-            <RecentOrderCard key={order._id} order={order} />
-          ))}
-          {recentOrders.length === 0 && (
-            <Text style={styles.emptyText}>No recent bookings found.</Text>
-          )}
+          <View style={styles.recentHeaderRow}>
+            <Text style={styles.sectionTitle}>Recent Bookings</Text>
+            <TouchableOpacity onPress={() => setActiveTab('Orders')}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+          {(() => {
+            // Get today's date in YYYY-MM-DD format (Local time)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+            const todayBookings = recentOrders.filter((o: any) => o.bookingDate === todayStr);
+
+            const displayOrders = todayBookings.length > 0 
+              ? todayBookings.slice(0, 3) 
+              : recentOrders.slice(0, 3);
+
+            if (displayOrders.length > 0) {
+              return displayOrders.map((order: any) => (
+                <RecentOrderCard key={order._id} order={order} />
+              ));
+            }
+
+            return (
+              <Text style={styles.emptyText}>No bookings found for today.</Text>
+            );
+          })()}
         </View>
       </ScrollView>
 
@@ -428,7 +457,7 @@ const styles = StyleSheet.create({
     padding: 10,
     position: 'relative',
     backgroundColor: '#FFF',
-    borderRadius: '50%',
+    borderRadius: 25,
     ...SHADOWS.light,
   },
   notifIcon: {
@@ -700,9 +729,74 @@ const styles = StyleSheet.create({
   recentOrderCard: {
     backgroundColor: '#FFF',
     borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     ...SHADOWS.light,
+  },
+  orderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  orderUserImg: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    marginRight: 12,
+  },
+  orderUserPlaceholder: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  orderUserInitial: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1B4D6B',
+  },
+  orderMid: {
+    flex: 1,
+  },
+  orderUserName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 2,
+  },
+  orderServices: {
+    fontSize: 12,
+    color: '#666',
+  },
+  viewBtn: {
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FB',
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  viewBtnText: {
+    fontSize: 12,
+    color: '#1B4D6B',
+    fontWeight: '700',
+  },
+  recentHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#1B4D6B',
+    fontWeight: '600',
   },
   quickActions: {
     paddingHorizontal: 20,

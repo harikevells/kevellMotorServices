@@ -387,3 +387,35 @@ exports.addBookingReview = async (req, res, next) => {
   }
 };
 
+exports.getCenterReviews = async (req, res, next) => {
+  try {
+    const { centerId } = req.params;
+    const bookings = await Booking.find({ 
+      center: centerId, 
+      'review.rating': { $exists: true } 
+    })
+    .populate('user', 'name email profileImage')
+    .sort({ 'review.createdAt': -1 });
+
+    const reviews = bookings.map(b => ({
+      _id: b._id,
+      user: {
+        name: b.userDetails?.name || b.user?.name || 'Anonymous',
+        email: b.user?.email || '',
+        image: b.user?.profileImage || ''
+      },
+      rating: b.review.rating,
+      comment: b.review.comment,
+      createdAt: b.review.createdAt || b.updatedAt
+    }));
+
+    res.json({
+      success: true,
+      count: reviews.length,
+      reviews
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

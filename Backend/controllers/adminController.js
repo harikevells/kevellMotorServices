@@ -1,4 +1,24 @@
 const User = require('../models/User');
+const Booking = require('../models/Booking');
+const Vendor = require('../models/vendor');
+
+// Get all bookings (admin only)
+exports.getAllBookings = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('user', 'name email')
+      .populate('center', 'shopName ownerName')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: bookings.length,
+      bookings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Get all users (admin only)
 exports.getAllUsers = async (req, res, next) => {

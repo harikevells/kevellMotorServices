@@ -11,5 +11,6 @@ router.get('/', verifyToken, bookingController.getUserBookings);
 router.get('/:id', verifyToken, bookingController.getBookingById);
 router.patch('/:id/cancel', verifyToken, bookingController.cancelBooking);
 router.post('/:id/review', verifyToken, bookingController.addBookingReview);
+router.get('/center/:centerId/reviews', bookingController.getCenterReviews);
 
 module.exports = router;

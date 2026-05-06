@@ -51,7 +51,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 12px 20px;
+    padding: 12px 11px;
+    padding-right: 9px !important;
     border-radius: 50px; /* Pill shape */
     color: #fff;
     text-decoration: none;

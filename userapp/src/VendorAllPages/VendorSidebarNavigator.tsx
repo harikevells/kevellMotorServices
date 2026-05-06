@@ -32,6 +32,8 @@ export const VendorNavContext = createContext<{
   activeTab: string;
   setActiveTab: (tab: string) => void;
   toggleDrawer: () => void;
+  unreadCount: number;
+  refreshNotifications: () => void;
 } | null>(null);
 
 export const useVendorNav = () => {
@@ -46,12 +48,30 @@ const VendorSidebarNavigator = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [shopName, setShopName] = useState('Vendor Portal');
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigation = useNavigation<any>();
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
   useEffect(() => {
     fetchVendorProfile();
+    fetchUnreadNotifications();
+    
+    // Refresh every minute
+    const interval = setInterval(fetchUnreadNotifications, 60000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchUnreadNotifications = async () => {
+    try {
+      const res: any = await api.get('/notifications');
+      if (res.success && res.data) {
+        const count = res.data.filter((n: any) => !n.isRead).length;
+        setUnreadCount(count);
+      }
+    } catch (e) {
+      console.warn('Sidebar failed to fetch notifications:', e);
+    }
+  };
 
   // Handle hardware back button
   useEffect(() => {
@@ -159,7 +179,7 @@ const VendorSidebarNavigator = () => {
   };
 
   return (
-    <VendorNavContext.Provider value={{ activeTab, setActiveTab: handleTabChange, toggleDrawer }}>
+    <VendorNavContext.Provider value={{ activeTab, setActiveTab: handleTabChange, toggleDrawer, unreadCount, refreshNotifications: fetchUnreadNotifications }}>
       <View style={styles.container}>
         {activeTab !== 'Dashboard' && (
           <SafeAreaView style={styles.header}>
@@ -182,7 +202,7 @@ const VendorSidebarNavigator = () => {
           {renderContent()}
         </View>
 
-        <VendorFooter />
+        <VendorFooter unreadCount={unreadCount} />
       </View>
     </VendorNavContext.Provider>
   );

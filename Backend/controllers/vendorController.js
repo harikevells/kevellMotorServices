@@ -743,6 +743,45 @@ exports.updateOrderStatus = async (req, res, next) => {
   }
 };
 
+// Update payment status
+exports.updateOrderPaymentStatus = async (req, res, next) => {
+  try {
+    const { paymentStatus } = req.body;
+    const validStatuses = ['pending', 'completed', 'Not Received'];
+    
+    if (!validStatuses.includes(paymentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment status'
+      });
+    }
+
+    const vendor = await Vendor.findOne({ user: req.user.id });
+    const order = await Order.findOne({
+      _id: req.params.orderId,
+      'center': vendor._id
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    order.paymentStatus = paymentStatus;
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Payment status updated',
+      order
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Upload booking bill
 exports.uploadBookingBill = async (req, res, next) => {
   try {
@@ -819,19 +858,31 @@ exports.getOrderStatistics = async (req, res, next) => {
     const now = new Date();
     const currentYear = year ? parseInt(year) : now.getFullYear();
 
-    if (period === 'week') {
-      const weekAgo = new Date(now.setDate(now.getDate() - 7));
+    if (period === 'today') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dateFilter = { $gte: today };
+    } else if (period === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
       dateFilter = { $gte: weekAgo };
     } else if (period === 'month') {
-      const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
       dateFilter = { $gte: monthAgo };
     } else if (period === 'year' && !year) {
-      const yearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
+      const yearAgo = new Date();
+      yearAgo.setFullYear(yearAgo.getFullYear() - 1);
       dateFilter = { $gte: yearAgo };
     }
 
     const query = { 'center': vendor._id };
-    if (year) {
+
+    // If a specific timeframe period is active, use it. 
+    // Otherwise, if a year is selected, filter by that year.
+    if (['today', 'week', 'month'].includes(period)) {
+      query.createdAt = dateFilter;
+    } else if (year || period === 'year') {
       const start = new Date(currentYear, 0, 1);
       const end = new Date(currentYear, 11, 31, 23, 59, 59);
       query.createdAt = { $gte: start, $lte: end };
@@ -1307,31 +1358,8 @@ exports.getDashboardData = async (req, res, next) => {
       });
     }
 
-    // Find shop
-    console.log(`[DEBUG] Dashboard: Finding shop for vendor ${vendor._id}`);
+    // Find shop (Optional check removed to prevent empty dashboards)
     const shop = await Shop.findOne({ vendor: vendor._id });
-    if (!shop) {
-      console.log(`[DEBUG] Dashboard: Shop not found for vendor ${vendor._id}`);
-      return res.json({
-        success: true,
-        dashboard: {
-          overview: {
-            totalOrders: 0,
-            completedOrders: 0,
-            totalEarnings: 0,
-            rating: vendor.rating || 0,
-            totalReviews: vendor.totalReviews || 0,
-            pendingOrders: 0,
-            todayOrders: 0,
-            todayEarnings: 0
-          },
-          recentOrders: [],
-          popularServices: [],
-          monthlyEarnings: [],
-          vendor
-        }
-      });
-    }
 
     // Get today's orders
     console.log(`[DEBUG] Dashboard: Fetching orders for vendor ${vendor._id}`);
@@ -1375,16 +1403,21 @@ exports.getDashboardData = async (req, res, next) => {
     });
 
     const recentOrders = await Order.find({ 'center': vendor._id })
-      .populate('user', 'name')
+      .populate('user', 'name profileImage')
       .populate('vehicle')
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(20);
+
+    console.log(`[DEBUG] Found ${recentOrders.length} recent orders for vendor ${vendor._id}`);
+    if (recentOrders.length > 0) {
+      console.log(`[DEBUG] Sample order: ${recentOrders[0]._id}, user: ${recentOrders[0].user?.name}`);
+    }
 
     // Get popular services
     console.log(`[DEBUG] Dashboard: Aggregating popular services`);
     const popularServices = await Order.aggregate([
       { $match: { center: vendor._id } },
-      { $unwind: '$serviceNames' },
+      { $unwind: { path: '$serviceNames', preserveNullAndEmptyArrays: true } },
       {
         $group: {
           _id: '$serviceNames',

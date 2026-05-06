@@ -33,6 +33,7 @@ const {
   exportOrders,
   completeVendorProfile,
   updateOrderLocation,
+  updateOrderPaymentStatus,
   uploadBookingBill
 } = require('../controllers/vendorController');
 const verifyToken = require('../middleware/auth');
@@ -111,6 +112,11 @@ router.patch('/orders/:orderId/status',
 router.patch('/orders/:orderId/location',
   verifyToken,
   updateOrderLocation
+);
+
+router.patch('/orders/:orderId/payment-status',
+  verifyToken,
+  updateOrderPaymentStatus
 );
 
 router.post('/orders/:orderId/bill',

@@ -10,13 +10,16 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
+  Modal,
+  Image,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { fetchCenters } from '../services/api';
+import { fetchCenters, fetchCenterReviews } from '../services/api';
+import { getImageUrl } from '../constants/config';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type CenterRouteProp = RouteProp<RootStackParamList, 'CenterSelection'>;
@@ -36,6 +39,18 @@ interface Center {
   };
 }
 
+interface Review {
+  _id: string;
+  user: {
+    name: string;
+    email: string;
+    image?: string;
+  };
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 const CenterSelectionPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<CenterRouteProp>();
@@ -48,28 +63,65 @@ const CenterSelectionPage = () => {
   const [centers, setCenters] = useState<Center[]>([]);
   const [selectedCenter, setSelectedCenter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [reviewCenterName, setReviewCenterName] = useState('');
 
   useEffect(() => {
     loadCenters();
   }, []);
 
+  useEffect(() => {
+    if (selectedCenter) {
+      loadReviews(selectedCenter);
+    }
+  }, [selectedCenter]);
+
+  const loadReviews = async (centerId: string) => {
+    try {
+      setLoadingReviews(true);
+      const res: any = await fetchCenterReviews(centerId);
+      if (res && res.success) {
+        setReviews(res.reviews || []);
+      }
+    } catch (error) {
+      console.error('[CenterSelection] loadReviews error:', error);
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <View style={styles.starContainer}>
+        {[1, 2, 3, 4, 5].map((s) => (
+          <Text key={s} style={[styles.star, { color: s <= rating ? '#f28b2c' : '#444444' }]}>
+            ★
+          </Text>
+        ))}
+      </View>
+    );
+  };
+
   const generateMapHTML = (mapCenters: Center[]) => {
     // Filter centers that have valid coordinates
     const validCenters = mapCenters.filter(c => c.location && c.location.coordinates && c.location.coordinates.length === 2);
-    
+
     let centerLat = 13.0827; // Chennai default
     let centerLng = 80.2116;
-    
+
     if (validCenters.length > 0) {
       let sumLat = 0, sumLng = 0;
       validCenters.forEach(c => {
-         sumLng += c.location!.coordinates[0];
-         sumLat += c.location!.coordinates[1];
+        sumLng += c.location!.coordinates[0];
+        sumLat += c.location!.coordinates[1];
       });
       centerLat = sumLat / validCenters.length;
       centerLng = sumLng / validCenters.length;
     }
-    
+
     const markers = validCenters.map(c => `
       L.marker([${c.location!.coordinates[1]}, ${c.location!.coordinates[0]}]).addTo(map)
         .bindTooltip("${c.center_name}", { permanent: true, direction: "top", offset: [0, -35], className: "custom-tooltip" })
@@ -77,7 +129,7 @@ const CenterSelectionPage = () => {
     `).join('\n');
 
     const boundsArray = validCenters.map(c => `[${c.location!.coordinates[1]}, ${c.location!.coordinates[0]}]`).join(',');
-    const fitBoundsScript = validCenters.length > 0 
+    const fitBoundsScript = validCenters.length > 0
       ? `
         setTimeout(function() {
           map.invalidateSize();
@@ -167,20 +219,32 @@ const CenterSelectionPage = () => {
           <Text style={styles.ratingText}>⭐ {item.rating} ({item.total_reviews})</Text>
           <Text style={styles.metaDivider}>•</Text>
           <Text style={styles.distanceText}>
-             {item.specializations.includes('electric') ? '⚡ EV Pro' : '🛠️ Master'}
+            {item.specializations.includes('electric') ? '⚡ EV Pro' : '🛠️ Master'}
           </Text>
         </View>
       </View>
       <View style={[styles.radio, selectedCenter === item._id && styles.radioActive]}>
         {selectedCenter === item._id && <View style={styles.radioInner} />}
       </View>
+
+      {/* Review Toggle at bottom right of the card */}
+      <TouchableOpacity
+        style={styles.reviewToggle}
+        onPress={() => {
+          setReviewCenterName(item.center_name);
+          loadReviews(item._id);
+          setShowReviewsModal(true);
+        }}
+      >
+        <Text style={styles.reviewToggleText}>Reviews ▼</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
@@ -191,10 +255,10 @@ const CenterSelectionPage = () => {
 
       <View style={styles.content}>
         <View style={styles.mapWrap}>
-          <WebView 
+          <WebView
             key={centers.length}
             originWhitelist={['*']}
-            source={{ html: generateMapHTML(centers) }} 
+            source={{ html: generateMapHTML(centers) }}
             style={{ width: '100%', height: '100%' }}
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
@@ -204,13 +268,79 @@ const CenterSelectionPage = () => {
           />
         </View>
 
+        {/* Reviews Modal */}
+        <Modal
+          visible={showReviewsModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowReviewsModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.reviewsModalContent}>
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Reviews</Text>
+                  <Text style={styles.modalSubtitle}>{reviewCenterName}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowReviewsModal(false)}>
+                  <Text style={styles.closeIcon}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {loadingReviews ? (
+                <ActivityIndicator size="large" color="#f28b2c" style={{ marginVertical: 30 }} />
+              ) : reviews.length === 0 ? (
+                <View style={styles.noReviewsWrapper}>
+                  <Text style={styles.noReviewsText}>No reviews yet for this vendor.</Text>
+                </View>
+              ) : (
+                <View style={styles.reviewsListWrapper}>
+                  <FlatList
+                    data={reviews}
+                    keyExtractor={(item) => item._id}
+                    renderItem={({ item }) => (
+                      <View key={item._id} style={styles.reviewCard}>
+                        <View style={styles.reviewHeader}>
+                          <View style={styles.reviewerInfo}>
+                            {item.user.image ? (
+                              <Image
+                                source={{ uri: getImageUrl(item.user.image) || undefined }}
+                                style={styles.reviewerImage}
+                              />
+                            ) : (
+                              <View style={styles.reviewerImagePlaceholder}>
+                                <Text style={styles.reviewerInitial}>
+                                  {item.user.name.charAt(0).toUpperCase()}
+                                </Text>
+                              </View>
+                            )}
+                            <View style={styles.reviewerText}>
+                              <Text style={styles.reviewerName}>{item.user.name}</Text>
+                              <Text style={styles.reviewDate}>
+                                {new Date(item.createdAt).toLocaleDateString()}
+                              </Text>
+                            </View>
+                          </View>
+                          {renderStars(item.rating)}
+                        </View>
+                        <Text style={styles.reviewComment}>{item.comment}</Text>
+                      </View>
+                    )}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.listHeader}>
           <Text style={styles.listHeading}>
             {safeFuel ? `Recommended for ${safeFuel.toUpperCase()}` : 'Recommended Centers'}
           </Text>
           <Text style={styles.listSubtitle}>{centers.length} centers found</Text>
         </View>
-        
+
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
         ) : centers.length === 0 ? (
@@ -227,10 +357,10 @@ const CenterSelectionPage = () => {
           />
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.nextButton, !selectedCenter && styles.disabledButton]}
-          onPress={() => selectedCenter && navigation.navigate('SlotBooking', { 
-            centerId: selectedCenter, 
+          onPress={() => selectedCenter && navigation.navigate('SlotBooking', {
+            centerId: selectedCenter,
             serviceIds,
             serviceNames,
             vehicleId,
@@ -254,7 +384,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    paddingTop:40,
+    paddingTop: 40,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
@@ -393,6 +523,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   radio: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -400,7 +533,6 @@ const styles = StyleSheet.create({
     borderColor: '#333333',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 10,
   },
   radioActive: {
     borderColor: '#f28b2c',
@@ -446,6 +578,142 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#AAAAAA',
     textAlign: 'center',
+  },
+  // New Styles
+  reviewToggle: {
+    position: 'absolute',
+    bottom: 15,
+    right: 15,
+    backgroundColor: '#f28b2c15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f28b2c33',
+  },
+  reviewToggleText: {
+    color: '#f28b2c',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'flex-end',
+  },
+  reviewsModalContent: {
+    backgroundColor: '#060606',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 20,
+    maxHeight: '85%',
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
+  },
+  reviewsListWrapper: {
+    maxHeight: 300,
+    flexShrink: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A1A',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#f28b2c',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#AAAAAA',
+    marginTop: 2,
+  },
+  closeIcon: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    padding: 5,
+  },
+  noReviewsWrapper: {
+    paddingVertical: 50,
+    alignItems: 'center',
+  },
+  noReviewsText: {
+    color: '#666666',
+    fontSize: 16,
+    fontStyle: 'italic',
+  },
+  reviewCard: {
+    backgroundColor: '#121212',
+    padding: 12,
+    borderRadius: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#1A1A1A',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  reviewerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  reviewerImage: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: '#1A1A1A',
+  },
+  reviewerImagePlaceholder: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: '#f28b2c22',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f28b2c44',
+  },
+  reviewerInitial: {
+    color: '#f28b2c',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  reviewerText: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  reviewerName: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  reviewDate: {
+    color: '#555555',
+    fontSize: 10,
+    marginTop: 1,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  star: {
+    fontSize: 14,
+    marginLeft: 1,
+  },
+  reviewComment: {
+    color: '#AAAAAA',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
   }
 });
 
