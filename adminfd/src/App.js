@@ -16,8 +16,44 @@ import Payment from './components/Pages/Payment';
 import Tracking from './components/Pages/Tracking';
 import SpareParts from './components/Pages/SpareParts';
 
+const pageToPathMap = {
+  Dashboard: '/dashboard',
+  'Service Management': '/service-management',
+  'Order Management': '/order-management',
+  'Vendor Management': '/vendor-management',
+  'Add Vendor': '/add-vendor',
+  'User Management': '/user-management',
+  Notification: '/notification',
+  'Reviews & Ratings': '/reviews',
+  Payment: '/payment',
+  Tracking: '/tracking',
+  'Spare Parts Management': '/spare-parts',
+  'Car Management': '/car-management',
+  Transactions: '/transactions',
+  Content: '/content',
+  CRM: '/crm',
+  Settings: '/settings',
+  Reports: '/reports',
+  Support: '/support',
+  Roles: '/roles'
+};
+
+const pathToPageMap = Object.entries(pageToPathMap).reduce((acc, [page, path]) => {
+  acc[path] = page;
+  return acc;
+}, {});
+
+const normalizePath = (path) => path.replace(/\/+$/, '').toLowerCase() || '/dashboard';
+
+const getPageFromPath = (pathname) => {
+  const normalized = normalizePath(pathname);
+  return pathToPageMap[normalized] || null;
+};
+
+const getPathFromPage = (page) => pageToPathMap[page] || '/dashboard';
+
 function App() {
-  const [activePage, setActivePage] = useState(sessionStorage.getItem('activePage') || 'Dashboard');
+  const [activePage, setActivePage] = useState('Dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [, setUser] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -31,14 +67,35 @@ function App() {
       setUser(JSON.parse(savedUser));
     }
 
-    const handlePageChange = (e) => {
-      setActivePage(e.detail);
-      sessionStorage.setItem('activePage', e.detail);
+    const routePage = getPageFromPath(window.location.pathname);
+    if (routePage) {
+      setActivePage(routePage);
+      sessionStorage.setItem('activePage', routePage);
+    } else {
+      const savedPage = sessionStorage.getItem('activePage') || 'Dashboard';
+      setActivePage(savedPage);
+    }
+
+    const handlePageChangeEvent = (e) => {
+      const page = e.detail;
+      setActivePage(page);
+      sessionStorage.setItem('activePage', page);
+      window.history.replaceState(null, '', getPathFromPage(page));
     };
 
-    window.addEventListener('changePage', handlePageChange);
-    return () => window.removeEventListener('changePage', handlePageChange);
+    window.addEventListener('changePage', handlePageChangeEvent);
+    return () => window.removeEventListener('changePage', handlePageChangeEvent);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const newPath = getPathFromPage(activePage);
+      if (normalizePath(window.location.pathname) !== normalizePath(newPath)) {
+        window.history.replaceState(null, '', newPath);
+      }
+      sessionStorage.setItem('activePage', activePage);
+    }
+  }, [activePage, isAuthenticated]);
 
   const handleLoginSuccess = (userData, token) => {
     setIsAuthenticated(true);
@@ -52,6 +109,13 @@ function App() {
     setIsAuthenticated(false);
     setUser(null);
     setActivePage('Dashboard');
+    window.history.replaceState(null, '', '/dashboard');
+  };
+
+  const handleSetPage = (page) => {
+    setActivePage(page);
+    sessionStorage.setItem('activePage', page);
+    window.history.replaceState(null, '', getPathFromPage(page));
   };
 
   const renderContent = () => {
@@ -105,7 +169,7 @@ function App() {
 
   return (
     <div className="dashboard-wrapper">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onLogout={handleLogout} collapsed={sidebarCollapsed} />
+      <Sidebar activePage={activePage} setActivePage={handleSetPage} onLogout={handleLogout} collapsed={sidebarCollapsed} />
       <Header activePage={activePage} onLogout={handleLogout} onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} collapsed={sidebarCollapsed} />
       <main className="main-content" style={{ marginLeft: sidebarCollapsed ? '80px' : '240px' }}>
         {renderContent()}

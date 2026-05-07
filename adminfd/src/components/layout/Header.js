@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, LogOut, Menu, Info, CheckCircle, Trash2, FileText } from 'lucide-react';
+import { Modal, Button } from 'react-bootstrap';
 import axios from 'axios';
 import './Header.css';
+import logoPdf from '../../assets/logopdf.png';
 
 const Header = ({ activePage, onLogout, onToggleSidebar, collapsed }) => {
-    const storedAdmin = typeof window !== 'undefined' ? localStorage.getItem('adminUser') : null;
+    const storedAdmin = typeof window !== 'undefined' ? sessionStorage.getItem('adminUser') : null;
     const adminData = storedAdmin ? JSON.parse(storedAdmin) : {};
     const adminName = adminData.name || 'Owner';
     const adminRole = adminData.role || 'Admin';
 
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
 
     const API_URL = 'http://localhost:5000/api/notifications';
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     const fetchNotifications = async () => {
         if (!token) return;
@@ -125,11 +128,22 @@ const Header = ({ activePage, onLogout, onToggleSidebar, collapsed }) => {
                         </div>
                     )}
 
-                    <div className="header-icon-btn logout-btn" onClick={onLogout} title="Logout">
+                    <div className="header-icon-btn logout-btn" onClick={() => setShowLogoutModal(true)} title="Logout">
                         <LogOut size={20} />
                     </div>
                 </div>
             </div>
+            <Modal show={showLogoutModal} onHide={() => setShowLogoutModal(false)} centered size="sm">
+                <div className="p-4 border-0 text-center forms">
+                    <img src={logoPdf} alt="Logo" className="mb-3 modal-logo" style={{ maxWidth: '150px', width: '100%' }} />
+                    <h5 className="text-black mb-3 font-weight-bold">Logout</h5>
+                    <p className="small text-muted mb-4">Are you sure you want to logout?</p>
+                    <div className="d-flex justify-content-center gap-2">
+                        <Button style={{width:'100%'}} variant="outline-dark" size="sm" className="px-4" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+                        <Button style={{width:'100%'}} variant="danger" size="sm" className="px-4" onClick={() => { setShowLogoutModal(false); onLogout(); }}>Logout</Button>
+                    </div>
+                </div>
+            </Modal>
         </header>
     );
 };

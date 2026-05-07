@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import fullLogo from '../../assets/logo.png';
 import smallLogo from '../../assets/smallLogo.png';
+import logoPdf from '../../assets/logopdf.png';
 
 const Sidebar = ({ activePage, setActivePage, onLogout, collapsed }) => {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -63,11 +64,12 @@ const Sidebar = ({ activePage, setActivePage, onLogout, collapsed }) => {
 
             <Modal show={showLogoutModal} onHide={() => setShowLogoutModal(false)} centered size="sm">
                 <div className="p-4 border-0 text-center forms">
+                    <img src={logoPdf} alt="Logo" className="mb-3 modal-logo" style={{ maxWidth: '150px', width: '100%' }} />
                     <h5 className="text-black mb-3 font-weight-bold">Logout</h5>
                     <p className="small text-muted mb-4">Are you sure you want to logout?</p>
                     <div className="d-flex justify-content-center gap-2">
-                        <Button variant="outline-dark" size="sm" className="px-4" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
-                        <Button variant="danger" size="sm" className="px-4" onClick={() => { setShowLogoutModal(false); onLogout(); }}>Logout</Button>
+                        <Button style={{width:'100%'}} variant="outline-dark" size="sm" className="px-4" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+                        <Button style={{width:'100%'}} variant="danger" size="sm" className="px-4" onClick={() => { setShowLogoutModal(false); onLogout(); }}>Logout</Button>
                     </div>
                 </div>
             </Modal>
