@@ -1,4 +1,4 @@
-package com.userapp
+package com.iws
 
 import android.app.Application
 import com.facebook.react.PackageList

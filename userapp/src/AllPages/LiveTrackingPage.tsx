@@ -143,7 +143,7 @@ const LiveTrackingPage = () => {
         <View style={styles.statusHeadingContainer}>
           <View>
             <Text style={styles.statusHeading}>Service Status</Text>
-            <Text style={styles.completionTime}>Completion: 04:30 PM</Text>
+            {/* <Text style={styles.completionTime}>Completion: 04:30 PM</Text> */}
           </View>
           <View style={styles.billDownloadSection}>
             <Text style={styles.billLabel}>Bill Download</Text>

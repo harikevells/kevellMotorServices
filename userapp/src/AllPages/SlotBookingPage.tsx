@@ -226,7 +226,7 @@ const SlotBookingPage = () => {
           style={[styles.tabButton, bookingType === 'live' && styles.activeTab]}
           onPress={() => setBookingType('live')}
         >
-          <Text style={[styles.tabText, bookingType === 'live' && styles.activeTabText]}>Emergency Slot</Text>
+          <Text style={[styles.tabText, bookingType === 'live' && styles.activeTabText]}>Live Booking</Text>
         </TouchableOpacity>
       </View>
 
