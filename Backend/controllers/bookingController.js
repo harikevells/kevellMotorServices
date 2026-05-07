@@ -106,6 +106,7 @@ exports.createBooking = async (req, res, next) => {
         vendorName: centerExists.ownerName || 'Unknown',
         shopName: centerExists.shopName,
         phone: centerExists.phone || centerExists.whatsappNumber || 'Unknown',
+        email: centerExists.email || 'Unknown',
         address: vendorAddressString
       },
       vehicleDetails: {

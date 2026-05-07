@@ -28,8 +28,8 @@ const Login = ({ onLoginSuccess }) => {
 
             if (response.data.success) {
                 const { token, user } = response.data;
-                localStorage.setItem('token', token);
-                localStorage.setItem('adminUser', JSON.stringify(user));
+                sessionStorage.setItem('token', token);
+                sessionStorage.setItem('adminUser', JSON.stringify(user));
                 onLoginSuccess(user, token);
             }
         } catch (err) {

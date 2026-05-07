@@ -18,7 +18,7 @@ import {
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import { useVendorNav } from './VendorSidebarNavigator';
-import { fetchVendorOrders, fetchSpareParts } from '../services/api';
+import { fetchVendorOrders, fetchSpareParts, uploadBookingBill } from '../services/api';
 import RNFS from 'react-native-fs';
 import { generatePDF } from 'react-native-html-to-pdf';
 import RNPrint from 'react-native-print';
@@ -332,8 +332,8 @@ const getInvoiceHTML = (data: any) => {
                 Phone: ${selectedBooking?.userDetails?.phone || 'N/A'}<br/>
                 Address: ${selectedBooking?.userDetails?.address || 'N/A'}<br/>
                 Reg No: ${vehicleNumber || 'N/A'}<br/>
-                Vehicle: ${vehicleDetails.brand} ${vehicleDetails.model}<br/>
-                Year: ${vehicleDetails.year || 'N/A'}
+                Vehicle: ${(vehicleDetails?.brand || '')} ${(vehicleDetails?.model || '')}<br/>
+                Year: ${vehicleDetails?.year || 'N/A'}
               </div>
             </div>
           </div>
@@ -460,6 +460,7 @@ const ChallenBooking = () => {
   const [spareSearch, setSpareSearch] = useState('');
   const [bookingSearch, setBookingSearch] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleReset = () => {
     setSelectedBooking(null);
@@ -555,7 +556,7 @@ const ChallenBooking = () => {
     // Auto-fill labor charges from booking services
     const services = booking.serviceNames || (booking.services || []).map((s: any) => s.name || s.serviceName);
     const laborDescription = Array.isArray(services) && services.length > 0 ? services.join(', ') : 'Service Charge';
-    
+
     // Calculate amount without tax
     const totalAmountValue = parseFloat(booking.totalAmount) || 0;
     const taxAmountValue = parseFloat(booking.tax) || 0;
@@ -613,7 +614,7 @@ const ChallenBooking = () => {
   };
 
 
-  const generatePDF = async () => {
+  const handlePrintPDF = async () => {
     try {
       const total = calculateTotal();
       const safeCustomerName = (customerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
@@ -793,6 +794,103 @@ const ChallenBooking = () => {
     setSpareParts(spareParts.map(part =>
       part.id === id ? { ...part, [field]: value } : part
     ));
+  };
+
+  const handleUploadBillAndDone = async () => {
+    if (!selectedBooking) {
+      alert('Please select a booking first');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const total = calculateTotal();
+      const safeCustomerName = (customerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+      const vendorName = selectedBooking?.vendorDetails?.shopName || 'Kevell Motor Services';
+      const vendorPhone = selectedBooking?.vendorDetails?.phone || 'N/A';
+      const vendorEmail = selectedBooking?.vendorDetails?.email || 'N/A';
+      const vendorAddress = selectedBooking?.vendorDetails?.address || 'N/A';
+
+      const logoAsset = Image.resolveAssetSource(require('../assets/logopdf.png'));
+      const logoUri = logoAsset ? logoAsset.uri : '';
+      let logoBase64 = '';
+
+      if (Platform.OS === 'android' && !logoUri.startsWith('http')) {
+        try {
+          logoBase64 = await RNFS.readFile(logoUri.replace('file://', ''), 'base64');
+        } catch (e) { }
+      }
+
+      if (!logoBase64 && Platform.OS === 'android') {
+        const logoAssets = ['src_assets_logopdf.png', 'assets_src_assets_logopdf.png', 'logopdf.png'];
+        for (const name of logoAssets) {
+          try {
+            logoBase64 = await RNFS.readFileAssets(name, 'base64');
+            if (logoBase64) break;
+          } catch (e) { }
+        }
+      }
+
+      const currentDate = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      const spareTotal = spareParts.reduce((sum, part) => sum + (parseFloat(part.amount) || 0), 0);
+      const laborTotal = laborCharges.reduce((sum, charge) => sum + (parseFloat(charge.amount) || 0), 0);
+      const subTotal = (spareTotal + laborTotal).toFixed(2);
+
+      const htmlContent = getInvoiceHTML({
+        total, subTotal, vendorName, vendorPhone, vendorEmail, vendorAddress,
+        logoBase64, logoUri, currentDate, customerName, vehicleNumber, vehicleDetails,
+        spareParts, laborCharges, selectedBooking
+      });
+
+      const safeBookingRef = selectedBooking?.bookingRef || 'Booking';
+      const safeId = selectedBooking?._id || '';
+      const safeFileName = `${safeCustomerName}_${safeBookingRef}`;
+
+      const options = {
+        html: htmlContent,
+        fileName: safeFileName,
+        directory: 'Documents',
+        base64: true,
+      };
+
+      const pdfFile = await generatePDF(options);
+
+      if (!pdfFile || (!pdfFile.filePath && !pdfFile.base64)) {
+        throw new Error('PDF generation failed.');
+      }
+
+      const formData = new FormData();
+      const fileName = `${safeFileName}.pdf`;
+
+      formData.append('bill', {
+        uri: Platform.OS === 'android' ? 'file://' + pdfFile.filePath : pdfFile.filePath,
+        name: fileName,
+        type: 'application/pdf',
+      } as any);
+
+      formData.append('totalAmount', total);
+      formData.append('tax', '0'); // Assuming 0 for now as per UI
+
+      console.log(`[UPLOAD] Starting upload for booking: ${safeId}, total: ${total}`);
+      const response: any = await uploadBookingBill(safeId, formData);
+
+      if (response.success) {
+        alert('Bill generated and uploaded successfully!');
+        handleReset();
+      } else {
+        alert('Upload failed: ' + (response.message || 'Unknown error'));
+      }
+    } catch (error: any) {
+      console.error('Upload Error:', error);
+      alert('Error: ' + (error.message || 'Failed to generate or upload bill'));
+    } finally {
+      setUploading(false);
+    }
   };
 
 
@@ -1043,16 +1141,21 @@ const ChallenBooking = () => {
           <View style={{ marginTop: 20 }}>
             <TouchableOpacity
               style={[styles.generateButton, { backgroundColor: '#F28B2C' }]}
-              onPress={generatePDF}
+              onPress={handlePrintPDF}
             >
               <Text style={styles.generateButtonText}>Challen View & Download Bill</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.generateButton, { backgroundColor: '#000000', marginTop: 10 }]}
-              onPress={handleReset}
+              onPress={handleUploadBillAndDone}
+              disabled={uploading}
             >
-              <Text style={styles.generateButtonText}>Done</Text>
+              {uploading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.generateButtonText}>Done</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -1085,13 +1188,13 @@ const ChallenBooking = () => {
             </View>
             <FlatList
               data={Array.isArray(bookings) ? bookings.filter(b => {
-                const matchesSearch = 
+                const matchesSearch =
                   b.bookingRef?.toLowerCase().includes(bookingSearch.toLowerCase()) ||
                   b.userDetails?.name?.toLowerCase().includes(bookingSearch.toLowerCase());
-                
+
                 const status = b.status?.toLowerCase();
                 const isExcludedStatus = status === 'delivered' || status === 'delivery' || status === 'cancelled';
-                
+
                 return matchesSearch && !isExcludedStatus;
               }) : []}
               keyExtractor={(item) => item._id}

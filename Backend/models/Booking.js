@@ -38,6 +38,7 @@ const bookingSchema = new mongoose.Schema({
     vendorName: String,
     shopName: String,
     phone: String,
+    email: String,
     address: String,
     latitude: Number,
     longitude: Number

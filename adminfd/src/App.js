@@ -17,15 +17,15 @@ import Tracking from './components/Pages/Tracking';
 import SpareParts from './components/Pages/SpareParts';
 
 function App() {
-  const [activePage, setActivePage] = useState('Dashboard');
+  const [activePage, setActivePage] = useState(sessionStorage.getItem('activePage') || 'Dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [, setUser] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    // Check for existing session
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('adminUser');
+    // Restore session on refresh (sessionStorage persists across refreshes)
+    const token = sessionStorage.getItem('token');
+    const savedUser = sessionStorage.getItem('adminUser');
     if (token && savedUser) {
       setIsAuthenticated(true);
       setUser(JSON.parse(savedUser));
@@ -33,6 +33,7 @@ function App() {
 
     const handlePageChange = (e) => {
       setActivePage(e.detail);
+      sessionStorage.setItem('activePage', e.detail);
     };
 
     window.addEventListener('changePage', handlePageChange);
@@ -45,8 +46,9 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('adminUser');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('adminUser');
+    sessionStorage.removeItem('activePage');
     setIsAuthenticated(false);
     setUser(null);
     setActivePage('Dashboard');

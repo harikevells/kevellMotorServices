@@ -169,10 +169,12 @@ const Ordermanagement = () => {
                                             <option value="confirmed">Confirmed</option>
                                             <option value="received">Received</option>
                                             <option value="inspected">Inspected</option>
+                                            <option value="in_progress">In Progress</option>
                                             <option value="in_service">In Service</option>
                                             <option value="quality_check">Quality Check</option>
                                             <option value="ready">Ready</option>
                                             <option value="out_for_delivery">Out for Delivery</option>
+                                            <option value="completed">Completed</option>
                                             <option value="delivered">Delivered</option>
                                             <option value="cancelled">Cancelled</option>
                                         </Form.Select>
@@ -309,10 +311,13 @@ const Ordermanagement = () => {
                                             <option value="confirmed">Confirmed</option>
                                             <option value="received">Received</option>
                                             <option value="inspected">Inspected</option>
+                                            <option value="in_progress">In Progress</option>
                                             <option value="in_service">In Service</option>
                                             <option value="quality_check">Quality Check</option>
                                             <option value="ready">Ready</option>
+                                            <option value="out_for_delivery">Out for Delivery</option>
                                             <option value="completed">Completed</option>
+                                            <option value="delivered">Delivered</option>
                                             <option value="cancelled">Cancelled</option>
                                         </Form.Select>
                                     </p>

@@ -748,7 +748,7 @@ exports.updateOrderPaymentStatus = async (req, res, next) => {
   try {
     const { paymentStatus } = req.body;
     const validStatuses = ['pending', 'completed', 'Not Received'];
-    
+
     if (!validStatuses.includes(paymentStatus)) {
       return res.status(400).json({
         success: false,
@@ -826,6 +826,11 @@ exports.uploadBookingBill = async (req, res, next) => {
       }
     }
 
+    const { totalAmount, tax } = req.body;
+    if (totalAmount) order.totalAmount = parseFloat(totalAmount);
+    if (tax) order.tax = parseFloat(tax);
+
+    order.status = 'completed';
     order.bill = `/uploads/bills/${req.file.filename}`;
     await order.save();
 

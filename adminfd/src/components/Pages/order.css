@@ -158,9 +158,10 @@
 .status-select-custom.confirmed { color: #2196f3 !important; } /* Blue */
 .status-select-custom.received { color: #00bcd4 !important; } /* Cyan */
 .status-select-custom.inspected { color: #9c27b0 !important; } /* Purple */
-.status-select-custom.in-service { color: #3f51b5 !important; } /* Indigo */
+.status-select-custom.in-progress, .status-select-custom.in-service { color: #3f51b5 !important; } /* Indigo */
 .status-select-custom.quality-check { color: #673ab7 !important; } /* Deep Purple */
 .status-select-custom.ready { color: #8bc34a !important; } /* Light Green */
+.status-select-custom.out-for-delivery { color: #ff5722 !important; } /* Deep Orange */
 .status-select-custom.completed, .status-select-custom.delivered { color: #00d084 !important; } /* Green */
 .status-select-custom.cancelled { color: #f44336 !important; } /* Red */
 
