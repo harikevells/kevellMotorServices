@@ -338,6 +338,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    marginTop:30,
     backgroundColor: '#060606',
   },
   backButton: {
@@ -379,6 +380,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
+    width: 100,
     color: '#AAAAAA',
   },
   infoValue: {
@@ -417,6 +419,7 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 14,
+    width: 100,
     color: '#AAAAAA',
   },
   priceValue: {

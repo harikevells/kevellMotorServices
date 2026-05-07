@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE = 'http://192.168.31.151:5000/api';
+const BASE = 'http://192.168.0.187:5000/api';
 
 async function test() {
   const cases = [

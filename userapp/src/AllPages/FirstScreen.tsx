@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: '#FFF',
         letterSpacing: 10,
-        marginTop: 22,
+        marginTop: 0,
         textShadowColor: '#E8640066',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 20,

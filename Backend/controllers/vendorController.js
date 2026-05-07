@@ -826,18 +826,22 @@ exports.uploadBookingBill = async (req, res, next) => {
       }
     }
 
-    const { totalAmount, tax } = req.body;
+    const { totalAmount, tax, status } = req.body;
+    if (status) {
+      // Explicitly ignore status updates during bill upload.
+      console.log(`[UPLOAD-BILL] Ignoring status field on bill upload for order ${orderId}`);
+    }
     if (totalAmount) order.totalAmount = parseFloat(totalAmount);
     if (tax) order.tax = parseFloat(tax);
 
-    order.status = 'completed';
     order.bill = `/uploads/bills/${req.file.filename}`;
     await order.save();
 
     res.json({
       success: true,
       message: 'Bill uploaded successfully',
-      bill: order.bill
+      bill: order.bill,
+      status: order.status
     });
   } catch (error) {
     if (req.file) fs.unlinkSync(req.file.path);

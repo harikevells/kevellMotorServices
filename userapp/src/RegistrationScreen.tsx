@@ -97,22 +97,15 @@ const RegistrationScreen = () => {
         await SafeStorage.setItem('token', res.token);
         await SafeStorage.setItem('user', JSON.stringify(res.user));
         Alert.alert('Success', 'Registration successful!', [
-          { 
-            text: 'OK', 
+          {
+            text: 'OK',
             onPress: () => {
-              if (res.user.role === 'vendor') {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'VendorDrawer' }],
-                });
-              } else {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'HomeTabs' }],
-                });
-              }
-            }
-          }
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login', params: { role } }],
+              });
+            },
+          },
         ]);
       }
     } catch (error: any) {

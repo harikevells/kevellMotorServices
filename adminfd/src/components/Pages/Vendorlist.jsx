@@ -138,6 +138,16 @@ const Vendorlist = () => {
     }
   };
 
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <div className="vendor-management-container">
       {/* Search and Filters */}
@@ -184,8 +194,7 @@ const Vendorlist = () => {
               <th className="text-center">Owner</th>
               <th className="text-center">Email</th>
               <th className="text-center">Phone</th>
-              <th className="text-center">City</th>
-              <th className="text-center">Status</th>
+              <th className="text-center">Registered</th>
               <th className="text-center">Verified</th>
               <th className="text-center">View</th>
               <th className="text-center">Action</th>
@@ -194,7 +203,7 @@ const Vendorlist = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="text-center py-5">
+                <td colSpan={8} className="text-center py-5">
                   <Spinner animation="border" variant="warning" />
                 </td>
               </tr>
@@ -209,12 +218,7 @@ const Vendorlist = () => {
                   <td className="text-center">{vendor.user?.name || 'No owner'}</td>
                   <td className="text-center">{vendor.email || vendor.user?.email || 'N/A'}</td>
                   <td className="text-center">{vendor.phone || 'N/A'}</td>
-                  <td className="text-center">{vendor.address?.city || 'N/A'}</td>
-                  <td className="text-center">
-                    <span className={`status-indicator ${vendor.status?.toLowerCase()}`}>
-                      {vendor.status}
-                    </span>
-                  </td>
+                  <td className="text-center">{formatDate(vendor.createdAt)}</td>
                   <td className="text-center">
                     <select 
                       className={`verification-dropdown ${vendor.isVerified ? 'verified' : 'unverified'}`}
@@ -248,7 +252,7 @@ const Vendorlist = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="text-center py-5 text-muted">No vendors found.</td>
+                <td colSpan={8} className="text-center py-5 text-muted">No vendors found.</td>
               </tr>
             )}
           </tbody>

@@ -111,8 +111,8 @@ const Ordermanagement = () => {
                 >
                     <option value="All">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
+                    <option value="in_progress">Ready</option>
+                    {/* <option value="completed">Completed</option> */}
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
@@ -174,7 +174,7 @@ const Ordermanagement = () => {
                                             <option value="quality_check">Quality Check</option>
                                             <option value="ready">Ready</option>
                                             <option value="out_for_delivery">Out for Delivery</option>
-                                            <option value="completed">Completed</option>
+                                            {/* <option value="completed">Completed</option> */}
                                             <option value="delivered">Delivered</option>
                                             <option value="cancelled">Cancelled</option>
                                         </Form.Select>

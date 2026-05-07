@@ -245,12 +245,16 @@ const VendorOrderList = () => {
 
       if (response.success) {
         Alert.alert('Success', 'Bill uploaded successfully');
-        // Update local state
+        // Update local state, keeping status unchanged.
         const updatedOrders = orders.map(o =>
-          o._id === selectedOrder._id ? { ...o, bill: response.bill } : o
+          o._id === selectedOrder._id ? { ...o, bill: response.bill, status: response.status || o.status } : o
         );
         setOrders(updatedOrders);
-        setSelectedOrder({ ...selectedOrder, bill: response.bill });
+        setSelectedOrder({
+          ...selectedOrder,
+          bill: response.bill,
+          status: response.status || selectedOrder.status
+        });
       } else {
         Alert.alert('Error', response.message || 'Failed to upload bill');
       }
