@@ -17,8 +17,9 @@ import {
 import { pick, isCancel, types } from '@react-native-documents/picker';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from '@react-native-community/geolocation';
-import { COLORS, SHADOWS, SIZES } from '../constants/theme';
-import { fetchVendorOrders, updateOrderStatus, updateOrderLocation, uploadBookingBill, updateOrderPaymentStatus } from '../services/api';
+import { COLORS, SHADOWS } from '../constants/theme';
+import { fetchVendorOrders, updateOrderStatus, uploadBookingBill, updateOrderPaymentStatus } from '../services/api';
+import { startVendorBackgroundLocation } from '../services/backgroundLocation';
 
 const STAGES = [
   { id: 'pending', label: 'Booking Pending', icon: '⏳', desc: 'Awaiting confirmation' },
@@ -186,10 +187,17 @@ const VendorOrderList = () => {
       
       // 5. Update UI
       setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: 'confirmed' } : o));
-      Alert.alert("Success", "Booking Confirmed!");
+      console.log('[VendorOrderList] starting background tracking for order:', orderId);
+      const started = await startVendorBackgroundLocation(orderId);
+      console.log('[VendorOrderList] background tracking start result:', started);
+      if (!started) {
+        Alert.alert('Warning', 'Order confirmed, but background location could not start. Please open the live tracking screen to continue sharing location.');
+      } else {
+        Alert.alert('Success', 'Booking confirmed and background tracking started.');
+      }
 
     } catch (error: any) {
-      console.error(error);
+      console.error('[VendorOrderList] failed to confirm order or start background tracking:', error);
       Alert.alert('Error', error.message || 'Could not fetch location or update order');
     } finally {
       setUpdatingId(null);

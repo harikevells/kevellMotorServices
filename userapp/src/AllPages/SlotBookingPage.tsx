@@ -17,7 +17,8 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { fetchSlots } from '../services/api';
+import { fetchSlots, fetchCenterDetails } from '../services/api';
+import Geolocation from '@react-native-community/geolocation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SlotRouteProp = RouteProp<RootStackParamList, 'SlotBooking'>;
@@ -55,6 +56,12 @@ const SlotBookingPage = () => {
   const [liveDate, setLiveDate] = useState('');
   const [liveTime, setLiveTime] = useState('');
 
+  // Location states
+  const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
+  const [vendorLat, setVendorLat] = useState<number | null>(null);
+  const [vendorLng, setVendorLng] = useState<number | null>(null);
+
   const generateDates = () => {
     const dates = [];
     const now = new Date();
@@ -87,7 +94,42 @@ const SlotBookingPage = () => {
 
   useEffect(() => {
     loadSlots();
-  }, [selectedDate]);
+
+    // Fetch vendor location
+    const fetchVendorLocation = async () => {
+      try {
+        const res = await fetchCenterDetails(centerId);
+        const center = res.data;
+        if (center.location && center.location.coordinates) {
+          setVendorLng(center.location.coordinates[0]);
+          setVendorLat(center.location.coordinates[1]);
+          console.log('Vendor Lat:', center.location.coordinates[1], 'Lng:', center.location.coordinates[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching vendor location:', error);
+      }
+    };
+
+    fetchVendorLocation();
+
+    // Get user location live
+    const watchId = Geolocation.watchPosition(
+      (position) => {
+        setUserLat(position.coords.latitude);
+        setUserLng(position.coords.longitude);
+        console.log('User Lat:', position.coords.latitude, 'Lng:', position.coords.longitude);
+      },
+      (error) => {
+        console.error('Error getting user location:', error);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+
+    // Cleanup watch on unmount
+    return () => {
+      Geolocation.clearWatch(watchId);
+    };
+  }, [selectedDate, centerId]);
 
   const isPastTime = (timeStr: string) => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -157,6 +199,10 @@ const SlotBookingPage = () => {
       Alert.alert('Selection Required', 'Please select or enter a date and time.');
       return;
     }
+
+    // Log user and vendor lat long for booking
+    console.log('Booking - User Lat:', userLat, 'Lng:', userLng);
+    console.log('Booking - Vendor Lat:', vendorLat, 'Lng:', vendorLng);
 
     navigation.navigate('Address', {
       centerId,

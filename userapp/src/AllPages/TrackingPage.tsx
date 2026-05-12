@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -43,14 +43,7 @@ const TrackingPage = () => {
   const [distanceKm, setDistanceKm] = useState<string>('0.0');
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadTrackingData();
-    // Optional: auto refresh every 15s
-    const interval = setInterval(loadTrackingData, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadTrackingData = async () => {
+  const loadTrackingData = useCallback(async () => {
     try {
       const res = await fetchUserBookings();
       const currentBooking = res.data.find((b: any) => b._id === bookingId || b.bookingRef === bookingId);
@@ -70,13 +63,23 @@ const TrackingPage = () => {
     } catch (error) {
       console.error('Tracking fetch error:', error);
     } finally {
-      if (loading) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    loadTrackingData();
+    // Optional: auto refresh every 15s
+    const interval = setInterval(loadTrackingData, 15000);
+    return () => clearInterval(interval);
+  }, [loadTrackingData]);
 
   const fetchRoute = async (vLat: number, vLng: number, uLat: number, uLng: number) => {
     try {
-      const response = await axios.get(`https://router.project-osrm.org/route/v1/driving/${vLng},${vLat};${uLng},${uLat}?overview=full&geometries=geojson`);
+      const response = await axios.get(
+        `https://router.project-osrm.org/route/v1/driving/${vLng},${vLat};${uLng},${uLat}?overview=full&geometries=geojson`,
+        { timeout: 15000 }
+      );
       if (response.data && response.data.routes && response.data.routes.length > 0) {
         const coords = response.data.routes[0].geometry.coordinates.map((coord: number[]) => ({
           latitude: coord[1],
@@ -90,7 +93,7 @@ const TrackingPage = () => {
       const dist = calculateDistance(vLat, vLng, uLat, uLng).toFixed(1);
       setDistanceKm(dist);
     } catch (error) {
-      console.error("Failed to fetch route from OSRM", error);
+      console.warn('OSRM route fetch failed, using straight-line fallback:', error);
       setRoutePath([
         { latitude: vLat, longitude: vLng },
         { latitude: uLat, longitude: uLng }

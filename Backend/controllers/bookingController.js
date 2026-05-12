@@ -24,6 +24,8 @@ exports.createBooking = async (req, res, next) => {
       userName, userPhone, userAddress, latitude, longitude
     } = req.body;
 
+    console.log('User booking - Lat:', latitude, 'Lng:', longitude);
+
     // 1. Validate Vehicle
     const vehicleExists = await Vehicle.findById(vehicle);
     if (!vehicleExists || vehicleExists.user.toString() !== req.user.id) {

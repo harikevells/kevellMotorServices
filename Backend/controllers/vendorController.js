@@ -694,6 +694,7 @@ exports.updateOrderStatus = async (req, res, next) => {
       if (vendor.address) {
         order.vendorDetails.address = `${vendor.address.street || ''}, ${vendor.address.city || ''}`;
       }
+      console.log('Vendor accepting order - Lat:', location.latitude, 'Lng:', location.longitude);
     }
 
     if (status === 'completed' || status === 'delivered') {
@@ -1657,15 +1658,6 @@ exports.updateOrderLocation = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Vendor profile not found'
-      });
-    }
-
-    // Find shop
-    const shop = await Shop.findOne({ vendor: vendor._id });
-    if (!shop) {
-      return res.status(404).json({
-        success: false,
-        message: 'Shop not found'
       });
     }
 

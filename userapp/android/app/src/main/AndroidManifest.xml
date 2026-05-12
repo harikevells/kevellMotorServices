@@ -4,8 +4,24 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
     <application
       android:name=".MainApplication"
@@ -14,9 +30,16 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
-      android:usesCleartextTraffic="${usesCleartextTraffic}"
+      android:usesCleartextTraffic="true"
       android:requestLegacyExternalStorage="true"
       android:supportsRtl="true">
+
+      <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyCjEatp-Gql5YwhrJQBByrHaA4WRpZ3VA4"/>
+
+      <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -29,9 +52,8 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-      <meta-data
-        android:name="com.google.android.geo.API_KEY"
-        android:value="YOUR_API_KEY_HERE"/>
+
+      <service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="location" />
 
     </application>
 </manifest>

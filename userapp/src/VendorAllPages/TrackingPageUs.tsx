@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Linking,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -15,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import axios from 'axios';
 import { fetchVendorOrders } from '../services/api';
+import { startVendorBackgroundLocation } from '../services/backgroundLocation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TrackingRouteProp = RouteProp<RootStackParamList, 'TrackingPageUs'>;
@@ -43,15 +45,9 @@ const TrackingPageUs = () => {
   const [distanceKm, setDistanceKm] = useState<string>('0.0');
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadTrackingData();
-    const interval = setInterval(loadTrackingData, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadTrackingData = async () => {
+  const loadTrackingData = useCallback(async () => {
     try {
-      const res = await fetchVendorOrders();
+      const res: any = await fetchVendorOrders();
       if (res.success && res.orders) {
         const currentBooking = res.orders.find((b: any) => b._id === bookingId || b.bookingRef === bookingId);
         
@@ -71,13 +67,47 @@ const TrackingPageUs = () => {
     } catch (error) {
       console.error('Tracking fetch error:', error);
     } finally {
-      if (loading) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    console.log('[TrackingPageUs] starting background location for bookingId:', bookingId);
+    startVendorBackgroundLocation(bookingId).then((started) => {
+      if (!started) {
+        Alert.alert(
+          'Background Location Required',
+          'Background location permission is needed for live tracking. Please enable it in app settings and try again.',
+          [
+            {
+              text: 'Go to Settings',
+              onPress: () => {
+                Linking.openSettings();
+              }
+            },
+            {
+              text: 'OK',
+              style: 'cancel'
+            }
+          ]
+        );
+      }
+    }).catch((error) => {
+      console.error('[TrackingPageUs] failed to start background tracking:', error);
+    });
+
+    loadTrackingData();
+    const interval = setInterval(loadTrackingData, 15000);
+    return () => clearInterval(interval);
+  }, [bookingId, loadTrackingData]);
 
   const fetchRoute = async (vLat: number, vLng: number, uLat: number, uLng: number) => {
     try {
-      const response = await axios.get(`https://router.project-osrm.org/route/v1/driving/${vLng},${vLat};${uLng},${uLat}?overview=full&geometries=geojson`);
+      const response = await axios.get(
+        `https://router.project-osrm.org/route/v1/driving/${vLng},${vLat};${uLng},${uLat}?overview=full&geometries=geojson`,
+        { timeout: 15000 }
+      );
+
       if (response.data && response.data.routes && response.data.routes.length > 0) {
         const coords = response.data.routes[0].geometry.coordinates.map((coord: number[]) => ({
           latitude: coord[1],
@@ -88,10 +118,11 @@ const TrackingPageUs = () => {
         const durationSeconds = response.data.routes[0].duration;
         setEtaMinutes(Math.round(durationSeconds / 60));
       }
+
       const dist = calculateDistance(vLat, vLng, uLat, uLng).toFixed(1);
       setDistanceKm(dist);
     } catch (error) {
-      console.error("Failed to fetch route from OSRM", error);
+      console.warn('OSRM route fetch failed, using straight-line fallback:', error);
       setRoutePath([
         { latitude: vLat, longitude: vLng },
         { latitude: uLat, longitude: uLng }
