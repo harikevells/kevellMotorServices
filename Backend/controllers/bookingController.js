@@ -279,8 +279,20 @@ exports.getAllBookingsAdmin = async (req, res, next) => {
     const { search, status } = req.query;
     console.log('--- ADMIN BOOKING FETCH ---');
     console.log('Query Params:', { search, status });
+    console.log('User Role:', req.user?.role);
 
     let query = {};
+
+    // If user is a vendor, only show their own bookings
+    if (req.user && req.user.role && req.user.role.toLowerCase() === 'vendor') {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (!vendor) {
+        console.error(`[AUTH-FILTER] Vendor profile not found for user ${req.user.id}`);
+        return res.status(404).json({ success: false, message: 'Vendor profile not found' });
+      }
+      query.center = vendor._id;
+      console.log(`[AUTH-FILTER] Successfully applied center filter: ${vendor._id} (${vendor.shopName})`);
+    }
 
     if (search) {
       query.bookingRef = { $regex: search, $options: 'i' };
@@ -326,6 +338,9 @@ exports.updateBookingStatusAdmin = async (req, res, next) => {
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
+
+    // Automatically trigger wallet crediting if status and paymentStatus are completed
+    await exports.creditWalletIfEligible(booking._id);
 
     res.json({
       success: true,
@@ -419,6 +434,97 @@ exports.getCenterReviews = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+exports.creditWalletIfEligible = async (bookingId) => {
+  try {
+    const Booking = require('../models/Booking');
+    const Vendor = require('../models/vendor');
+    const User = require('../models/User');
+    const Wallet = require('../models/Wallet');
+    const WalletTransaction = require('../models/WalletTransaction');
+
+    const booking = await Booking.findById(bookingId).populate('center');
+    if (!booking) return;
+
+    console.log(`[WALLET-CHECK] Booking: ref=${booking.bookingRef}, status=${booking.status}, paymentStatus=${booking.paymentStatus}`);
+
+    // Wallet should be credited as soon as payment is completed.
+    if (booking.paymentStatus === 'completed') {
+      // Safety check to avoid double-crediting
+      const existingTx = await WalletTransaction.findOne({ 
+        referenceId: booking._id.toString(), 
+        type: 'earning' 
+      });
+
+      if (!existingTx) {
+        const vendorRecord = booking.center;
+        if (vendorRecord) {
+          // 1. Credit Vendor Wallet with pendingBalance
+          let vendorWallet = await Wallet.findOne({ user: vendorRecord.user });
+          if (!vendorWallet) {
+            vendorWallet = new Wallet({ user: vendorRecord.user, balance: 0, pendingBalance: 0 });
+          }
+          
+          const commissionPercent = vendorRecord.commission || 10;
+          const platformFee = booking.totalAmount * (commissionPercent / 100);
+          const vendorEarning = booking.totalAmount - platformFee;
+          
+          vendorWallet.pendingBalance = (vendorWallet.pendingBalance || 0) + vendorEarning;
+          await vendorWallet.save();
+          
+          const vendorTx = new WalletTransaction({
+            wallet: vendorWallet._id,
+            user: vendorRecord.user,
+            type: 'earning',
+            amount: vendorEarning,
+            status: 'pending',
+            description: `Pending earnings from booking service ${booking.bookingRef} (Awaiting withdrawal)`,
+            referenceId: booking._id.toString()
+          });
+          await vendorTx.save();
+          
+          // 2. Credit Admin Wallet with full booking total amount
+          const adminUser = await User.findOne({ role: 'admin' });
+          if (adminUser) {
+            let adminWallet = await Wallet.findOne({ user: adminUser._id });
+            if (!adminWallet) {
+              adminWallet = new Wallet({ user: adminUser._id, balance: 0, pendingBalance: 0 });
+            }
+            adminWallet.balance += booking.totalAmount;
+            await adminWallet.save();
+            
+            const adminTxFee = new WalletTransaction({
+              wallet: adminWallet._id,
+              user: adminUser._id,
+              type: 'platform_fee',
+              amount: platformFee,
+              status: 'completed',
+              description: `Commission from booking Ref: ${booking.bookingRef} (Total: ₹${booking.totalAmount})`,
+              referenceId: booking._id.toString()
+            });
+            await adminTxFee.save();
+
+            const adminTxVendorShare = new WalletTransaction({
+              wallet: adminWallet._id,
+              user: adminUser._id,
+              type: 'add_funds',
+              amount: vendorEarning,
+              status: 'completed',
+              description: `Vendor share held for booking Ref: ${booking.bookingRef} (Vendor: ${vendorRecord.shopName})`,
+              referenceId: booking._id.toString()
+            });
+            await adminTxVendorShare.save();
+          }
+          console.log(`[WALLET-CREDIT] Successfully credited ₹${vendorEarning} to Vendor (${vendorRecord.shopName}) and ₹${platformFee} to Admin for booking ${booking.bookingRef}`);
+        }
+      } else {
+        console.log(`[WALLET-CHECK] Booking ${booking.bookingRef} already credited.`);
+      }
+    }
+  } catch (err) {
+    console.error('Error crediting wallet in helper:', err);
   }
 };
 

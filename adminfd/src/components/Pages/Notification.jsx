@@ -8,7 +8,7 @@ const Notification = () => {
     const [loading, setLoading] = useState(true);
 
     const API_URL = 'http://localhost:5000/api/notifications';
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     const fetchNotifications = async () => {
         try {

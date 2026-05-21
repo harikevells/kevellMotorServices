@@ -58,7 +58,7 @@ exports.getAllVendors = async (req, res, next) => {
 
     // Fetch vendors
     const vendors = await Vendor.find(filter)
-      .populate('user', 'name email phone')
+      .populate('user', 'name email phone profileImage')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));

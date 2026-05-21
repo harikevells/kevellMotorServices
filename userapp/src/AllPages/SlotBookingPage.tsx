@@ -30,21 +30,20 @@ interface Slot {
   bookedCount: number;
 }
 
-const DEFAULT_TIMES = [
-  '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
-  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM',
-  '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
-  '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM',
-  '08:00 PM', '08:30 PM', '09:00 PM'
-];
-
 const SlotBookingPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SlotRouteProp>();
   const { centerId, serviceIds, serviceNames, vehicleId, category, fuel, vehicleCategory } = route.params;
 
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString(new Date()));
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingType, setBookingType] = useState<'upcoming' | 'live'>('upcoming');
@@ -75,7 +74,7 @@ const SlotBookingPage = () => {
         // Don't show past dates
         if (date >= new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
           dates.push({
-            full: date.toISOString().split('T')[0],
+            full: getLocalDateString(date),
             day: date.toLocaleDateString('en-US', { weekday: 'short' }),
             date: date.getDate(),
             month: date.toLocaleDateString('en-US', { month: 'short' }),
@@ -132,20 +131,106 @@ const SlotBookingPage = () => {
   }, [selectedDate, centerId]);
 
   const isPastTime = (timeStr: string) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString(new Date());
     if (selectedDate !== todayStr) return false;
 
     const now = new Date();
-    const [time, modifier] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
+    let endTimeStr = timeStr;
+    
+    // If the slot is a range (e.g., "11:00 AM - 11:30 AM" or "11:00 AM - 05:00 PM")
+    if (timeStr.includes(' - ')) {
+      endTimeStr = timeStr.split(' - ')[1];
+    } else if (timeStr.includes('-')) {
+      endTimeStr = timeStr.split('-')[1];
+    }
 
-    if (modifier === 'PM' && hours < 12) hours += 12;
-    if (modifier === 'AM' && hours === 12) hours = 0;
+    try {
+      const [time, modifier] = endTimeStr.trim().split(' ');
+      let [hours, minutes] = time.split(':').map(Number);
 
-    const slotTimeEnd = new Date();
-    slotTimeEnd.setHours(hours, minutes + 30, 0, 0);
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
 
-    return slotTimeEnd <= now;
+      const slotTimeEnd = new Date();
+      slotTimeEnd.setHours(hours, minutes, 0, 0);
+
+      return slotTimeEnd <= now;
+    } catch (e) {
+      // Fallback in case of parse error
+      return false;
+    }
+  };
+
+  const parseTimeToMinutes = (timeStr: string): number => {
+    try {
+      const [time, modifier] = timeStr.trim().split(' ');
+      let [hours, minutes] = time.split(':').map(Number);
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+      return hours * 60 + minutes;
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  const formatMinutesTo12Hour = (totalMinutes: number): string => {
+    let hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const modifier = hours >= 12 ? 'PM' : 'AM';
+    
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    
+    const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+    const minutesStr = minutes < 10 ? `0${minutes}` : `${minutes}`;
+    
+    return `${hoursStr}:${minutesStr} ${modifier}`;
+  };
+
+  const splitSlotInto30MinChunks = (slot: Slot): Slot[] => {
+    const timeStr = slot.time;
+    let startTimeStr = '';
+    let endTimeStr = '';
+
+    if (timeStr.includes(' - ')) {
+      const parts = timeStr.split(' - ');
+      startTimeStr = parts[0];
+      endTimeStr = parts[1];
+    } else if (timeStr.includes('-')) {
+      const parts = timeStr.split('-');
+      startTimeStr = parts[0];
+      endTimeStr = parts[1];
+    } else {
+      return [slot];
+    }
+
+    try {
+      const startMinutes = parseTimeToMinutes(startTimeStr);
+      const endMinutes = parseTimeToMinutes(endTimeStr);
+      
+      if (startMinutes >= endMinutes) {
+        return [];
+      }
+
+      const chunks: Slot[] = [];
+      let current = startMinutes;
+      
+      while (current + 30 <= endMinutes) {
+        const chunkTime = `${formatMinutesTo12Hour(current)} - ${formatMinutesTo12Hour(current + 30)}`;
+        chunks.push({
+          _id: `${slot._id}_${current}`,
+          time: chunkTime,
+          maxCapacity: slot.maxCapacity,
+          bookedCount: slot.bookedCount,
+        });
+        current += 30;
+      }
+      
+      return chunks;
+    } catch (e) {
+      console.error('Error splitting slot:', e);
+      return [slot];
+    }
   };
 
   const loadSlots = async () => {
@@ -155,18 +240,15 @@ const SlotBookingPage = () => {
       const res = await fetchSlots(centerId, selectedDate);
       const backendSlots = Array.isArray(res?.data) ? res.data : [];
 
-      const mergedSlots = DEFAULT_TIMES.map(time => {
-        const found = backendSlots.find((s: any) => s.time === time);
-        if (found) return found;
-        return {
-          _id: time, // temporary id
-          time,
-          maxCapacity: 5,
-          bookedCount: 0
-        };
+      const allChunks: Slot[] = [];
+      backendSlots.forEach((slot: any) => {
+        if (slot.isActive !== false) {
+          const chunks = splitSlotInto30MinChunks(slot);
+          allChunks.push(...chunks);
+        }
       });
 
-      const filteredSlots = mergedSlots.filter(item => !isPastTime(item.time));
+      const filteredSlots = allChunks.filter(item => !isPastTime(item.time));
       setSlots(filteredSlots);
     } catch (error) {
       console.error(error);
@@ -177,7 +259,7 @@ const SlotBookingPage = () => {
 
   const handleLiveSlot = () => {
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = getLocalDateString(now);
     const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     setLiveDate(date);
     setLiveTime(time);

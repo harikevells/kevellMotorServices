@@ -1,0 +1,645 @@
+/* Timeslot.css */
+
+.timeslot-container {
+    padding: 24px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.timeslot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.timeslot-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark, #2c3e50);
+    margin: 0 0 5px 0;
+}
+
+.timeslot-subtitle {
+    color: var(--text-muted, #7f8c8d);
+    margin: 0;
+    font-size: 14px;
+}
+
+.vendor-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 10px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.vendor-icon {
+    color: var(--primary, #3498db);
+    background: rgba(52, 152, 219, 0.1);
+    padding: 8px;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+}
+
+.vendor-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.vendor-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.vendor-id {
+    font-size: 12px;
+    color: #95a5a6;
+    letter-spacing: 0.5px;
+}
+
+.timeslot-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 992px) {
+    .timeslot-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.timeslot-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 14px;
+    color: #95a5a6;
+}
+
+.input-with-icon input {
+    padding-left: 42px;
+}
+
+.timeslot-form input[type="date"],
+.timeslot-form input[type="time"],
+.timeslot-form input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e0e6ed;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #2c3e50;
+    transition: all 0.2s ease;
+    background: #f8fafc;
+}
+
+.timeslot-form input:focus {
+    outline: none;
+    border-color: #3498db;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+}
+
+.timeslot-form input:disabled {
+    background: #e2e8f0;
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row .half {
+    flex: 1;
+}
+
+.form-row .third {
+    flex: 1;
+}
+
+.days-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.day-checkbox {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1.5px solid #e0e6ed;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.day-checkbox input {
+    display: none;
+}
+
+.day-checkbox .check-icon {
+    color: #cbd5e1;
+    transition: all 0.2s;
+}
+
+.day-checkbox.selected {
+    background: #e1f0fa;
+    border-color: #3498db;
+    color: #2980b9;
+}
+
+.day-checkbox.selected .check-icon {
+    color: #3498db;
+}
+
+.day-checkbox.disabled-label {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.add-slot-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 10px;
+}
+
+.add-slot-btn.update-mode {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.add-slot-btn.update-mode:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+.add-slot-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+}
+
+.add-slot-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+.error-message {
+    background: #fdf3f3;
+    color: #e74c3c;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    border-left: 4px solid #e74c3c;
+}
+
+.success-message {
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    border-left: 4px solid #16a34a;
+}
+
+.mt-3 {
+    margin-top: 15px;
+}
+
+.mt-2 {
+    margin-top: 10px;
+}
+
+.list-card {
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.slots-container {
+    flex: 1;
+    min-height: 0; /* Important for flex child scrolling */
+}
+
+.custom-scrollbar {
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9; 
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.empty-icon {
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    margin: 0 0 4px 0;
+    font-weight: 600;
+    color: #475569;
+}
+
+.empty-state .text-muted {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.slot-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slot-item:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.08);
+    transform: translateY(-2px);
+}
+
+.slot-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+}
+
+.slot-item.active::before {
+    background: #2ecc71;
+}
+
+.slot-item.inactive::before {
+    background: #95a5a6;
+}
+
+.slot-date-day {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.date-badge {
+    background: #e1f0fa;
+    color: #2980b9;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.day-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.slot-time {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.slot-details {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.dot {
+    margin: 0 6px;
+    color: #cbd5e1;
+}
+
+.slot-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.edit-btn {
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.edit-btn:hover {
+    background: #dbeafe;
+}
+
+.delete-btn {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+.delete-btn:hover {
+    background: #fee2e2;
+}
+
+/* Custom Overrides for Black/Orange/White Dark Mode */
+.timeslot-container {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    min-height: 93vh;
+}
+
+.timeslot-title, .vendor-name, .form-group label {
+    color: #ffffff !important;
+}
+
+.card-title {
+    color: #ff8c00 !important;
+}
+
+/* Fix padding for inputs with icons so text doesn't overlap icon */
+.input-with-icon input {
+    padding-left: 42px !important;
+}
+
+.timeslot-subtitle, .vendor-id, .input-icon, .list-subtitle {
+    color: #aaaaaa !important;
+}
+
+.vendor-badge {
+    background: #111111 !important;
+    border: 1px solid #333333 !important;
+}
+
+.vendor-icon {
+    color: #ff8c00 !important;
+    background: rgba(255, 140, 0, 0.1) !important;
+}
+
+.timeslot-card {
+    background: #111111 !important;
+    border: 1px solid #333333 !important;
+    box-shadow: none !important;
+}
+
+.timeslot-form input[type="date"],
+.timeslot-form input[type="time"],
+.timeslot-form input[type="number"],
+.timeslot-form input[type="text"] {
+    background: #222222 !important;
+    color: #ffffff !important;
+    border-color: #333333 !important;
+}
+
+.timeslot-form input:focus {
+    border-color: #ff8c00 !important;
+    box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.1) !important;
+}
+
+.timeslot-form input:disabled {
+    background: #1a1a1a !important;
+    color: #666666 !important;
+}
+
+.timeslot-form input[type="date"]::-webkit-calendar-picker-indicator,
+.timeslot-form input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.day-checkbox {
+    background: #222222 !important;
+    border-color: #333333 !important;
+    color: #aaaaaa !important;
+}
+
+.day-checkbox.selected {
+    background: rgba(255, 140, 0, 0.1) !important;
+    border-color: #ff8c00 !important;
+    color: #ff8c00 !important;
+}
+
+.day-checkbox.selected .check-icon {
+    color: #ff8c00 !important;
+}
+
+.add-slot-btn {
+    background: linear-gradient(135deg, #ff8c00 0%, #e67e22 100%) !important;
+    color: #ffffff !important;
+}
+
+.add-slot-btn:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.3) !important;
+}
+
+.add-slot-btn.update-mode {
+    background: linear-gradient(135deg, #ff8c00 0%, #e67e22 100%) !important;
+}
+
+.slot-item {
+    background: #ffffff !important;
+    border-color: #ff8c00 !important;
+}
+
+.slot-item:hover {
+    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+.slot-time {
+    color: #000000 !important;
+}
+
+.slot-date {
+    background: #333333 !important;
+    color: #ffffff !important;
+}
+
+.slot-day {
+    background: rgba(255, 140, 0, 0.1) !important;
+    color: #ff8c00 !important;
+}
+
+.slot-details {
+    color: #333333 !important;
+}
+
+.day-badge {
+    background: #333333 !important;
+    color: #ffffff !important;
+}
+
+.stat-box {
+    background: #333333 !important;
+}
+
+.stat-box span {
+    color: #ffffff !important;
+}
+
+.stat-box small {
+    color: #aaaaaa !important;
+}
+
+.action-btn {
+    background: #333333 !important;
+    border-color: #444444 !important;
+    color: #ffffff !important;
+}
+
+.action-btn.edit-btn {
+    color: #ff8c00 !important;
+    background: rgba(255,140,0,0.1) !important;
+}
+
+.action-btn.edit-btn:hover {
+    background: #ff8c00 !important;
+    border-color: #ff8c00 !important;
+    color: #000000 !important;
+}
+
+.action-btn.delete-btn {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.action-btn.delete-btn:hover {
+    background: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: #ffffff !important;
+}
+
+.filter-input-wrapper input {
+    background: #222222 !important;
+    color: #ffffff !important;
+    border-color: #333333 !important;
+}
+
+.filter-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+.slots-scroll-container::-webkit-scrollbar-thumb {
+    background: #444444 !important;
+}

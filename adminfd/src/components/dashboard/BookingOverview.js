@@ -26,7 +26,10 @@ const BookingOverview = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/bookings/admin/all');
+                const token = sessionStorage.getItem('token');
+                const response = await axios.get('http://localhost:5000/api/bookings/admin/all', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.data.success) {
                     setAllBookings(response.data.data);
                 }

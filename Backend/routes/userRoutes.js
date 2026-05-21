@@ -13,6 +13,7 @@ const {
   uploadAvatar
 } = require('../controllers/usercontroller');
 const verifyToken = require('../middleware/auth');
+const { isAdminOrVendor } = require('../middleware/roleCheck');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -54,13 +55,13 @@ router.put('/address', verifyToken, updateAddress);
 router.get('/address', verifyToken, getAddresses);
 
 // Get all users (with pagination)
-router.get('/', verifyToken, getAllUsers);
+router.get('/', verifyToken, isAdminOrVendor, getAllUsers);
 
 // Get users by role
-router.get('/role/:role', verifyToken, getUsersByRole);
+router.get('/role/:role', verifyToken, isAdminOrVendor, getUsersByRole);
 
 // Get user by ID
-router.get('/:id', verifyToken, getUserById);
+router.get('/:id', verifyToken, isAdminOrVendor, getUserById);
 
 // Update user
 router.put('/:id', verifyToken, updateUser);

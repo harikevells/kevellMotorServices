@@ -15,12 +15,21 @@ import Reviews from './components/Pages/Reviews';
 import Payment from './components/Pages/Payment';
 import Tracking from './components/Pages/Tracking';
 import SpareParts from './components/Pages/SpareParts';
+import Sparepartorder from './components/Pages/Sparepartorder';
+import Challen from './components/Pages/Challen';
+import Timeslot from './components/Pages/Timeslot';
+import ViewTimeslot from './components/Pages/ViewTimeslot';
+import AdminWallet from './components/Wallet/AdminWallet';
+import VendorWallet from './components/Wallet/VendorWallet';
+import Suc from './components/Suscription/Suc';
+import Offer from './components/Offers/Offer';
 
 const pageToPathMap = {
   Dashboard: '/dashboard',
   'Service Management': '/service-management',
   'Order Management': '/order-management',
   'Vendor Management': '/vendor-management',
+  'Vendor Slot': '/view-timeslot',
   'Add Vendor': '/add-vendor',
   'User Management': '/user-management',
   Notification: '/notification',
@@ -28,6 +37,7 @@ const pageToPathMap = {
   Payment: '/payment',
   Tracking: '/tracking',
   'Spare Parts Management': '/spare-parts',
+  'Spare Parts Shop': '/spare-parts-shop',
   'Car Management': '/car-management',
   Transactions: '/transactions',
   Content: '/content',
@@ -35,7 +45,12 @@ const pageToPathMap = {
   Settings: '/settings',
   Reports: '/reports',
   Support: '/support',
-  Roles: '/roles'
+  'Roles': '/roles',
+  'Challen Bill': '/challen',
+  'Time Slot': '/time-slot',
+  'Wallet': '/wallet',
+  'Subscription Management': '/subscriptions',
+  'Offer Management': '/offers'
 };
 
 const pathToPageMap = Object.entries(pageToPathMap).reduce((acc, [page, path]) => {
@@ -55,7 +70,7 @@ const getPathFromPage = (page) => pageToPathMap[page] || '/dashboard';
 function App() {
   const [activePage, setActivePage] = useState('Dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [, setUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -123,15 +138,17 @@ function App() {
       case 'Dashboard':
         return <DashboardView />;
       case 'Service Management':
-        return <ServiceCreate />;
+        return user?.role === 'admin' ? <ServiceCreate /> : <DashboardView />;
       case 'Order Management':
         return <Ordermanagement />;
       case 'Vendor Management':
-        return <Vendorlist />;
+        return user?.role === 'admin' ? <Vendorlist /> : <DashboardView />;
+      case 'Vendor Slot':
+        return user?.role === 'admin' ? <ViewTimeslot /> : <DashboardView />;
       case 'Add Vendor':
-        return <Addvendor />;
+        return user?.role === 'admin' ? <Addvendor /> : <DashboardView />;
       case 'User Management':
-        return <User />;
+        return (user?.role === 'admin' || user?.role === 'vendor') ? <User /> : <DashboardView />;
       case 'Notification':
         return <Notification />;
       case 'Reviews & Ratings':
@@ -141,7 +158,19 @@ function App() {
       case 'Tracking':
         return <Tracking />;
       case 'Spare Parts Management':
-        return <SpareParts />;
+        return user?.role === 'admin' ? <SpareParts /> : <DashboardView />;
+      case 'Spare Parts Shop':
+        return (user?.role === 'admin' || user?.role === 'vendor') ? <Sparepartorder /> : <DashboardView />;
+      case 'Challen Bill':
+        return user?.role === 'vendor' ? <Challen /> : <DashboardView />;
+      case 'Time Slot':
+        return user?.role === 'vendor' ? <Timeslot /> : <DashboardView />;
+      case 'Wallet':
+        return (user?.role === 'admin' || user?.role === 'vendor') ? (user.role === 'admin' ? <AdminWallet /> : <VendorWallet />) : <DashboardView />;
+      case 'Subscription Management':
+        return user?.role === 'admin' ? <Suc /> : <DashboardView />;
+      case 'Offer Management':
+        return user?.role === 'admin' ? <Offer /> : <DashboardView />;
       case 'Car Management':
       case 'Transactions':
       case 'Content':

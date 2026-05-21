@@ -24,7 +24,7 @@ const UserPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     setFetchError(null);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     try {
       const params = { page: currentPage, limit: rowsPerPage, role: 'user' };
       if (searchTerm.trim()) params.search = searchTerm.trim();

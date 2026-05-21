@@ -49,7 +49,7 @@ const ServiceCreate = () => {
             const response = await axios[method](url, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${sessionStorage.getItem('token')}`
                 }
             });
 
@@ -69,7 +69,7 @@ const ServiceCreate = () => {
         if (window.confirm('Are you sure you want to delete this service?')) {
             try {
                 await axios.delete(`${API_BASE_URL}/${id}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` }
                 });
                 fetchServices();
             } catch (error) {

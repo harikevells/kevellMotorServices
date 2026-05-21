@@ -134,6 +134,38 @@
     text-align: left; /* Inputs and labels align left */
 }
 
+.role-toggle-container {
+    display: flex;
+    background-color: #1a1a1a;
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.role-toggle-item {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.role-toggle-item.active {
+    background-color: #f28b2c;
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(242, 139, 44, 0.3);
+}
+
+.role-toggle-item:hover:not(.active) {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
 .custom-input-group {
     width: 100%;
     text-align: left;

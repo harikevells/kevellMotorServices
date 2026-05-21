@@ -8,7 +8,10 @@ const RecentBookings = () => {
     useEffect(() => {
         const fetchRecent = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/bookings/admin/all');
+                const token = sessionStorage.getItem('token');
+                const response = await axios.get('http://localhost:5000/api/bookings/admin/all', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.data.success) {
                     // Sort by newest first and limit to 6 items
                     const sorted = response.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

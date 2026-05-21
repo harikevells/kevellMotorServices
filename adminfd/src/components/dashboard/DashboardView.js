@@ -17,8 +17,11 @@ const DashboardView = () => {
     useEffect(() => {
         const fetchDashboardStats = async () => {
             try {
+                const token = sessionStorage.getItem('token');
                 // Fetch all bookings to calculate stats
-                const response = await axios.get('http://localhost:5000/api/bookings/admin/all');
+                const response = await axios.get('http://localhost:5000/api/bookings/admin/all', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.data.success) {
                     const bookings = response.data.data;
 

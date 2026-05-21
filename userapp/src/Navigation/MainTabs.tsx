@@ -5,6 +5,7 @@ import BookingHistory from '../AllPages/YourOrderDetails';
 import LiveTrackingPage from '../AllPages/LiveTrackingPage';
 import NotificationPage from '../AllPages/NotificationPage';
 import ProfilePage from '../AllPages/ProfilePage';
+import UserProductspare from '../AllPages/UserProductspare';
 import Footer from './footer';
 
 export type BottomTabParamList = {
@@ -12,6 +13,7 @@ export type BottomTabParamList = {
   Bookings: undefined;
   Tracking: { bookingId?: string };
   Bell: undefined;
+  Spares: undefined;
   Profile: undefined;
 };
 
@@ -27,6 +29,7 @@ const MainTabs = () => {
       <Tab.Screen name="Home" component={HomePage} />
       <Tab.Screen name="Bookings" component={BookingHistory} />
       {/* <Tab.Screen name="Tracking" component={LiveTrackingPage} /> */}
+      <Tab.Screen name="Spares" component={UserProductspare} />
       <Tab.Screen name="Bell" component={NotificationPage} />
       <Tab.Screen name="Profile" component={ProfilePage} />
     </Tab.Navigator>

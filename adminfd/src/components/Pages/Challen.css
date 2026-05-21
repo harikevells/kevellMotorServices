@@ -1,0 +1,374 @@
+.challen-container {
+    padding: 20px;
+    color: #fff;
+    min-height: 100vh;
+}
+
+.challen-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.bill-paper {
+    background: #fff;
+    color: #333;
+    padding: 60px;
+    max-width: 850px;
+    margin: 0 auto;
+    border-radius: 4px;
+    min-height: 1100px;
+}
+
+.bill-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 50px;
+}
+
+.bill-logo {
+    width: 180px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.vendor-name {
+    color: #C13D10;
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.vendor-info {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.invoice-title {
+    font-size: 56px;
+    font-weight: 900;
+    color: #C13D10;
+    margin: 0;
+    letter-spacing: 4px;
+}
+
+.invoice-ref {
+    font-weight: 700;
+    font-size: 18px;
+    margin-top: 5px;
+}
+
+.balance-due {
+    margin-top: 20px;
+}
+
+.balance-due .label {
+    font-size: 13px;
+    color: #666;
+}
+
+.balance-due .amount {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.bill-details-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 50px;
+}
+
+.section-label {
+    font-size: 14px;
+    color: #888;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.customer-name {
+    color: #C13D10;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.customer-info {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.invoice-dates .date-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-bottom: 8px;
+}
+
+.invoice-dates .label {
+    color: #666;
+    font-size: 14px;
+}
+
+.invoice-dates .value {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.bill-table th {
+    background-color: #C13D10 !important;
+    color: #fff !important;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border: none;
+    padding: 12px 15px;
+}
+
+.bill-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.item-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #333;
+}
+
+.item-sub {
+    font-size: 11px;
+    color: #999;
+}
+
+.bill-summary-section {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 30px;
+}
+
+.summary-box {
+    width: 300px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+}
+
+.summary-row.total {
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-weight: 700;
+    font-size: 22px;
+}
+
+.qr-box {
+    width: 120px;
+    height: 120px;
+    border: 2px solid #eee;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ccc;
+    letter-spacing: 1px;
+}
+
+/* Modal Styling */
+.challen-modal .modal-content {
+    background: #151515;
+    color: #fff;
+    border: 1px solid #333;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: #222;
+    padding: 10px 15px;
+    border-radius: 8px;
+    gap: 10px;
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 100%;
+    outline: none;
+}
+
+.modal-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.list-item {
+    padding: 12px;
+    border-bottom: 1px solid #222;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.list-item:hover {
+    background: #222;
+}
+
+.item-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-main strong {
+    color: #f28b2c;
+}
+
+.item-main span {
+    font-size: 12px;
+    color: #888;
+}
+
+.item-sub {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Form View Styling */
+.challen-form-card {
+    background: #111;
+    /* border: 1px solid #333; */
+    border-radius: 12px;
+    /* padding: 30px; */
+    margin-top: 30px;
+    /* max-width: 1000px; */
+    /* margin: 0 auto; */
+}
+
+.form-title {
+    color: #f28b2c;
+    font-weight: 700;
+}
+
+.form-section {
+    background: #181818;
+    padding: 20px;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.section-title {
+    color: #888;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dark-input {
+    background: #222 !important;
+    border: 1px solid #333 !important;
+    color: #fff !important;
+    padding: 10px 15px !important;
+}
+
+.dark-input:focus {
+    border-color: #f28b2c !important;
+    box-shadow: 0 0 0 0.2rem rgba(242, 139, 44, 0.25) !important;
+}
+
+.dark-input-inline {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px dashed #444 !important;
+    color: #fff !important;
+    padding: 5px 0 !important;
+    border-radius: 0 !important;
+}
+
+.dark-input-inline:focus {
+    border-bottom-color: #f28b2c !important;
+    box-shadow: none !important;
+}
+
+.form-table {
+    margin-top: 10px;
+}
+
+.form-table th {
+    background: transparent !important;
+    color: #666 !important;
+    font-size: 12px;
+    border-bottom: 1px solid #333 !important;
+}
+
+.form-table td {
+    background: transparent !important;
+    color: #fff !important;
+    border-bottom: 1px solid #222 !important;
+    vertical-align: middle;
+}
+
+.total-display {
+    display: flex;
+    flex-direction: column;
+}
+
+.total-display .label {
+    color: #888;
+    font-size: 14px;
+}
+
+.total-display .value {
+    color: #f28b2c;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.invoice-preview-mode .bill-paper {
+    margin-top: 20px;
+}
+
+.cursor-pointer { cursor: pointer; }
+
+/* Print Logic */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printable-bill, #printable-bill * {
+        visibility: visible;
+    }
+    #printable-bill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 40px;
+        box-shadow: none;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .no-print-input {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+}
+
+.print-only { display: none; }
+

@@ -219,6 +219,14 @@ exports.login = async (req, res, next) => {
       { expiresIn: '7d' }
     );
 
+    let vendorId = undefined;
+    if (user.role === 'vendor') {
+      const vendorDoc = await Vendor.findOne({ user: user._id });
+      if (vendorDoc) {
+        vendorId = vendorDoc._id;
+      }
+    }
+
     res.json({
       success: true,
       token,
@@ -231,7 +239,8 @@ exports.login = async (req, res, next) => {
         gender: user.gender,
         address: user.address,
         profileImage: user.profileImage,
-        defaultAddress: user.defaultAddress
+        defaultAddress: user.defaultAddress,
+        vendorId
       }
     });
   } catch (error) {

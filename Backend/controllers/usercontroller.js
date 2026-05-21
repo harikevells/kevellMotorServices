@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const Booking = require('../models/Booking');
+const Vendor = require('../models/vendor');
 
 // Update own profile (both admin and user)
 exports.updateProfile = async (req, res, next) => {
@@ -190,6 +192,16 @@ exports.getAllUsers = async (req, res, next) => {
     // Build search query
     let searchQuery = {};
     
+    // If user is a vendor, only show users who have booked with them
+    if (req.user && req.user.role && req.user.role.toLowerCase() === 'vendor') {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (vendor) {
+        // Find all bookings for this vendor
+        const vendorBookings = await Booking.find({ center: vendor._id }).distinct('user');
+        searchQuery._id = { $in: vendorBookings };
+      }
+    }
+
     // Add role filter if provided
     if (role) {
       searchQuery.role = role;

@@ -25,10 +25,14 @@ const Payment = () => {
     const [rowsPerPage, setRowsPerPage] = useState(6);
     const [totalPayments, setTotalPayments] = useState(0);
 
+    const userStr = sessionStorage.getItem('adminUser');
+    const user = userStr ? JSON.parse(userStr) : null;
+    const isAdmin = user && user.role === 'admin';
+
     const fetchPayments = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const response = await axios.get('http://localhost:5000/api/admin/bookings', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -73,6 +77,26 @@ const Payment = () => {
     useEffect(() => {
         fetchPayments();
     }, [fetchPayments]);
+
+    const handleStatusUpdate = async (id, newStatus) => {
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.put(`http://localhost:5000/api/admin/bookings/${id}/payment-status`, {
+                paymentStatus: newStatus
+            }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.data.success) {
+                setPayments(prevPayments => prevPayments.map(p => 
+                    p._id === id ? { ...p, status: newStatus } : p
+                ));
+            }
+        } catch (error) {
+            console.error('Error updating payment status:', error);
+            alert('Failed to update status');
+        }
+    };
 
     const totalPages = Math.ceil(totalPayments / rowsPerPage);
     const startRow = (currentPage - 1) * rowsPerPage + 1;
@@ -142,9 +166,23 @@ const Payment = () => {
                                         <td>{payment.paymentMethod}</td>
                                         <td className="fw-bold">₹{payment.amount}</td>
                                         <td>
-                                            <span className={`status-val ${payment.status.toLowerCase().replace(' ', '-')}`}>
-                                                {payment.status.toUpperCase()}
-                                            </span>
+                                            {isAdmin ? (
+                                                <select 
+                                                    className={`status-select ${payment.status.toLowerCase().replace(' ', '-')}`}
+                                                    value={payment.status.toLowerCase()}
+                                                    onChange={(e) => handleStatusUpdate(payment._id, e.target.value)}
+                                                    style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#222', color: '#fff', fontSize: '13px' }}
+                                                >
+                                                    <option value="pending">PENDING</option>
+                                                    <option value="completed">COMPLETED</option>
+                                                    <option value="cancelled">CANCELLED</option>
+                                                    <option value="refunded">REFUNDED</option>
+                                                </select>
+                                            ) : (
+                                                <span className={`status-val ${payment.status.toLowerCase().replace(' ', '-')}`}>
+                                                    {payment.status.toUpperCase()}
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

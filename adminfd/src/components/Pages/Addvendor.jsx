@@ -37,7 +37,7 @@ const Addvendor = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const response = await axios.post('http://localhost:5000/api/auth/register', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });

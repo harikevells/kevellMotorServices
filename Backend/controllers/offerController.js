@@ -7,7 +7,11 @@ const Shop = require('../models/ServiceCenter'); // ✅ Changed from 'Shop'
  */
 exports.createOffer = async (req, res, next) => {  // Add 'next' parameter back
   try {
-    const { shopName, offerTitle, discount, category, startDate, endDate, activeStatus } = req.body;
+    const { 
+      shopName, offerTitle, discount, category, startDate, endDate, activeStatus,
+      discountType, couponCode, usageLimitPerUser, totalRedemptionLimit, 
+      minimumBookingValue, applicableServices, planTier
+    } = req.body;
 
     console.log('Creating offer with data:', req.body);
     console.log('User:', req.user);
@@ -36,7 +40,14 @@ exports.createOffer = async (req, res, next) => {  // Add 'next' parameter back
       endDate: new Date(endDate),
       activeStatus: activeStatus === true || activeStatus === 'true',
       createdBy: req.user.id,
-      shopId
+      shopId,
+      discountType: discountType || 'percentage',
+      couponCode: couponCode ? couponCode.toUpperCase() : undefined,
+      usageLimitPerUser: Number(usageLimitPerUser) || 1,
+      totalRedemptionLimit: totalRedemptionLimit ? Number(totalRedemptionLimit) : null,
+      minimumBookingValue: Number(minimumBookingValue) || 0,
+      applicableServices: applicableServices || [],
+      planTier: planTier || 'Basic'
     });
 
     res.status(201).json({
@@ -155,7 +166,11 @@ exports.getOfferById = async (req, res, next) => {
 
 exports.updateOffer = async (req, res, next) => {
   try {
-    const { shopName, offerTitle, discount, category, startDate, endDate, activeStatus } = req.body;
+    const { 
+      shopName, offerTitle, discount, category, startDate, endDate, activeStatus,
+      discountType, couponCode, usageLimitPerUser, totalRedemptionLimit, 
+      minimumBookingValue, applicableServices, planTier
+    } = req.body;
 
     const offer = await Offer.findById(req.params.id);
     if (!offer) {
@@ -185,6 +200,13 @@ exports.updateOffer = async (req, res, next) => {
     if (activeStatus !== undefined) {
       offer.activeStatus = activeStatus === true || activeStatus === 'true';
     }
+    if (discountType) offer.discountType = discountType;
+    if (couponCode !== undefined) offer.couponCode = couponCode ? couponCode.toUpperCase() : null;
+    if (usageLimitPerUser !== undefined) offer.usageLimitPerUser = Number(usageLimitPerUser);
+    if (totalRedemptionLimit !== undefined) offer.totalRedemptionLimit = totalRedemptionLimit ? Number(totalRedemptionLimit) : null;
+    if (minimumBookingValue !== undefined) offer.minimumBookingValue = Number(minimumBookingValue);
+    if (applicableServices !== undefined) offer.applicableServices = applicableServices;
+    if (planTier) offer.planTier = planTier;
 
     // Update shopId if shop name changed
     if (shopName && shopName !== offer.shopName) {
@@ -305,6 +327,39 @@ exports.getOffersByShop = async (req, res, next) => {
       success: true,
       count: offers.length,
       offers
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getOfferAnalytics = async (req, res, next) => {
+  try {
+    const totalOffers = await Offer.countDocuments();
+    
+    const stats = await Offer.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalRedeemed: { $sum: '$timesRedeemed' },
+          totalRevenue: { $sum: '$revenueGenerated' }
+        }
+      }
+    ]);
+
+    const topOffers = await Offer.find()
+      .sort({ timesRedeemed: -1 })
+      .limit(5)
+      .select('offerTitle couponCode timesRedeemed revenueGenerated');
+
+    res.json({
+      success: true,
+      data: {
+        totalOffers,
+        totalRedeemed: stats.length > 0 ? stats[0].totalRedeemed : 0,
+        totalRevenue: stats.length > 0 ? stats[0].totalRevenue : 0,
+        topOffers
+      }
     });
   } catch (error) {
     next(error);

@@ -1,6 +1,6 @@
 // Centralized configuration for the application
 // Update this IP if your local machine's IP changes (check with ipconfig)
-export const SERVER_IP = '192.168.0.187';
+export const SERVER_IP = '192.168.0.116';
 export const SERVER_PORT = '5000';
 export const BASE_URL = `http://${SERVER_IP}:${SERVER_PORT}/api/`;
 export const SOCKET_URL = `http://${SERVER_IP}:${SERVER_PORT}`;

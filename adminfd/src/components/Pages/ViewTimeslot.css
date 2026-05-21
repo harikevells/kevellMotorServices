@@ -1,0 +1,230 @@
+/* ViewTimeslot.css */
+
+/* Flat Layout Styles for ViewTimeslot */
+
+.view-timeslot-container {
+  padding: 24px;
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 93vh;
+}
+
+.timeslot-filter-bar {
+  background: #111111 !important;
+  padding: 16px 24px;
+  border-radius: 12px;
+}
+
+.timeslot-filter-bar input {
+  background-color: #222222 !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+}
+
+.timeslot-filter-bar input::placeholder {
+  color: #888888 !important;
+}
+
+/* Make native date calendar icon white */
+.timeslot-filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.search-icon {
+  color: #ff8c00 !important;
+}
+
+.stats-badge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: #111111 !important;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid #333333 !important;
+}
+
+.stats-icon {
+  color: #ff8c00 !important;
+  background: rgba(255, 140, 0, 0.1) !important;
+  padding: 8px;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+}
+
+.stats-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff !important;
+  line-height: 1;
+}
+
+.stats-label {
+  font-size: 12px;
+  color: #aaaaaa !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* Vendor Grid Layout */
+.flat-vendors-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* Vendor Flat Card */
+.vendor-flat-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  height: 335px;
+  flex-direction: column;
+  background-color: #111111 !important;
+  border: 1px solid #333333 !important;
+}
+
+.vendor-flat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(255, 140, 0, 0.1), 0 8px 10px -6px rgba(255, 140, 0, 0.05) !important;
+  border: 1.5px solid #ff8c00 !important;
+}
+
+/* Header overrides inside card */
+.vendor-flat-header {
+  background-color: #1a1a1a !important;
+  border-bottom: 1px solid #333333 !important;
+}
+
+.vendor-flat-header h5 {
+  color: #ffffff !important;
+}
+
+.vendor-flat-header .text-muted {
+  color: #aaaaaa !important;
+}
+
+.vendor-flat-header .badge {
+  background-color: #222222 !important;
+  color: #ff8c00 !important;
+  border-color: #ff8c00 !important;
+}
+
+.vendor-image-wrapper {
+  background-color: #222222 !important;
+  border-color: #333333 !important;
+}
+
+/* Body overrides inside card */
+.vendor-flat-body {
+  color: #ffffff !important;
+}
+
+.vendor-flat-body .text-muted {
+  color: #aaaaaa !important;
+}
+
+.vendor-flat-body .text-primary {
+  color: #ff8c00 !important;
+}
+
+/* Vertical Scroll Container for Slots */
+.horizontal-slots-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.horizontal-slots-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Each Slot Card inside vertical grid */
+.flat-slot-card {
+  background: #222222 !important;
+  border: 1px solid #333333 !important;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  box-shadow: none !important;
+}
+
+.flat-slot-card .badge.bg-light {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+  border-color: #444444 !important;
+}
+
+.flat-slot-card .badge.bg-primary {
+  background-color: rgba(255, 140, 0, 0.1) !important;
+  color: #ff8c00 !important;
+  border-color: #ff8c00 !important;
+}
+
+.flat-slot-card .text-dark {
+  color: #ffffff !important;
+}
+
+.flat-slot-card.active {
+  border-top: 4px solid #ff8c00 !important;
+}
+
+.flat-slot-card.inactive {
+  border-top: 4px solid #666666 !important;
+  opacity: 0.7;
+}
+
+.flat-slot-card:hover {
+  border: 1.5px solid #ff8c00 !important;
+  transform: translateY(-2px);
+}
+
+/* Alert styles */
+.alert-danger {
+  background-color: rgba(255, 0, 0, 0.1) !important;
+  color: #ff4444 !important;
+  border-color: #ff4444 !important;
+}
+
+/* Border dashed utility */
+.border-dashed {
+  border-style: dashed !important;
+  border-color: #333333 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .flat-vendors-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .flat-vendors-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .vendor-header-content {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+}

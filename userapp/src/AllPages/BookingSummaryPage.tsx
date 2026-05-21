@@ -35,7 +35,7 @@ const BookingSummaryPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [summaryData, setSummaryData] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'GPay' | 'Card'>('Cash');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Razorpay'>('Cash');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // API expects "2 Wheeler" instead of "2_wheeler"
@@ -273,25 +273,16 @@ const BookingSummaryPage = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.optionItem, paymentMethod === 'GPay' && styles.selectedOption]}
-                onPress={() => { setPaymentMethod('GPay'); setShowPaymentModal(false); }}
-              >
-                <Text style={styles.optionIcon}>📱</Text>
-                <View>
-                  <Text style={styles.optionLabel}>Google Pay (UPI)</Text>
-                  <Text style={styles.optionSubLabel}>Fast and secure UPI payment</Text>
-                </View>
-              </TouchableOpacity>
+
 
               <TouchableOpacity 
-                style={[styles.optionItem, paymentMethod === 'Card' && styles.selectedOption]}
-                onPress={() => { setPaymentMethod('Card'); setShowPaymentModal(false); }}
+                style={[styles.optionItem, paymentMethod === 'Razorpay' && styles.selectedOption]}
+                onPress={() => { setPaymentMethod('Razorpay'); setShowPaymentModal(false); }}
               >
                 <Text style={styles.optionIcon}>💳</Text>
                 <View>
-                  <Text style={styles.optionLabel}>Credit / Debit Card</Text>
-                  <Text style={styles.optionSubLabel}>Visa, Mastercard, RuPay</Text>
+                  <Text style={styles.optionLabel}>Razorpay (Online Payment)</Text>
+                  <Text style={styles.optionSubLabel}>Secure payment gateway checkout</Text>
                 </View>
               </TouchableOpacity>
             </View>

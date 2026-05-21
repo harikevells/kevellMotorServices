@@ -9,6 +9,16 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+const isAdminOrVendor = (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'vendor') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Access denied. Admin or Vendor only.' 
+    });
+  }
+  next();
+};
+
 const isUser = (req, res, next) => {
   if (req.user.role !== 'user') {
     return res.status(403).json({ 
@@ -31,4 +41,4 @@ const hasRole = (roles) => {
   };
 };
 
-module.exports = { isAdmin, isUser, hasRole };
+module.exports = { isAdmin, isUser, hasRole, isAdminOrVendor };

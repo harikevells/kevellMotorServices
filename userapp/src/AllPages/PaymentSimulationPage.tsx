@@ -8,11 +8,15 @@ import {
   StatusBar,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SHADOWS } from '../constants/theme';
+import { createRazorpayOrder, verifyRazorpayPayment } from '../services/api';
+
+import RazorpayCheckout from 'react-native-razorpay';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PaymentRouteProp = RouteProp<RootStackParamList, 'PaymentSimulation'>;
@@ -25,17 +29,70 @@ const PaymentSimulationPage = () => {
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handlePay = () => {
+  const handlePay = async (methodName: string) => {
     setProcessing(true);
-    // Simulate payment processing
-    setTimeout(() => {
+    try {
+      console.log('Creating Razorpay order on backend for booking:', bookingData?._id);
+      const orderRes: any = await createRazorpayOrder(bookingData?._id);
+      
+      if (!orderRes || !orderRes.success || !orderRes.razorpayOrder) {
+        throw new Error('Failed to initiate Razorpay order on backend.');
+      }
+      
+      const razorpayOrderId = orderRes.razorpayOrder.id;
+      console.log('Razorpay Order Created:', razorpayOrderId);
+
+      const options = {
+        description: 'Payment for EV Service Booking',
+        image: 'https://i.imgur.com/3g7nmJC.png', // Optional Kevell Logo
+        currency: 'INR',
+        key: 'rzp_test_SfkV0cySd3CwyQ', // Embedded Test Key requested by USER
+        amount: orderRes.razorpayOrder.amount, // amount in paise
+        name: 'Kevell Motor Services',
+        order_id: razorpayOrderId,
+        theme: { color: COLORS.primary },
+        prefill: {
+          email: bookingData?.user?.email || 'test@example.com',
+          contact: bookingData?.userDetails?.phone || '9999999999',
+          name: bookingData?.userDetails?.name || 'Customer'
+        }
+      };
+
+      RazorpayCheckout.open(options).then(async (data: any) => {
+        // Success callback from Razorpay
+        console.log('Razorpay Payment Success:', data.razorpay_payment_id);
+        try {
+          const verifyRes: any = await verifyRazorpayPayment({
+            razorpay_order_id: data.razorpay_order_id,
+            razorpay_payment_id: data.razorpay_payment_id,
+            razorpay_signature: data.razorpay_signature,
+            orderId: bookingData?._id
+          });
+
+          if (verifyRes && verifyRes.success) {
+            setSuccess(true);
+            setTimeout(() => {
+              navigation.navigate('BookingConfirmation', { bookingRef: bookingData?.bookingRef });
+            }, 1500);
+          } else {
+            throw new Error(verifyRes?.message || 'Payment signature verification failed.');
+          }
+        } catch (verifyErr: any) {
+          Alert.alert('Verification Error', verifyErr.toString());
+          setProcessing(false);
+        }
+      }).catch((error: any) => {
+        // Error / Cancel callback from Razorpay
+        console.error('Razorpay Checkout Error:', error);
+        Alert.alert('Payment Failed or Cancelled', `Code: ${error.code} | Description: ${error.description}`);
+        setProcessing(false);
+      });
+      
+    } catch (error: any) {
+      console.error('Payment Flow Error:', error);
+      Alert.alert('Payment Initialization Failed', error.toString() || 'Something went wrong while starting payment.');
       setProcessing(false);
-      setSuccess(true);
-      // Brief delay before confirmation
-      setTimeout(() => {
-        navigation.navigate('BookingConfirmation', { bookingRef: 'BK' + Math.floor(Math.random() * 1000000) });
-      }, 1500);
-    }, 2000);
+    }
   };
 
   return (
@@ -54,33 +111,8 @@ const PaymentSimulationPage = () => {
 
         {!success ? (
           <>
-            <Text style={styles.sectionTitle}>Select Payment Method</Text>
-            
-            <TouchableOpacity style={styles.methodCard} onPress={handlePay} disabled={processing}>
-              <Text style={styles.methodIcon}>💳</Text>
-              <View style={styles.methodInfo}>
-                <Text style={styles.methodName}>Credit / Debit Card</Text>
-                <Text style={styles.methodDesc}>Pay using any secure card</Text>
-              </View>
-              <Text style={styles.arrow}>›</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.methodCard} onPress={handlePay} disabled={processing}>
-              <Text style={styles.methodIcon}>📱</Text>
-              <View style={styles.methodInfo}>
-                <Text style={styles.methodName}>UPI (GPay / PhonePe)</Text>
-                <Text style={styles.methodDesc}>Instant payment via UPI apps</Text>
-              </View>
-              <Text style={styles.arrow}>›</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.methodCard} onPress={handlePay} disabled={processing}>
-              <Text style={styles.methodIcon}>💵</Text>
-              <View style={styles.methodInfo}>
-                <Text style={styles.methodName}>Cash at Center</Text>
-                <Text style={styles.methodDesc}>Pay after service completion</Text>
-              </View>
-              <Text style={styles.arrow}>›</Text>
+            <TouchableOpacity style={styles.razorpayButton} onPress={() => handlePay('Razorpay')} disabled={processing}>
+              <Text style={styles.razorpayButtonText}>Open Razorpay Checkout</Text>
             </TouchableOpacity>
 
             {processing && (
@@ -191,6 +223,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  razorpayButton: {
+    backgroundColor: '#3399cc',
+    padding: 18,
+    borderRadius: 15,
+    alignItems: 'center',
+    marginTop: 20,
+    ...SHADOWS.medium,
+  },
+  razorpayButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   successContainer: {
     flex: 1,

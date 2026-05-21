@@ -150,6 +150,8 @@ export const fetchOrderStatistics = (year?: number, period?: string) => {
 };
 export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
 export const fetchSpareParts = () => api.get('/spare-parts');
+export const createSparePartOrder = (data: any) => api.post('/spare-part-orders', data);
+export const getMySparePartOrders = () => api.get('/spare-part-orders/my-orders');
 export const uploadBookingBill = (bookingId: string, formData: FormData) =>
   api.post(`/vendor/orders/${bookingId}/bill`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -159,5 +161,14 @@ export const uploadBookingBill = (bookingId: string, formData: FormData) =>
 export const fetchNotifications = () => api.get('/notifications');
 export const markNotificationRead = (id: string) => api.put(`/notifications/mark-read/${id}`);
 export const markAllNotificationsRead = () => api.put('/notifications/mark-all-read');
+
+// Razorpay
+export const createRazorpayOrder = (orderId: string) => api.post('/razorpay/create-order', { orderId });
+export const verifyRazorpayPayment = (data: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  orderId: string;
+}) => api.post('/razorpay/verify', data);
 
 export default api;

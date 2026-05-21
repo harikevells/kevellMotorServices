@@ -33,6 +33,13 @@ exports.processPayPalPayment = async (req, res, next) => {
       status: 'confirmed' // ✅ Updated from orderStatus
     });
 
+    try {
+      const { creditWalletIfEligible } = require('./bookingController');
+      await creditWalletIfEligible(orderId);
+    } catch (err) {
+      console.error('Error invoking creditWalletIfEligible in processPayPalPayment:', err);
+    }
+
     res.json({
       success: true,
       message: 'Payment completed successfully',
@@ -71,6 +78,13 @@ exports.confirmCashPayment = async (req, res, next) => {
       paymentStatus: 'completed',
       status: 'confirmed' // ✅ Updated from orderStatus
     });
+
+    try {
+      const { creditWalletIfEligible } = require('./bookingController');
+      await creditWalletIfEligible(orderId);
+    } catch (err) {
+      console.error('Error invoking creditWalletIfEligible in confirmCashPayment:', err);
+    }
 
     res.json({
       success: true,

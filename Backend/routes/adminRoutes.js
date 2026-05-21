@@ -8,13 +8,14 @@ const {
   getStudentsWithOrders,    
   getStudentById,           
   exportStudentsData,
-  getAllBookings        
+  getAllBookings,
+  updatePaymentStatus        
 } = require('../controllers/adminController');
 const verifyToken = require('../middleware/auth');
-const { isAdmin } = require('../middleware/roleCheck');
+const { isAdmin, isAdminOrVendor } = require('../middleware/roleCheck');
 
 // Existing routes
-router.get('/users', verifyToken, isAdmin, getAllUsers);
+router.get('/users', verifyToken, isAdminOrVendor, getAllUsers);
 router.post('/create-admin', verifyToken, isAdmin, createAdmin);
 router.delete('/users/:id', verifyToken, isAdmin, deleteUser);
 router.put('/users/:id/role', verifyToken, isAdmin, updateUserRole);
@@ -23,6 +24,7 @@ router.put('/users/:id/role', verifyToken, isAdmin, updateUserRole);
 router.get('/students-with-orders', verifyToken, isAdmin, getStudentsWithOrders);
 router.get('/students/:userId', verifyToken, isAdmin, getStudentById);
 router.get('/students/export/csv', verifyToken, isAdmin, exportStudentsData);
-router.get('/bookings', verifyToken, isAdmin, getAllBookings);
+router.get('/bookings', verifyToken, isAdminOrVendor, getAllBookings);
+router.put('/bookings/:id/payment-status', verifyToken, isAdmin, updatePaymentStatus);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const Review = require('../models/Review');
 const Order = require('../models/Booking');  // ✅ Changed from 'Order'
 const Shop = require('../models/ServiceCenter'); // ✅ Changed from 'Shop'
+const Vendor = require('../models/vendor');
 
 // Get all reviews (admin only) - ✅ ADD THIS
 // Get all reviews (admin only)
@@ -13,6 +14,16 @@ exports.getAllReviews = async (req, res, next) => {
     // Build filter
     let filter = {};
     
+    // If user is a vendor, only show reviews for their shop
+    if (req.user && req.user.role === 'vendor') {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (vendor) {
+        const shops = await Shop.find({ vendor: vendor._id });
+        const shopIds = shops.map(s => s._id);
+        filter.shop = { $in: shopIds };
+      }
+    }
+
     // Add search functionality
     if (search) {
       filter.$or = [

@@ -84,11 +84,14 @@ const Header = ({ activePage, onLogout, onToggleSidebar, collapsed }) => {
                 <div className="user-profile">
                     <div className="avatar-small">
                         <img
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=f28b2c&color=fff`}
+                            src={adminData.profileImage ? `http://localhost:5000${adminData.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=f28b2c&color=fff`}
                             alt={adminName}
                         />
                     </div>
-                    <span className="user-role-text">{adminRole}</span>
+                    <div className="user-info">
+                        <span className="user-name-text">{adminName}</span>
+                        <span className="user-role-text">{adminRole}</span>
+                    </div>
                 </div>
                 
                 <div className="header-icon-group" ref={dropdownRef}>

@@ -3,43 +3,71 @@ import axios from 'axios';
 import {
     Plus,
     Search,
-    Edit2,
+    Edit3,
     Trash2,
     CheckCircle,
     XCircle,
     Package,
-    Bike,
+    Zap,
     Car,
-    Truck,
+    Settings,
     X,
+    ShoppingCart,
+    Filter,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Eye,
+    Calendar,
+    Star,
+    MessageCircle
 } from 'lucide-react';
 import { Modal, Button, Spinner } from 'react-bootstrap';
 import './SpareParts.css';
 
 const SpareParts = () => {
     const [spareParts, setSpareParts] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('Parts');
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterCategory, setFilterCategory] = useState('All');
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({
-        category: 'Bike',
-        name: '',
-        amount: '',
-        status: 'Available'
-    });
     const [currentId, setCurrentId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(6);
-    const [filterCategory, setFilterCategory] = useState('All');
+    const [itemsPerPage] = useState(20);
+    const [filterStatus, setFilterStatus] = useState('All');
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [currentOrder, setCurrentOrder] = useState(null);
+    
+    // Review Response State
+    const [showRespondModal, setShowRespondModal] = useState(false);
+    const [selectedReview, setSelectedReview] = useState(null);
+    const [selectedPartId, setSelectedPartId] = useState(null);
+    const [responseMessage, setResponseMessage] = useState('');
+
+    const [formData, setFormData] = useState({
+        name: '',
+        partNumber: '',
+        category: 'Bike',
+        amount: '',
+        stockQty: '',
+        brand: '',
+        warranty: '',
+        description: '',
+        isListed: true,
+        status: 'Active'
+    });
+    const [imageFile, setImageFile] = useState(null);
 
     const fetchSpareParts = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await axios.get('http://localhost:5000/api/spare-parts');
+            const token = sessionStorage.getItem('token');
+            const response = await axios.get('http://localhost:5000/api/spare-parts', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (response.data.success) {
                 setSpareParts(response.data.data);
             }
@@ -51,9 +79,33 @@ const SpareParts = () => {
         }
     }, []);
 
+    const fetchOrders = useCallback(async () => {
+        setLoading(true);
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.get('http://localhost:5000/api/spare-part-orders', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.data.success) {
+                setOrders(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            showMessage('error', 'Failed to fetch orders');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchSpareParts();
-    }, [fetchSpareParts]);
+        fetchOrders();
+    }, [fetchSpareParts, fetchOrders]);
+
+    // Reset pagination when search or filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterCategory, filterStatus]);
 
     const showMessage = (type, text) => {
         setMessage({ type, text });
@@ -61,21 +113,43 @@ const SpareParts = () => {
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? checked : value
+        });
+    };
+
+    const handleFileChange = (e) => {
+        setImageFile(e.target.files[0]);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+
+        const token = sessionStorage.getItem('token');
+        const data = new FormData();
+        Object.keys(formData).forEach(key => {
+            data.append(key, formData[key]);
+        });
+        if (imageFile) {
+            data.append('image', imageFile);
+        }
+
         try {
+            const headers = {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            };
+
             if (isEditing) {
-                const response = await axios.put(`http://localhost:5000/api/spare-parts/${currentId}`, formData);
+                const response = await axios.put(`http://localhost:5000/api/spare-parts/${currentId}`, data, { headers });
                 if (response.data.success) {
                     showMessage('success', 'Spare part updated successfully');
                 }
             } else {
-                const response = await axios.post('http://localhost:5000/api/spare-parts', formData);
+                const response = await axios.post('http://localhost:5000/api/spare-parts', data, { headers });
                 if (response.data.success) {
                     showMessage('success', 'Spare part added successfully');
                 }
@@ -90,10 +164,35 @@ const SpareParts = () => {
         }
     };
 
+    const handleStatusUpdate = async (orderId, newStatus) => {
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.put(`http://localhost:5000/api/spare-part-orders/${orderId}/status`,
+                { status: newStatus },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            if (response.data.success) {
+                showMessage('success', `Order status updated to ${newStatus}`);
+                fetchOrders();
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            showMessage('error', 'Failed to update order status');
+        }
+    };
+
+    const openOrderModal = (order) => {
+        setCurrentOrder(order);
+        setShowOrderModal(true);
+    };
+
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this spare part?')) {
             try {
-                const response = await axios.delete(`http://localhost:5000/api/spare-parts/${id}`);
+                const token = sessionStorage.getItem('token');
+                const response = await axios.delete(`http://localhost:5000/api/spare-parts/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (response.data.success) {
                     showMessage('success', 'Spare part deleted');
                     fetchSpareParts();
@@ -110,20 +209,33 @@ const SpareParts = () => {
             setIsEditing(true);
             setCurrentId(part._id);
             setFormData({
-                category: part.category,
-                name: part.name,
-                amount: part.amount,
-                status: part.status
+                name: part.name || '',
+                partNumber: part.partNumber || '',
+                category: part.category || 'Bike',
+                amount: part.amount || '',
+                stockQty: part.stockQty || '',
+                brand: part.brand || '',
+                warranty: part.warranty || '',
+                description: part.description || '',
+                isListed: part.isListed !== undefined ? part.isListed : true,
+                status: part.status || 'Active'
             });
         } else {
             setIsEditing(false);
             setFormData({
-                category: 'Bike',
                 name: '',
+                partNumber: '',
+                category: 'Bike',
                 amount: '',
-                status: 'Available'
+                stockQty: '',
+                brand: '',
+                warranty: '',
+                description: '',
+                isListed: true,
+                status: 'Active'
             });
         }
+        setImageFile(null);
         setShowModal(true);
     };
 
@@ -133,62 +245,136 @@ const SpareParts = () => {
         setCurrentId(null);
     };
 
-    const getCategoryIcon = (category) => {
-        switch (category) {
-            case 'Bike': return <Bike size={18} />;
-            case 'Car': return <Car size={18} />;
-            case 'Heavy': return <Truck size={18} />;
-            default: return <Package size={18} />;
+    const handleRespondSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.post(`http://localhost:5000/api/spare-parts/${selectedPartId}/reviews/${selectedReview._id}/respond`, {
+                message: responseMessage
+            }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.data.success) {
+                showMessage('success', 'Response sent successfully!');
+                setShowRespondModal(false);
+                setResponseMessage('');
+                fetchSpareParts(); // Refresh to show the response
+            }
+        } catch (error) {
+            showMessage('error', error.response?.data?.error || 'Failed to send response');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Pagination Logic
+    const getCategoryIcon = (category) => {
+        switch (category?.toLowerCase()) {
+            case 'bike': return <Zap className="placeholder-icon" size={40} />;
+            case 'car': return <Car className="placeholder-icon" size={40} />;
+            case 'heavy': return <Settings className="placeholder-icon" size={40} />;
+            default: return <Package className="placeholder-icon" size={40} />;
+        }
+    };
+
     const filteredParts = spareParts.filter(part => {
-        const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            part.category.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = part.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            part.partNumber?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = filterCategory === 'All' || part.category === filterCategory;
         return matchesSearch && matchesCategory;
     });
 
-    const indexOfLastRow = currentPage * rowsPerPage;
-    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentRows = filteredParts.slice(indexOfFirstRow, indexOfLastRow);
-    const totalPages = Math.ceil(filteredParts.length / rowsPerPage);
+    const filteredOrders = orders.filter(order => {
+        const matchesSearch = order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.sparePart?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'All' || order.status === filterStatus;
+        return matchesSearch && matchesStatus;
+    });
 
-    // Reset to first page when searching or filtering
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, filterCategory]);
+    const allReviews = spareParts.flatMap(part => 
+        (part.reviews || []).map(review => ({ ...review, partName: part.name, partId: part._id }))
+    ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return (
         <div className="spare-parts-page">
-            <div className="header-container">
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div className="search-input-group">
-                        <Search size={18} color="#888" />
-                        <input
-                            type="text"
-                            placeholder="Search by name..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <select
-                        className="status-filter-select"
-                        value={filterCategory}
-                        onChange={(e) => setFilterCategory(e.target.value)}
-                        style={{ marginLeft: '15px' }}
+            {/* <div className="page-title-section">
+                <h2><Settings size={28} /> Spare Parts</h2>
+                <p className="page-subtitle">Manage inventory and customer orders</p>
+            </div> */}
+
+            <div className="header-actions">
+                <div className="tabs-container">
+                    <div
+                        className={`tab-item ${activeTab === 'Parts' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('Parts')}
                     >
-                        <option value="All">All Categories</option>
-                        <option value="Bike">Bike</option>
-                        <option value="Car">Car</option>
-                        <option value="Heavy">Heavy</option>
-                    </select>
+                        <Settings size={18} /> Parts ({spareParts.length})
+                    </div>
+                    <div
+                        className={`tab-item ${activeTab === 'Orders' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('Orders')}
+                    >
+                        <ShoppingCart size={18} /> Orders ({orders.length})
+                    </div>
+                    <div
+                        className={`tab-item ${activeTab === 'Reviews' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('Reviews')}
+                    >
+                        <Star size={18} /> Reviews
+                    </div>
                 </div>
-                <button className="add-btn" onClick={() => openModal()}>
-                    <Plus size={20} />
-                    <span>Add New Part</span>
-                </button>
+
+                {activeTab === 'Parts' && (
+                    <button className="add-part-btn" onClick={() => openModal()}>
+                        <Plus size={20} /> Add Part
+                    </button>
+                )}
+            </div>
+
+            <div className="search-filter-row">
+                <div className="search-container">
+                    <Search size={18} color="#666" />
+                    <input
+                        type="text"
+                        placeholder={activeTab === 'Parts' ? "Search by name or part number..." : "Search by ID, name or part..."}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+
+                {activeTab === 'Parts' ? (
+                    <div className="filter-dropdown-wrapper">
+                        <Filter size={18} className="filter-icon" />
+                        <select 
+                            className="filter-select-custom"
+                            value={filterCategory}
+                            onChange={(e) => setFilterCategory(e.target.value)}
+                        >
+                            {['All', 'Bike', 'Car', 'Heavy'].map(cat => (
+                                <option key={cat} value={cat}>
+                                    {cat === 'All' ? 'All Categories' : cat} ({cat === 'All' ? spareParts.length : spareParts.filter(p => p.category === cat).length})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                ) : (
+                    <div className="filter-dropdown-wrapper">
+                        <Filter size={18} className="filter-icon" />
+                        <select 
+                            className="filter-select-custom"
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                        >
+                            {['All', 'Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered', 'Cancelled'].map(status => (
+                                <option key={status} value={status}>
+                                    {status === 'All' ? 'All Status' : status} ({status === 'All' ? orders.length : orders.filter(o => o.status === status).length})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             {message.text && (
@@ -198,160 +384,489 @@ const SpareParts = () => {
                 </div>
             )}
 
-            {/* Search Bar matching Ordermanagement */}
-
-
-            {/* Main Table matching custom-order-table */}
-            <div className="order-table-container">
-                <table className="custom-order-table">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Spare Part Name</th>
-                            <th>Amount (₹)</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan="5" className="text-center py-5">
-                                    <Spinner animation="border" variant="warning" />
-                                </td>
-                            </tr>
-                        ) : currentRows.length > 0 ? (
-                            currentRows.map(part => (
-                                <tr key={part._id}>
-                                    <td>
-                                        <div className="category-badge">
-                                            {getCategoryIcon(part.category)}
-                                            <span>{part.category}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ fontWeight: '600' }}>{part.name}</td>
-                                    <td className="amount-cell">₹{part.amount}</td>
-                                    <td>
-                                        <span className={`status-pill ${part.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                                            {part.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <Edit2
-                                                size={18}
-                                                className="action-icon"
-                                                onClick={() => openModal(part)}
-                                            />
-                                            <Trash2
-                                                size={18}
-                                                className="action-icon delete-icon"
-                                                onClick={() => handleDelete(part._id)}
-                                            />
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="5" className="text-center py-5 text-muted">No spare parts found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Footer and Pagination matching Ordermanagement */}
-            <div className="table-footer">
-                <div className="rows-per-page">
-                    Show rows per page
-                    <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-                        <option value={6}>6</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                    </select>
+            {loading ? (
+                <div className="text-center py-5">
+                    <Spinner animation="border" variant="primary" />
                 </div>
-                <div className="pagination-controls">
-                    <div className="pagi-numbers">
-                        {filteredParts.length > 0 ? indexOfFirstRow + 1 : 0}-{Math.min(indexOfLastRow, filteredParts.length)} of {filteredParts.length}
-                    </div>
-                    <div className="pagi-arrows">
-                        <button
-                            className="pagi-arrow"
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => prev - 1)}
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <button
-                            className="pagi-arrow"
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            onClick={() => setCurrentPage(prev => prev + 1)}
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Modal matching theme */}
-            <Modal show={showModal} onHide={closeModal} centered className="spare-part-modal">
-                <Modal.Header className="bg-dark border-secondary">
-                    <Modal.Title className="text-warning">
-                        {isEditing ? 'Edit Spare Part' : 'Add New Spare Part'}
-                    </Modal.Title>
-                    <button className="close-btn" onClick={closeModal}><X size={24} /></button>
-                </Modal.Header>
-                <Modal.Body className="bg-dark p-4">
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-group mb-4">
-                            <label>Category</label>
-                            <div className="category-select">
-                                {['Bike', 'Car', 'Heavy'].map(cat => (
-                                    <div
-                                        key={cat}
-                                        className={`cat-option ${formData.category === cat ? 'active' : ''}`}
-                                        onClick={() => setFormData({ ...formData, category: cat })}
-                                    >
-                                        {getCategoryIcon(cat)}
-                                        <span>{cat}</span>
+            ) : activeTab === 'Parts' ? (
+                <>
+                    <div className="spare-parts-grid">
+                        {filteredParts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(part => (
+                            <div className="part-card" key={part._id}>
+                                <span className="card-status-badge">Active</span>
+                                <div className="card-image-section">
+                                    {part.image ? (
+                                        <img src={`http://localhost:5000${part.image}`} alt={part.name} />
+                                    ) : (
+                                        getCategoryIcon(part.category)
+                                    )}
+                                </div>
+                                <div className="card-info">
+                                    <div className="card-category">{part.category}</div>
+                                    <h3 className="card-name">{part.name}</h3>
+                                    <div className="card-part-number">{part.partNumber || '---'}</div>
+                                    <div className="rating-badge-circle">
+                                        <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                                        <span>{part.averageRating?.toFixed(1) || '0.0'}</span>
                                     </div>
+
+                                    <div className="card-pricing-row">
+                                        <div className="card-price">₹{part.amount?.toLocaleString()}</div>
+                                        <div className="card-stock">
+                                            <span>Stock:</span>
+                                            <strong>{part.stockQty || 0}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div className="card-actions">
+                                        <button className="btn-card-edit" onClick={() => openModal(part)}>
+                                            <Edit3 size={16} /> Edit
+                                        </button>
+                                        <button className="btn-card-delete" onClick={() => handleDelete(part._id)}>
+                                            <Trash2 size={16} /> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {filteredParts.length > itemsPerPage && (
+                        <div className="pagination-wrapper">
+                            <div className="pagination-info">
+                                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredParts.length)} of {filteredParts.length} parts
+                            </div>
+                            <div className="pagination-buttons">
+                                <button
+                                    className="pagi-btn"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(prev => prev - 1)}
+                                >
+                                    <ChevronLeft size={18} />
+                                </button>
+                                {[...Array(Math.ceil(filteredParts.length / itemsPerPage))].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        className={`pagi-btn ${currentPage === i + 1 ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                    >
+                                        {i + 1}
+                                    </button>
                                 ))}
+                                <button
+                                    className="pagi-btn"
+                                    disabled={currentPage === Math.ceil(filteredParts.length / itemsPerPage)}
+                                    onClick={() => setCurrentPage(prev => prev + 1)}
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
                             </div>
                         </div>
-                        <div className="form-group mb-3">
-                            <label>Spare Part Name</label>
+                    )}
+                </>
+            ) : activeTab === 'Orders' ? (
+                <div className="orders-table-wrapper">
+                    <table className="custom-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Part Details</th>
+                                <th>Customer/Vendor</th>
+                                <th>Amount</th>
+                                <th>Shipping Address</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredOrders.map(order => (
+                                <tr key={order._id}>
+                                    <td><span className="order-id-badge">#{order._id.slice(-6).toUpperCase()}</span></td>
+                                    <td>
+                                        <div className="small font-weight-bold">
+                                            {new Date(order.createdAt).toLocaleDateString()}
+                                        </div>
+                                        <div className="small text-muted">
+                                            {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="order-part-info">
+                                            {order.sparePart?.image ? (
+                                                <img src={`http://localhost:5000${order.sparePart.image}`} alt="" className="table-part-img" />
+                                            ) : (
+                                                <Package size={24} color="#555" />
+                                            )}
+                                            <div>
+                                                <div className="font-weight-bold">{order.sparePart?.name}</div>
+                                                <div className="small text-muted">{order.sparePart?.partNumber}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="font-weight-bold">{order.user?.name}</div>
+                                        <div className="small text-muted">{order.user?.email}</div>
+                                    </td>
+                                    <td><div className="text-primary font-weight-bold">₹{order.totalAmount}</div></td>
+                                    <td className="shipping-address-cell">
+                                        <div className="small text-muted address-text">
+                                            {order.shippingAddress?.address}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
+                                            <br />
+                                            Ph: {order.shippingAddress?.phone}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select
+                                            className={`status-select-custom status-${order.status.toLowerCase().replace(/\s+/g, '-')}`}
+                                            value={order.status}
+                                            onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                                        >
+                                            <option value="Pending">Pending</option>
+                                            <option value="Confirmed">Confirmed</option>
+                                            <option value="Shipped">Shipped</option>
+                                            <option value="Out of delivery">Out of delivery</option>
+                                            <option value="Delivered">Delivered</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button className="btn-view-order" onClick={() => openOrderModal(order)}>
+                                            <Eye size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filteredOrders.length === 0 && (
+                                <tr>
+                                    <td colSpan="8" className="text-center py-5 text-muted">No orders found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="reviews-list-container">
+                    {allReviews.map((review, idx) => (
+                        <div className="review-card-admin" key={idx}>
+                            <div className="review-card-header">
+                                <div className="reviewer-info">
+                                    <div className="reviewer-avatar">
+                                        {review.user?.name?.charAt(0) || 'U'}
+                                    </div>
+                                    <div>
+                                        <div className="reviewer-name">{review.user?.name}</div>
+                                        <div className="review-part-tag">{review.partName}</div>
+                                    </div>
+                                </div>
+                                <div className="review-rating-stars">
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                        <Star 
+                                            key={star} 
+                                            size={14} 
+                                            fill={review.rating >= star ? "#f59e0b" : "none"} 
+                                            color={review.rating >= star ? "#f59e0b" : "#444"} 
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="review-content">
+                                "{review.comment}"
+                            </div>
+                            <div className="review-footer">
+                                <span className="review-date">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                {review.vendorReply ? (
+                                    <div className="admin-reply-box">
+                                        <strong>Your Response:</strong> {review.vendorReply}
+                                    </div>
+                                ) : (
+                                    <button 
+                                        className="btn-respond-review"
+                                        onClick={() => {
+                                            setSelectedReview(review);
+                                            setSelectedPartId(review.partId);
+                                            setShowRespondModal(true);
+                                        }}
+                                    >
+                                        <MessageCircle size={16} /> Respond
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    {allReviews.length === 0 && (
+                        <div className="text-center py-5 text-muted">No reviews found for any parts.</div>
+                    )}
+                </div>
+            )}
+
+            {/* Add/Edit Modal */}
+            <Modal show={showModal} onHide={closeModal} centered className="spare-part-modal" size="lg">
+                <Modal.Header className="modal-header-custom">
+                    <div className="modal-title-custom">
+                        <Plus size={24} className="text-primary" />
+                        <span>{isEditing ? 'Update Part' : 'Add New Part'}</span>
+                    </div>
+                    <X size={24} className="cursor-pointer text-white" onClick={closeModal} />
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    <form onSubmit={handleSubmit} className="form-grid">
+                        <div className="form-group form-full-width">
+                            <label>Part Name *</label>
                             <input
                                 type="text"
                                 name="name"
+                                className="form-input-custom"
                                 value={formData.name}
                                 onChange={handleInputChange}
-                                placeholder="e.g. Engine Oil, Brake Pad"
+                                placeholder="e.g. Lithium-Ion Battery Cell 72V"
                                 required
                             />
                         </div>
-                        <div className="form-group mb-3">
-                            <label>Amount (₹)</label>
+
+                        <div className="form-group">
+                            <label>Part Number</label>
+                            <input
+                                type="text"
+                                name="partNumber"
+                                className="form-input-custom"
+                                value={formData.partNumber}
+                                onChange={handleInputChange}
+                                placeholder="e.g. BAT-72V-001"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Category *</label>
+                            <select
+                                name="category"
+                                className="form-input-custom form-select-custom"
+                                value={formData.category}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="Bike">Bike</option>
+                                <option value="Car">Car</option>
+                                <option value="Heavy">Heavy</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Price (₹) *</label>
                             <input
                                 type="number"
                                 name="amount"
+                                className="form-input-custom"
                                 value={formData.amount}
                                 onChange={handleInputChange}
-                                placeholder="0.00"
+                                placeholder="e.g. 12500"
                                 required
                             />
                         </div>
-                        <div className="form-group mb-4">
-                            <label>Status</label>
-                            <select name="status" value={formData.status} onChange={handleInputChange}>
-                                <option value="Available">Available</option>
-                                <option value="Out of Stock">Out of Stock</option>
-                            </select>
+
+                        <div className="form-group">
+                            <label>Stock Qty *</label>
+                            <input
+                                type="number"
+                                name="stockQty"
+                                className="form-input-custom"
+                                value={formData.stockQty}
+                                onChange={handleInputChange}
+                                placeholder="e.g. 50"
+                                required
+                            />
                         </div>
-                        <div className="modal-footer pt-3">
-                            <Button variant="outline-light" onClick={closeModal} className="px-4">Cancel</Button>
-                            <Button type="submit" variant="warning" className="px-4 fw-bold" disabled={loading}>
+
+                        <div className="form-group">
+                            <label>Brand</label>
+                            <input
+                                type="text"
+                                name="brand"
+                                className="form-input-custom"
+                                value={formData.brand}
+                                onChange={handleInputChange}
+                                placeholder="e.g. Nexgen"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Warranty</label>
+                            <input
+                                type="text"
+                                name="warranty"
+                                className="form-input-custom"
+                                value={formData.warranty}
+                                onChange={handleInputChange}
+                                placeholder="e.g. 1 Year"
+                            />
+                        </div>
+
+                        <div className="form-group form-full-width">
+                            <label>Product Image</label>
+                            <div className="file-upload-container">
+                                <input type="file" onChange={handleFileChange} accept="image/*" />
+                            </div>
+                        </div>
+
+                        <div className="form-group form-full-width">
+                            <label>Description</label>
+                            <textarea
+                                name="description"
+                                className="form-input-custom description-area"
+                                value={formData.description}
+                                onChange={handleInputChange}
+                                placeholder="Brief description of the part..."
+                            ></textarea>
+                        </div>
+
+                        <div className="form-group form-full-width">
+                            <div className="toggle-row">
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        name="isListed"
+                                        checked={formData.isListed}
+                                        onChange={handleInputChange}
+                                    />
+                                    <span className="slider"></span>
+                                </label>
+                                <span className="toggle-label">Listed (visible to customers)</span>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer-custom form-full-width">
+                            <button type="button" className="btn-cancel" onClick={closeModal}>Cancel</button>
+                            <button type="submit" className="btn-submit-main" disabled={loading}>
                                 {loading ? 'Saving...' : isEditing ? 'Update Part' : 'Add Part'}
+                            </button>
+                        </div>
+                    </form>
+                </Modal.Body>
+            </Modal>
+
+            {/* Order Details Modal */}
+            <Modal show={showOrderModal} onHide={() => setShowOrderModal(false)} centered size="lg" className="order-details-modal">
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="text-white">Order Details - #{currentOrder?._id.slice(-6).toUpperCase()}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4 bg-dark-custom">
+                    {currentOrder && (
+                        <div className="order-full-details">
+                            <div className="row">
+                                <div className="col-md-6 mb-4">
+                                    <div className="detail-group">
+                                        <label>ORDER STATUS</label>
+                                        <div className={`status-pill status-${currentOrder.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                                            {currentOrder.status}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6 mb-4">
+                                    <div className="detail-group">
+                                        <label>ORDER DATE</label>
+                                        <div className="detail-value text-white">
+                                            <Calendar size={16} className="mr-2" />
+                                            {new Date(currentOrder.createdAt).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr className="border-secondary" />
+
+                            <div className="row mt-4">
+                                <div className="col-md-6">
+                                    <label className="text-muted small font-weight-bold">CUSTOMER DETAILS</label>
+                                    <div className="detail-card">
+                                        <div className="detail-row"><strong>Name:</strong> {currentOrder.user?.name}</div>
+                                        <div className="detail-row"><strong>Email:</strong> {currentOrder.user?.email}</div>
+                                        <div className="detail-row"><strong>Phone:</strong> {currentOrder.shippingAddress?.phone}</div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6">
+                                    <label className="text-muted small font-weight-bold">SHIPPING ADDRESS</label>
+                                    <div className="detail-card">
+                                        <div className="detail-row">{currentOrder.shippingAddress?.name}</div>
+                                        <div className="detail-row">{currentOrder.shippingAddress?.address}</div>
+                                        <div className="detail-row">{currentOrder.shippingAddress?.city} - {currentOrder.shippingAddress?.pincode}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="row mt-4">
+                                <div className="col-12">
+                                    <label className="text-muted small font-weight-bold">ORDER ITEMS</label>
+                                    <div className="items-list-card">
+                                        <div className="order-item-detail">
+                                            <div className="item-img-box">
+                                                {currentOrder.sparePart?.image ? (
+                                                    <img src={`http://localhost:5000${currentOrder.sparePart.image}`} alt="" />
+                                                ) : (
+                                                    <Package size={30} color="#555" />
+                                                )}
+                                            </div>
+                                            <div className="item-text">
+                                                <div className="item-name">{currentOrder.sparePart?.name}</div>
+                                                <div className="item-qty">Quantity: {currentOrder.quantity}</div>
+                                            </div>
+                                            <div className="item-price">₹{currentOrder.totalAmount}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {currentOrder.status === 'Delivered' && (
+                                <div className="delivery-info mt-4 p-3 bg-success-soft rounded">
+                                    <div className="d-flex align-items-center text-success">
+                                        <CheckCircle size={20} className="mr-2" />
+                                        <strong>Delivered on: {new Date(currentOrder.updatedAt).toLocaleString()}</strong>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="border-0 bg-dark-custom">
+                    <Button variant="secondary" onClick={() => setShowOrderModal(false)} className="rounded-pill px-4">
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Respond Modal */}
+            <Modal show={showRespondModal} onHide={() => setShowRespondModal(false)} centered className="spare-part-modal">
+                <Modal.Header className="modal-header-custom border-0 pb-0">
+                    <div className="modal-title-custom">
+                        <MessageCircle size={24} className="text-primary" />
+                        <span className="text-white ml-2">Respond to Review</span>
+                    </div>
+                    <X size={24} className="cursor-pointer text-white" onClick={() => setShowRespondModal(false)} />
+                </Modal.Header>
+                <Modal.Body className="p-4 bg-dark-custom">
+                    <div className="mb-4">
+                        <div className="small text-muted mb-1">Review from {selectedReview?.user?.name}</div>
+                        <div className="p-3 bg-dark rounded border border-secondary text-white-50 italic" style={{ fontStyle: 'italic' }}>
+                            "{selectedReview?.comment}"
+                        </div>
+                    </div>
+                    <form onSubmit={handleRespondSubmit}>
+                        <div className="form-group">
+                            <label className="text-white mb-2">Your Response *</label>
+                            <textarea
+                                className="form-control bg-dark border-secondary text-white"
+                                rows="4"
+                                value={responseMessage}
+                                onChange={(e) => setResponseMessage(e.target.value)}
+                                placeholder="Type your response here..."
+                                required
+                            ></textarea>
+                        </div>
+                        <div className="d-flex justify-content-end gap-2 mt-4">
+                            <Button variant="outline-secondary" onClick={() => setShowRespondModal(false)} className="rounded-pill px-4">
+                                Cancel
+                            </Button>
+                            <Button type="submit" variant="primary" disabled={loading} className="rounded-pill px-4">
+                                {loading ? <Spinner animation="border" size="sm" /> : 'Send Response'}
                             </Button>
                         </div>
                     </form>

@@ -5,8 +5,19 @@ const Vendor = require('../models/vendor');
 // Get all bookings (admin only)
 exports.getAllBookings = async (req, res, next) => {
   try {
-    const bookings = await Booking.find()
-      .populate('user', 'name email')
+    let query = {};
+
+    // If user is a vendor, only show their own bookings
+    if (req.user && req.user.role && req.user.role.toLowerCase() === 'vendor') {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (!vendor) {
+        return res.status(404).json({ success: false, message: 'Vendor profile not found' });
+      }
+      query.center = vendor._id;
+    }
+
+    const bookings = await Booking.find(query)
+      .populate('user', 'name email phone')
       .populate('center', 'shopName ownerName')
       .sort({ createdAt: -1 });
 
@@ -20,10 +31,61 @@ exports.getAllBookings = async (req, res, next) => {
   }
 };
 
+// Update payment status (admin only)
+exports.updatePaymentStatus = async (req, res, next) => {
+  try {
+    const { paymentStatus } = req.body;
+    
+    // Map standard UI terms to backend enum
+    let statusToUpdate = paymentStatus.toLowerCase();
+    if (statusToUpdate === 'complete') statusToUpdate = 'completed';
+    if (statusToUpdate === 'cancel') statusToUpdate = 'failed'; // Or keep it as cancelled if the schema supports it. Actually schema enum is: ['pending', 'completed', 'failed', 'refunded']
+
+    if (!['pending', 'completed', 'failed', 'refunded'].includes(statusToUpdate)) {
+      return res.status(400).json({ success: false, message: 'Invalid payment status' });
+    }
+
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus: statusToUpdate },
+      { new: true, runValidators: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment status updated successfully',
+      data: booking
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Get all users (admin only)
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-password');
+    let query = {};
+
+    // If user is a vendor, only show users who have booked with them
+    if (req.user && req.user.role && req.user.role.toLowerCase() === 'vendor') {
+      const vendor = await Vendor.findOne({ user: req.user.id });
+      if (!vendor) {
+        return res.status(404).json({ success: false, message: 'Vendor profile not found' });
+      }
+      
+      // Find all bookings for this vendor
+      const vendorBookings = await Booking.find({ center: vendor._id }).distinct('user');
+      query._id = { $in: vendorBookings };
+    } else {
+      // For Admin, show all users with role 'user'
+      query.role = 'user';
+    }
+
+    const users = await User.find(query).select('-password');
     res.json({
       success: true,
       count: users.length,

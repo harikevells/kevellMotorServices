@@ -9,7 +9,8 @@ const uploadDirs = [
   'uploads/shops',
   'uploads/documents',
   'uploads/profilePictures',
-  'uploads/bills'
+  'uploads/bills',
+  'uploads/spareparts'
 ];
 uploadDirs.forEach(dir => {
   if (!fs.existsSync(dir)) {
@@ -96,7 +97,13 @@ const uploadProfilePicture = multer({
 
 const uploadBill = multer({
   storage: getStorage('bills'),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  fileFilter: fileFilter
+});
+
+const uploadSparePart = multer({
+  storage: getStorage('spareparts'),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: fileFilter
 });
 
@@ -106,5 +113,6 @@ module.exports = {
   uploadShop,
   uploadDocument,
   uploadProfilePicture,
-  uploadBill
-};
+  uploadBill,
+  uploadSparePart
+};

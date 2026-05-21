@@ -1,0 +1,261 @@
+.subscription-container {
+  padding: 20px;
+  background-color: #000;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.subscription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.subscription-header h2 {
+  color: #f28b2c;
+  margin: 0;
+}
+
+.btn-venum {
+  background-color: #f28b2c;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.btn-venum:hover {
+  background-color: #d87622;
+}
+
+.btn-venum-outline {
+  background-color: transparent;
+  color: #f28b2c;
+  border: 1px solid #f28b2c;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-venum-outline:hover {
+  background-color: #f28b2c;
+  color: #fff;
+}
+
+.btn-danger-venum {
+  background-color: transparent;
+  color: #ff4d4d;
+  border: 1px solid #ff4d4d;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-danger-venum:hover {
+  background-color: #ff4d4d;
+  color: #fff;
+}
+
+.plans-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  padding: 10px 0;
+  justify-content: flex-start;
+}
+
+.plan-card {
+  width: 350px;
+  background-color: #1a1a1a;
+  border: 2px solid transparent;
+  border-radius: 30px;
+  padding: 30px 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card:hover {
+  transform: translateY(-15px) scale(1.02);
+  border-color: #f28b2c;
+  box-shadow: 0 20px 40px rgba(242, 139, 44, 0.2);
+}
+
+.plan-card-header {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 25px;
+  margin-bottom: 25px;
+  text-align: center;
+  width: 100%;
+}
+
+.plan-name {
+  color: #fff;
+  font-size: 20px;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.plan-price {
+  color: #f28b2c;
+  font-size: 45px;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1;
+}
+
+.plan-price span {
+  font-size: 16px;
+  color: #aaa;
+  font-weight: normal;
+}
+
+.plan-features {
+  /* flex-grow: 1; */
+  /* margin-bottom: 20px; */
+  width: 100%;
+}
+
+.plan-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plan-features li {
+  padding: 12px 0;
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 15px;
+  color: #ddd;
+}
+
+.plan-features li::before {
+  content: '✓';
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 22px;
+  height: 22px;
+  background-color: #f28b2c;
+  color: #000;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.custom-check {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 22px;
+  height: 22px;
+  background-color: #f28b2c;
+  color: #000;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.custom-cross {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 22px;
+  height: 22px;
+  background-color: #333;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.plan-settings {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.plan-settings > div {
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 15px;
+  color: #ddd;
+}
+
+.plan-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  width: 100%;
+}
+
+.plan-actions button {
+  flex: 1;
+  border-radius: 30px;
+  padding: 12px 0;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Modal styling overrides to match theme */
+.modal-content.venum-modal {
+  background-color: #1a1a1a;
+  color: #fff;
+  border: 1px solid #f28b2c;
+}
+
+.venum-modal .modal-header {
+  border-bottom: 1px solid #333;
+}
+
+.venum-modal .modal-header .modal-title {
+  color: #f28b2c;
+}
+
+.venum-modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.venum-modal .modal-footer {
+  border-top: 1px solid #333;
+}
+
+.venum-modal .form-control, .venum-modal .form-select {
+  background-color: #000;
+  border: 1px solid #333;
+  color: #fff;
+}
+
+.venum-modal .form-control:focus, .venum-modal .form-select:focus {
+  background-color: #000;
+  border-color: #f28b2c;
+  color: #fff;
+  box-shadow: 0 0 0 0.25rem rgba(242, 139, 44, 0.25);
+}
+
+.feature-input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}

@@ -10,7 +10,7 @@ const {
   replyToReview
 } = require('../controllers/reviewController');
 const verifyToken = require('../middleware/auth');
-const { isAdmin } = require('../middleware/roleCheck');  // ✅ Add this
+const { isAdmin, isAdminOrVendor } = require('../middleware/roleCheck');  // ✅ Add this
 
 // Public routes
 router.get('/shop/:shopId', getShopReviews);
@@ -21,8 +21,8 @@ router.get('/user/me', verifyToken, getUserReviews);
 router.put('/:id', verifyToken, updateReview);
 router.delete('/:id', verifyToken, deleteReview);
 
-// ✅ Admin route - Get all reviews
-router.get('/', verifyToken, isAdmin, getAllReviews);
+// ✅ Admin/Vendor route - Get all reviews
+router.get('/', verifyToken, isAdminOrVendor, getAllReviews);
 
 // Vendor reply route
 router.post('/:id/reply', verifyToken, replyToReview);

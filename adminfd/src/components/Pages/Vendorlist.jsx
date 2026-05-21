@@ -42,7 +42,7 @@ const Vendorlist = () => {
   const fetchVendors = async () => {
     setLoading(true);
     setFetchError(null);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     try {
       const params = { page: currentPage, limit: rowsPerPage };
       if (searchTerm.trim()) params.search = searchTerm.trim();
@@ -106,7 +106,7 @@ const Vendorlist = () => {
     console.log(`[DEBUG] Updating vendor at: ${updateUrl}`);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await axios.patch(updateUrl, editFormData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -124,7 +124,7 @@ const Vendorlist = () => {
 
   const handleToggleVerification = async (vendorId, currentStatus) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await axios.patch(`${API_BASE_URL}/${vendorId}/verify`, 
         { isVerified: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }

@@ -5,7 +5,7 @@ const verifyToken = require('../middleware/auth');
 console.log('✅ Booking Routes Loaded');
 
 router.patch('/admin/:id/status', verifyToken, bookingController.updateBookingStatusAdmin);
-router.get('/admin/all', bookingController.getAllBookingsAdmin);
+router.get('/admin/all', verifyToken, bookingController.getAllBookingsAdmin);
 router.post('/', verifyToken, bookingController.createBooking);
 router.get('/', verifyToken, bookingController.getUserBookings);
 router.get('/:id', verifyToken, bookingController.getBookingById);

@@ -96,10 +96,15 @@
     font-weight: 700;
 }
 
-.status-val.completed { color: #00d084; } /* Green */
-.status-val.pending { color: #ffb100; } /* Amber */
-.status-val.not-received { color: #f44336; } /* Red */
-.status-val.failed { color: #f44336; }
+.status-val.completed, .status-select.completed { color: #00d084 !important; } /* Green */
+.status-val.pending, .status-select.pending { color: #ffb100 !important; } /* Yellow */
+.status-val.not-received { color: #f44336 !important; } /* Red */
+.status-val.failed, .status-select.failed, .status-val.cancelled, .status-select.cancelled { color: #f44336 !important; } /* Red */
+.status-val.refunded, .status-select.refunded { color: #2196f3 !important; } /* Blue */
+
+.status-select {
+    font-weight: 700;
+}
 
 /* Action Icons */
 .action-icons {

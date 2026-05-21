@@ -1,0 +1,212 @@
+/* components/Wallet/VendorWallet.css */
+
+:root {
+  --venum-bg: #070708;
+  --venum-card-bg: #111113;
+  --venum-input-bg: #1a1a1f;
+  --venum-orange: #f28b2c;
+  --venum-orange-glow: rgba(242, 139, 44, 0.4);
+  --venum-orange-hover: #ff983d;
+  --venum-border: rgba(255, 255, 255, 0.08);
+  --venum-success: #10b981;
+  --venum-success-glow: rgba(16, 185, 129, 0.2);
+  --venum-danger: #ef4444;
+  --venum-danger-glow: rgba(239, 68, 68, 0.2);
+  --venum-yellow: #f59e0b;
+}
+
+/* Vendor Wallet Container */
+.vendor-wallet-container {
+  padding: 20px 25px;
+  background-color: var(--venum-bg);
+  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 90vh;
+}
+
+/* Primary Balance Dashboard Card */
+.card-wallet-primary {
+  background: linear-gradient(135deg, #111113 0%, #1c1c22 100%);
+  border: 1px solid rgba(242, 139, 44, 0.35);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(242, 139, 44, 0.1);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-wallet-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(242, 139, 44, 0.25);
+  border-color: var(--venum-orange);
+}
+
+.card-wallet-glow-effect {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(242, 139, 44, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.balance-lbl {
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  color: #a0a0ab;
+}
+
+.balance-value {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.pending-hold-tag {
+  background-color: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: var(--venum-yellow);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Wallet Card Buttons */
+.btn-wallet-act {
+  flex: 1;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-wallet-act.primary {
+  background: linear-gradient(135deg, var(--venum-orange) 0%, #ff6a00 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(242, 139, 44, 0.3);
+}
+
+.btn-wallet-act.primary:hover {
+  box-shadow: 0 6px 20px rgba(242, 139, 44, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-wallet-act.secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--venum-border);
+  color: #ffffff;
+}
+
+.btn-wallet-act.secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* Custom disputes sidebar container */
+.refund-disputes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.refund-dispute-item {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--venum-border);
+  border-radius: 10px;
+  padding: 15px;
+  transition: all 0.2s ease;
+}
+
+.refund-dispute-item:hover {
+  border-color: rgba(242, 139, 44, 0.3);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.booking-ref {
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+}
+
+.dispute-amount {
+  font-size: 13px;
+  color: #d1d1d6;
+}
+
+.dispute-reason {
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.admin-resolution-notes {
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: var(--venum-success);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* General carbon grid widgets */
+.bg-dark-carbon {
+  background: linear-gradient(135deg, #111113 0%, #15151b 100%) !important;
+}
+
+/* Modal form elements */
+.alert-box-venum.warning {
+  background-color: rgba(242, 139, 44, 0.08);
+  border-color: rgba(242, 139, 44, 0.25);
+  color: #ff983d;
+}
+
+/* Ledger Adjustments */
+.ledger-table .desc-col {
+  max-width: 250px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Responsive Overrides */
+@media (max-width: 991px) {
+  .card-wallet-primary {
+    padding: 24px;
+  }
+  
+  .balance-value {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 575px) {
+  .card-wallet-primary {
+    padding: 20px;
+  }
+  
+  .btn-wallet-act {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}

@@ -25,7 +25,7 @@ const Ordermanagement = () => {
     const fetchBookings = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const query = `?search=${searchTerm}&status=${filterStatus}`;
             const response = await axios.get(`${API_BASE_URL}/admin/all${query}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -45,7 +45,7 @@ const Ordermanagement = () => {
         const url = `${API_BASE_URL}/admin/${bookingId}/status`;
         console.log('UPDATING STATUS AT:', url);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const response = await axios.patch(url,
                 { status: newStatus },
                 { headers: { 'Authorization': `Bearer ${token}` } }
@@ -112,7 +112,7 @@ const Ordermanagement = () => {
                     <option value="All">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="in_progress">Ready</option>
-                    {/* <option value="completed">Completed</option> */}
+                    <option value="completed">Completed</option>
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
@@ -174,7 +174,7 @@ const Ordermanagement = () => {
                                             <option value="quality_check">Quality Check</option>
                                             <option value="ready">Ready</option>
                                             <option value="out_for_delivery">Out for Delivery</option>
-                                            {/* <option value="completed">Completed</option> */}
+                                            <option value="completed">Completed</option>
                                             <option value="delivered">Delivered</option>
                                             <option value="cancelled">Cancelled</option>
                                         </Form.Select>

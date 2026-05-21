@@ -17,8 +17,55 @@ const offerSchema = new mongoose.Schema(
     discount: {
       type: Number,
       required: [true, 'Discount is required'],
-      min: [0, 'Discount cannot be negative'],
-      max: [100, 'Discount cannot exceed 100%']
+      min: [0, 'Discount cannot be negative']
+    },
+
+    discountType: {
+      type: String,
+      enum: ['percentage', 'flat'],
+      default: 'percentage'
+    },
+
+    couponCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true
+    },
+
+    usageLimitPerUser: {
+      type: Number,
+      default: 1
+    },
+
+    totalRedemptionLimit: {
+      type: Number,
+      default: null
+    },
+
+    minimumBookingValue: {
+      type: Number,
+      default: 0
+    },
+
+    applicableServices: [{
+      type: String
+    }],
+
+    timesRedeemed: {
+      type: Number,
+      default: 0
+    },
+
+    revenueGenerated: {
+      type: Number,
+      default: 0
+    },
+
+    planTier: {
+      type: String,
+      enum: ['Basic', 'Pro', 'Enterprise'],
+      default: 'Basic'
     },
 
     category: {

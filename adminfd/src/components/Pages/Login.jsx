@@ -14,6 +14,8 @@ const Login = ({ onLoginSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [role, setRole] = useState('admin');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -23,7 +25,7 @@ const Login = ({ onLoginSuccess }) => {
             const response = await axios.post('http://localhost:5000/api/auth/login', {
                 email,
                 password,
-                role: 'admin'
+                role: role
             });
 
             if (response.data.success) {
@@ -39,6 +41,12 @@ const Login = ({ onLoginSuccess }) => {
         }
     };
 
+    const handleRoleChange = (newRole) => {
+        setRole(newRole);
+        setEmail('');
+        setPassword('');
+    };
+
     return (
         <div className="login-full-page">
             {/* Background Decorations */}
@@ -49,15 +57,15 @@ const Login = ({ onLoginSuccess }) => {
                 <div className="road-line">
                     <div className="moving-car">
                         <svg width="60" height="30" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 40H110V50H10V40Z" fill="#151515"/>
-                            <path d="M15 40L25 20H85L100 40H15Z" fill="#f28b2c"/>
-                            <path d="M30 23L35 23L35 35L20 35L30 23Z" fill="#333"/>
-                            <path d="M40 23H60V35H40V23Z" fill="#333"/>
-                            <path d="M65 23H80L82 35H65V23Z" fill="#333"/>
-                            <circle cx="30" cy="48" r="8" fill="#111" stroke="#333" strokeWidth="2"/>
-                            <circle cx="85" cy="48" r="8" fill="#111" stroke="#333" strokeWidth="2"/>
-                            <circle cx="30" cy="48" r="3" fill="#444"/>
-                            <circle cx="85" cy="48" r="3" fill="#444"/>
+                            <path d="M10 40H110V50H10V40Z" fill="#151515" />
+                            <path d="M15 40L25 20H85L100 40H15Z" fill="#f28b2c" />
+                            <path d="M30 23L35 23L35 35L20 35L30 23Z" fill="#333" />
+                            <path d="M40 23H60V35H40V23Z" fill="#333" />
+                            <path d="M65 23H80L82 35H65V23Z" fill="#333" />
+                            <circle cx="30" cy="48" r="8" fill="#111" stroke="#333" strokeWidth="2" />
+                            <circle cx="85" cy="48" r="8" fill="#111" stroke="#333" strokeWidth="2" />
+                            <circle cx="30" cy="48" r="3" fill="#444" />
+                            <circle cx="85" cy="48" r="3" fill="#444" />
                         </svg>
                     </div>
                 </div>
@@ -72,6 +80,22 @@ const Login = ({ onLoginSuccess }) => {
                     {error && <div className="login-error-msg">{error}</div>}
 
                     <form onSubmit={handleSubmit} className="login-form-custom">
+                        {/* Role Toggle Selection */}
+                        <div className="role-toggle-container">
+                            <div 
+                                className={`role-toggle-item ${role === 'admin' ? 'active' : ''}`}
+                                onClick={() => handleRoleChange('admin')}
+                            >
+                                Admin
+                            </div>
+                            <div 
+                                className={`role-toggle-item ${role === 'vendor' ? 'active' : ''}`}
+                                onClick={() => handleRoleChange('vendor')}
+                            >
+                                Vendor
+                            </div>
+                        </div>
+
                         {/* User Name Input */}
                         <div className="custom-input-group">
                             <fieldset className="custom-fieldset">
@@ -98,8 +122,8 @@ const Login = ({ onLoginSuccess }) => {
                                     required
                                 />
                             </fieldset>
-                            <div 
-                                className="password-toggle-custom" 
+                            <div
+                                className="password-toggle-custom"
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -117,9 +141,9 @@ const Login = ({ onLoginSuccess }) => {
                             </a>
                         </div>
 
-                        <button 
-                            type="submit" 
-                            className="sign-in-btn-orange" 
+                        <button
+                            type="submit"
+                            className="sign-in-btn-orange"
                             disabled={loading}
                         >
                             {loading ? 'Processing...' : 'Sign in'}

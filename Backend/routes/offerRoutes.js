@@ -10,7 +10,8 @@ const {
   toggleOfferStatus,
   getCategories,
   getActiveOffers,
-  getOffersByShop
+  getOffersByShop,
+  getOfferAnalytics
 } = require('../controllers/offerController');
 const verifyToken = require('../middleware/auth');
 const { isAdmin } = require('../middleware/roleCheck');
@@ -21,6 +22,7 @@ router.get('/categories', getCategories);
 router.get('/shop/:shopId', getOffersByShop);
 
 // Protected routes (admin only)
+router.get('/analytics', verifyToken, isAdmin, getOfferAnalytics);
 router.post('/', verifyToken, isAdmin, createOffer);
 router.get('/', verifyToken, isAdmin, getAllOffers);
 router.get('/:id', verifyToken, isAdmin, getOfferById);

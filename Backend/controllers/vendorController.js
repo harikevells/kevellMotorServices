@@ -707,6 +707,14 @@ exports.updateOrderStatus = async (req, res, next) => {
     }
     await order.save();
 
+    // Trigger wallet credit if eligible
+    try {
+      const { creditWalletIfEligible } = require('./bookingController');
+      await creditWalletIfEligible(order._id);
+    } catch (err) {
+      console.error('Error invoking creditWalletIfEligible in updateOrderStatus:', err);
+    }
+
     // --- Generate Notifications ---
     // 1. To User
     await createNotification({
@@ -772,6 +780,14 @@ exports.updateOrderPaymentStatus = async (req, res, next) => {
 
     order.paymentStatus = paymentStatus;
     await order.save();
+
+    // Trigger wallet credit if eligible
+    try {
+      const { creditWalletIfEligible } = require('./bookingController');
+      await creditWalletIfEligible(order._id);
+    } catch (err) {
+      console.error('Error invoking creditWalletIfEligible in updateOrderPaymentStatus:', err);
+    }
 
     res.json({
       success: true,

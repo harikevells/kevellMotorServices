@@ -92,7 +92,7 @@ const Tracking = () => {
     useEffect(() => {
         const fetchTrackingData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = sessionStorage.getItem('token');
                 const response = await axios.get('http://localhost:5000/api/bookings/admin/all', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });

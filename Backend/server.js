@@ -102,7 +102,9 @@ app.use('/api/master', require('./routes/masterRoutes'));
 app.use('/api/vendor', require('./routes/vendorRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/spare-parts', require('./routes/sparePartRoutes'));
-
+app.use('/api/spare-part-orders', require('./routes/sparePartOrderRoutes'));
+app.use('/api/wallet', require('./routes/walletRoutes'));
+app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
 
 // Error handler
 app.use(require('./middleware/errorHandler'));
