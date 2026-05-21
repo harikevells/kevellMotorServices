@@ -18,7 +18,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { fetchCenterDetails, fetchServices, createBooking, fetchUserVehicles } from '../services/api';
+import { fetchCenterDetails, fetchServices, createBooking, fetchUserVehicles, validateOffer, fetchActiveOffers } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SummaryRouteProp = RouteProp<RootStackParamList, 'BookingSummary'>;
@@ -37,6 +37,16 @@ const BookingSummaryPage = () => {
   const [summaryData, setSummaryData] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Razorpay'>('Cash');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedOffer, setAppliedOffer] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+  const [liveOffers, setLiveOffers] = useState<any[]>([]);
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [usedOfferIds, setUsedOfferIds] = useState<Set<string>>(new Set()); // offers already used by this user
 
   // API expects "2 Wheeler" instead of "2_wheeler"
   const getApiVehicleCat = (cat: string) => {
@@ -48,7 +58,49 @@ const BookingSummaryPage = () => {
 
   useEffect(() => {
     loadSummary();
+    loadOffers();
   }, []);
+
+  const loadOffers = async () => {
+    try {
+      const res: any = await fetchActiveOffers();
+      if (res.success && res.offers) {
+        const offers = res.offers;
+        setLiveOffers(offers);
+
+        // Silently pre-check which offers this user has already used
+        const usedIds = new Set<string>();
+        await Promise.all(
+          offers
+            .filter((o: any) => o.couponCode) // only offers with coupon codes
+            .map(async (o: any) => {
+              try {
+                await validateOffer(o.couponCode, 0);
+                // 0 subtotal - if backend rejects due to usage limit, mark as used
+              } catch (errMsg: any) {
+                const msg = errMsg?.toString() || '';
+                if (msg.includes('already used') || msg.includes('maximum allowed')) {
+                  usedIds.add(o._id);
+                }
+              }
+            })
+        );
+        setUsedOfferIds(usedIds);
+      }
+    } catch (e) {
+      console.warn('Failed to load offers:', e);
+    }
+  };
+
+  const calcDiscount = (offer: any, subtotal: number) => {
+    let discount = 0;
+    if (offer.discountType === 'percentage') {
+      discount = Math.round((subtotal * offer.discount) / 100 * 100) / 100;
+    } else {
+      discount = offer.discount;
+    }
+    return Math.min(discount, subtotal);
+  };
 
   const loadSummary = async () => {
     try {
@@ -84,9 +136,94 @@ const BookingSummaryPage = () => {
     }
   };
 
+  const handleSelectOffer = async (offer: any) => {
+    // Don't allow selecting used offers
+    if (usedOfferIds.has(offer._id)) return;
+
+    // Deselect if already selected
+    if (selectedOfferId === offer._id) {
+      setSelectedOfferId(null);
+      setAppliedOffer(null);
+      setDiscountAmount(0);
+      setCouponError('');
+      return;
+    }
+    if (!offer.couponCode) {
+      // No coupon code — just apply directly based on offer data
+      const discount = calcDiscount(offer, summaryData?.subtotal || 0);
+      setSelectedOfferId(offer._id);
+      setAppliedOffer(offer);
+      setDiscountAmount(discount);
+      setCouponError('');
+      return;
+    }
+    try {
+      setCouponLoading(true);
+      setCouponError('');
+      const res: any = await validateOffer(offer.couponCode, summaryData?.subtotal || 0);
+      if (res.success && res.offer) {
+        const discount = calcDiscount(res.offer, summaryData.subtotal);
+        setSelectedOfferId(offer._id);
+        setAppliedOffer(res.offer);
+        setDiscountAmount(discount);
+        setCouponError('');
+      }
+    } catch (err: any) {
+      const errMsg = err?.toString() || '';
+      if (errMsg.includes('already used') || errMsg.includes('maximum allowed')) {
+        // Mark this offer as used for this user in the UI
+        setUsedOfferIds(prev => new Set([...prev, offer._id]));
+        setCouponError('You have already used this offer.');
+      } else {
+        setCouponError(errMsg || 'Offer not applicable for your booking.');
+      }
+      setSelectedOfferId(null);
+      setAppliedOffer(null);
+      setDiscountAmount(0);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    try {
+      setCouponLoading(true);
+      setCouponError('');
+      setCouponSuccess('');
+      const res: any = await validateOffer(couponInput.trim(), summaryData?.subtotal || 0);
+      if (res.success && res.offer) {
+        const discount = calcDiscount(res.offer, summaryData.subtotal);
+        setSelectedOfferId(res.offer._id);
+        setAppliedOffer(res.offer);
+        setDiscountAmount(discount);
+        setCouponSuccess(`✔ "${res.offer.offerTitle}" applied! You save ₹${discount}`);
+        setShowManualInput(false);
+      }
+    } catch (err: any) {
+      setCouponError(err?.toString() || 'Invalid coupon code');
+      setAppliedOffer(null);
+      setDiscountAmount(0);
+      setSelectedOfferId(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedOffer(null);
+    setDiscountAmount(0);
+    setCouponInput('');
+    setCouponError('');
+    setCouponSuccess('');
+    setSelectedOfferId(null);
+    setShowManualInput(false);
+  };
+
   const handleConfirmBooking = async () => {
     try {
       setSubmitting(true);
+      const finalTotal = summaryData.total - discountAmount;
       const res = await createBooking({
         vehicle: vehicleId,
         center: centerId,
@@ -99,14 +236,15 @@ const BookingSummaryPage = () => {
         userPhone,
         userAddress,
         latitude,
-        longitude
+        longitude,
+        couponCode: appliedOffer ? appliedOffer.couponCode : undefined,
       });
       
       if (paymentMethod === 'Cash') {
         navigation.navigate('BookingConfirmation', { bookingRef: res.data.bookingRef });
       } else {
         navigation.navigate('PaymentSimulation', { 
-          amount: summaryData.total, 
+          amount: summaryData.total - discountAmount,
           bookingData: res.data 
         });
       }
@@ -221,13 +359,153 @@ const BookingSummaryPage = () => {
               <Text style={styles.priceLabel}>GST (18%)</Text>
               <Text style={styles.priceValue}>₹{summaryData.tax}</Text>
             </View>
+            {discountAmount > 0 && (
+              <View style={styles.priceRow}>
+                <Text style={[styles.priceLabel, { color: '#00d084' }]}>Discount</Text>
+                <Text style={[styles.priceValue, { color: '#00d084' }]}>- ₹{discountAmount}</Text>
+              </View>
+            )}
             <View style={[styles.priceRow, { marginTop: 10 }]}>
               <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>₹{summaryData.total}</Text>
+              <Text style={styles.totalValue}>₹{Math.max(0, summaryData.total - discountAmount)}</Text>
             </View>
           </View>
         </View>
 
+        {/* Offer Section - Radio Button Style */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎁 Apply Offer</Text>
+
+          {/* Applied offer summary bar */}
+          {appliedOffer && (
+            <View style={styles.appliedOfferBox}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.appliedOfferTitle}>✔ {appliedOffer.offerTitle}</Text>
+                <Text style={styles.appliedOfferSave}>You save ₹{discountAmount}</Text>
+              </View>
+              <TouchableOpacity onPress={handleRemoveCoupon} style={styles.removeCouponBtn}>
+                <Text style={styles.removeCouponText}>✕ Remove</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Live Offers Radio List */}
+          {liveOffers.length > 0 && (
+            <View style={styles.offerListCard}>
+              {liveOffers.map((offer: any, idx: number) => {
+                const isSelected = selectedOfferId === offer._id;
+                const isUsed = usedOfferIds.has(offer._id);
+                const savingsAmt = summaryData && !isUsed ? calcDiscount(offer, summaryData.subtotal) : 0;
+                const isLast = idx === liveOffers.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={offer._id}
+                    style={[
+                      styles.offerRadioRow,
+                      isSelected && styles.offerRadioRowActive,
+                      isUsed && styles.offerRadioRowUsed,
+                      !isLast && styles.offerRadioDivider,
+                    ]}
+                    onPress={() => handleSelectOffer(offer)}
+                    activeOpacity={isUsed ? 1 : 0.8}
+                  >
+                    {/* Radio circle */}
+                    <View style={[styles.radioCircle, isSelected && styles.radioCircleActive, isUsed && styles.radioCircleUsed]}>
+                      {isSelected && !isUsed && <View style={styles.radioInner} />}
+                      {isUsed && <Text style={{ color: '#555', fontSize: 10 }}>✕</Text>}
+                    </View>
+
+                    {/* Offer details */}
+                    <View style={{ flex: 1, marginLeft: 14, opacity: isUsed ? 0.45 : 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
+                        <View style={[styles.discountPill, isUsed && { backgroundColor: '#2a2a2a' }]}>
+                          <Text style={[styles.discountPillText, isUsed && { color: '#555' }]}>
+                            {offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `\u20b9${offer.discount} OFF`}
+                          </Text>
+                        </View>
+                        {offer.usageLimitPerUser === 1 && (
+                          <View style={styles.oneTimePill}>
+                            <Text style={styles.oneTimePillText}>1\u00d7 Only</Text>
+                          </View>
+                        )}
+                        {isUsed && (
+                          <View style={styles.alreadyUsedPill}>
+                            <Text style={styles.alreadyUsedPillText}>\u2713 Already Used</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[styles.offerRadioTitle, isUsed && { color: '#555' }]}>{offer.offerTitle}</Text>
+                      {offer.couponCode ? (
+                        <View style={styles.couponCodeChip}>
+                          <Text style={styles.couponCodeChipLabel}>CODE: </Text>
+                          <Text style={[styles.couponCodeChipVal, isUsed && { color: '#555' }]}>{offer.couponCode}</Text>
+                        </View>
+                      ) : null}
+                      {offer.minimumBookingValue > 0 && (
+                        <Text style={styles.offerMinText}>Min. booking \u20b9{offer.minimumBookingValue}</Text>
+                      )}
+                    </View>
+
+                    {/* Savings or Used tag */}
+                    {isUsed ? (
+                      <View style={[styles.savingsTag, { backgroundColor: '#1a1a1a' }]}>
+                        <Text style={[styles.savingsTagText, { color: '#444' }]}>Used</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.savingsTag}>
+                        <Text style={styles.savingsTagText}>Save</Text>
+                        <Text style={styles.savingsTagAmount}>\u20b9{savingsAmt}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {couponError ? (
+            <Text style={[styles.couponMsg, { marginTop: 10 }]}>{couponError}</Text>
+          ) : null}
+
+          {/* Manual coupon toggle */}
+          <TouchableOpacity
+            style={styles.manualToggleBtn}
+            onPress={() => { setShowManualInput(v => !v); setCouponError(''); }}
+          >
+            <Text style={styles.manualToggleText}>
+              {showManualInput ? '▲ Hide coupon input' : '+ Have a coupon code?'}
+            </Text>
+          </TouchableOpacity>
+
+          {showManualInput && !appliedOffer && (
+            <View style={{ marginTop: 12 }}>
+              <View style={styles.couponInputRow}>
+                <TextInput
+                  style={styles.couponTextInput}
+                  placeholder="Enter coupon code"
+                  placeholderTextColor="#555"
+                  value={couponInput}
+                  onChangeText={(t) => { setCouponInput(t); setCouponError(''); setCouponSuccess(''); }}
+                  autoCapitalize="characters"
+                />
+                <TouchableOpacity
+                  style={[styles.applyBtn, couponLoading && { opacity: 0.6 }]}
+                  onPress={handleApplyCoupon}
+                  disabled={couponLoading}
+                >
+                  {couponLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.applyBtnText}>Apply</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              {couponSuccess ? <Text style={[styles.couponMsg, { color: '#00d084', marginTop: 8 }]}>{couponSuccess}</Text> : null}
+            </View>
+          )}
+        </View>
+
+        {/* Payment Method */}
         <View style={styles.paymentSection}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
           <TouchableOpacity 
@@ -548,6 +826,224 @@ const styles = StyleSheet.create({
   paymentIcon: {
     fontSize: 20,
     marginRight: 12,
+  },
+  // Coupon styles
+  couponInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  couponTextInput: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    color: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    borderWidth: 1,
+    borderColor: '#333',
+    letterSpacing: 1,
+  },
+  applyBtn: {
+    backgroundColor: '#f28b2c',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  applyBtnText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  couponMsg: {
+    marginTop: 10,
+    fontSize: 13,
+    color: '#ff5252',
+    fontWeight: '600',
+  },
+  appliedOfferBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#00d08415',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#00d08440',
+  },
+  appliedOfferTitle: {
+    color: '#00d084',
+    fontWeight: '800',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  appliedOfferSave: {
+    color: '#00d084',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  removeCouponBtn: {
+    backgroundColor: '#ff525220',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  removeCouponText: {
+    color: '#ff5252',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  // Radio offer list styles
+  offerListCard: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  offerRadioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  offerRadioRowActive: {
+    backgroundColor: '#f28b2c12',
+  },
+  offerRadioDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a2a',
+  },
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#555',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioCircleActive: {
+    borderColor: '#f28b2c',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#f28b2c',
+  },
+  discountPill: {
+    backgroundColor: '#f28b2c22',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginRight: 8,
+  },
+  discountPillText: {
+    color: '#f28b2c',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  oneTimePill: {
+    backgroundColor: '#7c5cfc22',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  oneTimePillText: {
+    color: '#9b7dff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  offerRadioTitle: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+  couponCodeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e1e1e',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#333',
+    borderStyle: 'dashed',
+  },
+  couponCodeChipLabel: {
+    color: '#666',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  couponCodeChipVal: {
+    color: '#f28b2c',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  offerMinText: {
+    color: '#555',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  savingsTag: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00d08415',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginLeft: 10,
+    minWidth: 52,
+  },
+  savingsTagText: {
+    color: '#00d084',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  savingsTagAmount: {
+    color: '#00d084',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  manualToggleBtn: {
+    marginTop: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  manualToggleText: {
+    color: '#f28b2c',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  // Used offer state styles
+  offerRadioRowUsed: {
+    backgroundColor: '#0d0d0d',
+  },
+  radioCircleUsed: {
+    borderColor: '#333',
+    backgroundColor: '#1a1a1a',
+  },
+  alreadyUsedPill: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 6,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  alreadyUsedPillText: {
+    color: '#555',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
 

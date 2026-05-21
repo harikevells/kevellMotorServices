@@ -11,7 +11,8 @@ const {
   getCategories,
   getActiveOffers,
   getOffersByShop,
-  getOfferAnalytics
+  getOfferAnalytics,
+  validateCoupon
 } = require('../controllers/offerController');
 const verifyToken = require('../middleware/auth');
 const { isAdmin } = require('../middleware/roleCheck');
@@ -20,6 +21,9 @@ const { isAdmin } = require('../middleware/roleCheck');
 router.get('/active', getActiveOffers);
 router.get('/categories', getCategories);
 router.get('/shop/:shopId', getOffersByShop);
+
+// Protected routes
+router.post('/validate', verifyToken, validateCoupon);
 
 // Protected routes (admin only)
 router.get('/analytics', verifyToken, isAdmin, getOfferAnalytics);

@@ -19,7 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { EVCar } from '../assets/EVIcons';
-import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications } from '../services/api';
+import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications, fetchActiveOffers, validateOffer } from '../services/api';
 import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
@@ -43,14 +43,14 @@ const CATEGORIES = [
 const OFFERS = [
   {
     id: '1',
-    title: 'Free Checkup',
+    // title: 'Free Checkup',
     subtitle: 'On your first service',
     image: OFFER_1,
     discount: 'FREE',
   },
   {
     id: '2',
-    title: '20% Offer',
+    // title: '',
     subtitle: 'On battery repair',
     image: OFFER_2,
     discount: '20%',
@@ -86,6 +86,8 @@ const HomeScreen = () => {
   const [loadingServices, setLoadingServices] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [liveOffers, setLiveOffers] = useState<any[]>([]);
+  const [usedOfferIds, setUsedOfferIds] = useState<Set<string>>(new Set());
   const scrollRef = useRef<FlatList>(null);
   const intervalRef = useRef<any>(null);
 
@@ -111,8 +113,39 @@ const HomeScreen = () => {
   useEffect(() => {
     loadServicesByCategory('General Service');
     startAutoSlide();
+    loadActiveOffers();
     return () => stopAutoSlide();
   }, []);
+
+  const loadActiveOffers = async () => {
+    try {
+      const res: any = await fetchActiveOffers();
+      if (res.success && res.offers) {
+        const offers = res.offers;
+        // Pre-check which offers this user has already used, silently
+        const usedIds = new Set<string>();
+        await Promise.all(
+          offers
+            .filter((o: any) => o.couponCode)
+            .map(async (o: any) => {
+              try {
+                await validateOffer(o.couponCode, 0);
+              } catch (errMsg: any) {
+                const msg = errMsg?.toString() || '';
+                if (msg.includes('already used') || msg.includes('maximum allowed')) {
+                  usedIds.add(o._id);
+                }
+              }
+            })
+        );
+        setUsedOfferIds(usedIds);
+        // Show all offers, but we will visually disable the used ones in the UI
+        setLiveOffers(offers);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch offers:', e);
+    }
+  };
 
   const loadUser = async () => {
     try {
@@ -287,29 +320,69 @@ const HomeScreen = () => {
         </ScrollView>
 
         {/* Exclusive Offers Section */}
-        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Exclusive Offers</Text>
-        <View style={styles.offersGrid}>
-          {OFFERS.map(offer => (
-            <ImageBackground
-              key={offer.id}
-              source={offer.image}
-              style={styles.offerCardNew}
-              imageStyle={{ borderRadius: 20 }}
-            >
-              <View style={styles.offerOverlay}>
-                <View style={styles.offerBadge}>
-                  <View style={styles.badgeIconBox}>
-                    <Text style={{ fontSize: 12, color: '#fff' }}>%</Text>
+        {(liveOffers.length > 0 || OFFERS.length > 0) && (
+          <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Exclusive Offers</Text>
+        )}
+        {liveOffers.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+            {liveOffers.map((offer: any, idx: number) => {
+              const bgImages = [OFFER_1, OFFER_2];
+              const bgImage = bgImages[idx % bgImages.length];
+              const isUsed = usedOfferIds.has(offer._id);
+
+              return (
+                <ImageBackground
+                  key={offer._id}
+                  source={bgImage}
+                  style={[styles.liveOfferCard, isUsed && { opacity: 0.6 }]}
+                  imageStyle={{ borderRadius: 18 }}
+                >
+                  <View style={[styles.liveOfferOverlay, isUsed && { backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+                    <View style={styles.liveOfferBadge}>
+                      <Text style={styles.liveOfferDiscount}>
+                        {offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `₹${offer.discount} OFF`}
+                      </Text>
+                    </View>
+
+                    {isUsed && (
+                      <View style={{ position: 'absolute', top: '40%', left: 0, right: 0, alignItems: 'center' }}>
+                        <View style={{ backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#333' }}>
+                          <Text style={{ color: '#aaa', fontWeight: 'bold', fontSize: 13 }}>✓ Already Used</Text>
+                        </View>
+                      </View>
+                    )}
+
+                    <View style={styles.liveOfferFooter}>
+                      <Text style={[styles.liveOfferTitle, isUsed && { color: '#888' }]} numberOfLines={2}>{offer.offerTitle}</Text>
+                      <Text style={[styles.offerShop, isUsed && { color: '#555' }]} numberOfLines={1}>🏪 {offer.shopName}</Text>
+                      <Text style={[styles.offerExpiry, isUsed && { color: '#555' }]}>Expires: {new Date(offer.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.badgeText}>{offer.title}</Text>
+                </ImageBackground>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <View style={styles.offersGrid}>
+            {OFFERS.map(offer => (
+              <ImageBackground
+                key={offer.id}
+                source={offer.image}
+                style={styles.offerCardNew}
+                imageStyle={{ borderRadius: 20 }}
+              >
+                <View style={styles.offerOverlay}>
+                  <View style={styles.offerBadge}>
+                    <Text style={styles.badgeText}>{offer.title}</Text>
+                  </View>
+                  <View style={styles.offerFooter}>
+                    <Text style={styles.offerSubtitle}>{offer.subtitle}</Text>
+                  </View>
                 </View>
-                <View style={styles.offerFooter}>
-                  <Text style={styles.offerSubtitle}>{offer.subtitle}</Text>
-                </View>
-              </View>
-            </ImageBackground>
-          ))}
-        </View>
+              </ImageBackground>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -536,15 +609,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignSelf: 'flex-start',
   },
-  badgeIconBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-  },
   badgeText: {
     color: '#fff',
     fontSize: 11,
@@ -560,6 +624,53 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  // Live offer card styles
+  liveOfferCard: {
+    width: 200,
+    height: 240,
+    borderRadius: 18,
+    marginRight: 14,
+    overflow: 'hidden',
+  },
+  liveOfferOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  liveOfferBadge: {
+    backgroundColor: '#f28b2c',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  liveOfferDiscount: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 13,
+  },
+  liveOfferFooter: {
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    borderRadius: 12,
+    padding: 10,
+  },
+  liveOfferTitle: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+    marginBottom: 5,
+    lineHeight: 18,
+  },
+  offerShop: {
+    color: '#ccc',
+    fontSize: 11,
+    marginBottom: 3,
+  },
+  offerExpiry: {
+    color: '#aaa',
+    fontSize: 10,
   },
 });
 

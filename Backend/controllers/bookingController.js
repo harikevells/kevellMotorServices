@@ -71,7 +71,24 @@ exports.createBooking = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No valid services selected' });
     }
 
-    const subtotal = serviceDetails.reduce((sum, s) => sum + s.price, 0);
+    let subtotal = serviceDetails.reduce((sum, s) => sum + s.price, 0);
+
+    let discountAmount = 0;
+    let appliedOffer = null;
+    if (couponCode) {
+      const Offer = require('../models/Offer');
+      appliedOffer = await Offer.findOne({ couponCode: couponCode.toUpperCase(), activeStatus: true });
+      if (appliedOffer) {
+        if (appliedOffer.discountType === 'percentage') {
+          discountAmount = (subtotal * appliedOffer.discount) / 100;
+        } else {
+          discountAmount = appliedOffer.discount;
+        }
+        if (discountAmount > subtotal) discountAmount = subtotal;
+        subtotal -= discountAmount;
+      }
+    }
+
     const tax = Math.round(subtotal * 0.18 * 100) / 100; // 18% GST
     const totalAmount = subtotal + tax;
 
@@ -134,6 +151,13 @@ exports.createBooking = async (req, res, next) => {
     // 6. Update Slot Count
     slot.bookedCount += 1;
     await slot.save();
+
+    // 6.5 Update Offer
+    if (appliedOffer) {
+      appliedOffer.timesRedeemed = (appliedOffer.timesRedeemed || 0) + 1;
+      appliedOffer.revenueGenerated = (appliedOffer.revenueGenerated || 0) + totalAmount;
+      await appliedOffer.save();
+    }
 
     // 7. Initialize Tracking
     await Tracking.create({

@@ -127,6 +127,10 @@ export const createBooking = (data: any) => api.post('/bookings', data);
 export const fetchUserBookings = () => api.get('/bookings');
 export const fetchTracking = (bookingId: string) => api.get('/bookings/' + bookingId + '/track');
 
+// Offers
+export const fetchActiveOffers = () => api.get('/offers/active');
+export const validateOffer = (couponCode: string, subtotal: number) => api.post('/offers/validate', { couponCode, subtotal });
+
 // Reviews
 export const addReview = (data: { orderId: string, rating: number, comment: string }) =>
   api.post(`/bookings/${data.orderId}/review`, { rating: data.rating, comment: data.comment });
@@ -152,6 +156,10 @@ export const fetchDeliveryBoys = () => api.get('/vendor/delivery-boys');
 export const fetchSpareParts = () => api.get('/spare-parts');
 export const createSparePartOrder = (data: any) => api.post('/spare-part-orders', data);
 export const getMySparePartOrders = () => api.get('/spare-part-orders/my-orders');
+export const updateSparePartOrderPayment = (orderId: string, paymentData: any) =>
+  api.put(`/spare-part-orders/${orderId}/payment`, paymentData);
+export const cancelSparePartOrder = (orderId: string, cancelReason: string) =>
+  api.put(`/spare-part-orders/${orderId}/cancel`, { cancelReason });
 export const uploadBookingBill = (bookingId: string, formData: FormData) =>
   api.post(`/vendor/orders/${bookingId}/bill`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }

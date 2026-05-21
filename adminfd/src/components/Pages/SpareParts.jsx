@@ -37,6 +37,8 @@ const SpareParts = () => {
     const [currentId, setCurrentId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(20);
+    const [orderCurrentPage, setOrderCurrentPage] = useState(1);
+    const [ordersPerPage] = useState(5);
     const [filterStatus, setFilterStatus] = useState('All');
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [currentOrder, setCurrentOrder] = useState(null);
@@ -105,6 +107,7 @@ const SpareParts = () => {
     // Reset pagination when search or filter changes
     useEffect(() => {
         setCurrentPage(1);
+        setOrderCurrentPage(1);
     }, [searchTerm, filterCategory, filterStatus]);
 
     const showMessage = (type, text) => {
@@ -474,20 +477,20 @@ const SpareParts = () => {
                                 <th>Part Details</th>
                                 <th>Customer/Vendor</th>
                                 <th>Amount</th>
-                                <th>Shipping Address</th>
+                                <th>Payment Status</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredOrders.map(order => (
+                            {filteredOrders.slice((orderCurrentPage - 1) * ordersPerPage, orderCurrentPage * ordersPerPage).map(order => (
                                 <tr key={order._id}>
                                     <td><span className="order-id-badge">#{order._id.slice(-6).toUpperCase()}</span></td>
                                     <td>
                                         <div className="small font-weight-bold">
                                             {new Date(order.createdAt).toLocaleDateString()}
                                         </div>
-                                        <div className="small text-muted">
+                                        <div className="small">
                                             {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </td>
@@ -500,21 +503,19 @@ const SpareParts = () => {
                                             )}
                                             <div>
                                                 <div className="font-weight-bold">{order.sparePart?.name}</div>
-                                                <div className="small text-muted">{order.sparePart?.partNumber}</div>
+                                                <div className="small">{order.sparePart?.partNumber}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div className="font-weight-bold">{order.user?.name}</div>
-                                        <div className="small text-muted">{order.user?.email}</div>
+                                        <div className="small">{order.user?.email}</div>
                                     </td>
                                     <td><div className="text-primary font-weight-bold">₹{order.totalAmount}</div></td>
-                                    <td className="shipping-address-cell">
-                                        <div className="small text-muted address-text">
-                                            {order.shippingAddress?.address}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
-                                            <br />
-                                            Ph: {order.shippingAddress?.phone}
-                                        </div>
+                                    <td>
+                                        <span className={`font-weight-bold text-${order.paymentStatus === 'Paid' ? 'success' : 'warning'}`}>
+                                            {order.paymentStatus || 'Pending'}
+                                        </span>
                                     </td>
                                     <td>
                                         <select
@@ -539,11 +540,44 @@ const SpareParts = () => {
                             ))}
                             {filteredOrders.length === 0 && (
                                 <tr>
-                                    <td colSpan="8" className="text-center py-5 text-muted">No orders found.</td>
+                                    <td colSpan="8" className="text-center py-5">No orders found.</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
+
+                    {filteredOrders.length > ordersPerPage && (
+                        <div className="pagination-wrapper mt-4">
+                            <div className="pagination-info">
+                                Showing {(orderCurrentPage - 1) * ordersPerPage + 1} to {Math.min(orderCurrentPage * ordersPerPage, filteredOrders.length)} of {filteredOrders.length} orders
+                            </div>
+                            <div className="pagination-buttons">
+                                <button
+                                    className="pagi-btn"
+                                    disabled={orderCurrentPage === 1}
+                                    onClick={() => setOrderCurrentPage(prev => prev - 1)}
+                                >
+                                    <ChevronLeft size={18} />
+                                </button>
+                                {[...Array(Math.ceil(filteredOrders.length / ordersPerPage))].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        className={`pagi-btn ${orderCurrentPage === i + 1 ? 'active' : ''}`}
+                                        onClick={() => setOrderCurrentPage(i + 1)}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                                <button
+                                    className="pagi-btn"
+                                    disabled={orderCurrentPage === Math.ceil(filteredOrders.length / ordersPerPage)}
+                                    onClick={() => setOrderCurrentPage(prev => prev + 1)}
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="reviews-list-container">
@@ -595,7 +629,7 @@ const SpareParts = () => {
                         </div>
                     ))}
                     {allReviews.length === 0 && (
-                        <div className="text-center py-5 text-muted">No reviews found for any parts.</div>
+                        <div className="text-center py-5">No reviews found for any parts.</div>
                     )}
                 </div>
             )}
@@ -776,7 +810,7 @@ const SpareParts = () => {
 
                             <div className="row mt-4">
                                 <div className="col-md-6">
-                                    <label className="text-muted small font-weight-bold">CUSTOMER DETAILS</label>
+                                    <label className="small font-weight-bold">CUSTOMER DETAILS</label>
                                     <div className="detail-card">
                                         <div className="detail-row"><strong>Name:</strong> {currentOrder.user?.name}</div>
                                         <div className="detail-row"><strong>Email:</strong> {currentOrder.user?.email}</div>
@@ -784,7 +818,7 @@ const SpareParts = () => {
                                     </div>
                                 </div>
                                 <div className="col-md-6">
-                                    <label className="text-muted small font-weight-bold">SHIPPING ADDRESS</label>
+                                    <label className="small font-weight-bold">SHIPPING ADDRESS</label>
                                     <div className="detail-card">
                                         <div className="detail-row">{currentOrder.shippingAddress?.name}</div>
                                         <div className="detail-row">{currentOrder.shippingAddress?.address}</div>
@@ -794,8 +828,29 @@ const SpareParts = () => {
                             </div>
 
                             <div className="row mt-4">
+                                <div className="col-md-6">
+                                    <label className="small font-weight-bold">PAYMENT DETAILS</label>
+                                    <div className="detail-card">
+                                        <div className="detail-row"><strong>Status:</strong> <span className={`font-weight-bold text-${currentOrder.paymentStatus === 'Paid' ? 'success' : 'warning'} ml-2`}>{currentOrder.paymentStatus || 'Pending'}</span></div>
+                                        <div className="detail-row"><strong>Payment ID:</strong> {currentOrder.paymentId || 'N/A'}</div>
+                                        <div className="detail-row"><strong>Amount:</strong> ₹{currentOrder.totalAmount}</div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6">
+                                    {currentOrder.cancelReason && (
+                                        <>
+                                            <label className="small font-weight-bold text-danger">CANCELLATION DETAILS</label>
+                                            <div className="detail-card border-danger">
+                                                <div className="detail-row text-danger"><strong>Reason:</strong> {currentOrder.cancelReason}</div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="row mt-4">
                                 <div className="col-12">
-                                    <label className="text-muted small font-weight-bold">ORDER ITEMS</label>
+                                    <label className="small font-weight-bold">ORDER ITEMS</label>
                                     <div className="items-list-card">
                                         <div className="order-item-detail">
                                             <div className="item-img-box">
@@ -844,7 +899,7 @@ const SpareParts = () => {
                 </Modal.Header>
                 <Modal.Body className="p-4 bg-dark-custom">
                     <div className="mb-4">
-                        <div className="small text-muted mb-1">Review from {selectedReview?.user?.name}</div>
+                        <div className="small mb-1">Review from {selectedReview?.user?.name}</div>
                         <div className="p-3 bg-dark rounded border border-secondary text-white-50 italic" style={{ fontStyle: 'italic' }}>
                             "{selectedReview?.comment}"
                         </div>

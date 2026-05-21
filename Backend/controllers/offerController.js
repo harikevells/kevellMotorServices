@@ -365,3 +365,52 @@ exports.getOfferAnalytics = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.validateCoupon = async (req, res, next) => {
+  try {
+    const { couponCode, subtotal } = req.body;
+    if (!couponCode) {
+      return res.status(400).json({ success: false, message: 'Coupon code is required' });
+    }
+
+    const offer = await Offer.findOne({ couponCode: couponCode.toUpperCase() });
+    if (!offer) {
+      return res.status(404).json({ success: false, message: 'Invalid coupon code' });
+    }
+
+    if (!offer.activeStatus) {
+      return res.status(400).json({ success: false, message: 'This offer is no longer active' });
+    }
+
+    const now = new Date();
+    if (now < offer.startDate || now > offer.endDate) {
+      return res.status(400).json({ success: false, message: 'This offer has expired or is not yet active' });
+    }
+
+    if (subtotal && subtotal < offer.minimumBookingValue) {
+      return res.status(400).json({ success: false, message: `Minimum booking value of ₹${offer.minimumBookingValue} required` });
+    }
+
+    if (offer.totalRedemptionLimit && offer.timesRedeemed >= offer.totalRedemptionLimit) {
+      return res.status(400).json({ success: false, message: 'Offer redemption limit reached' });
+    }
+
+    const Booking = require('../models/Booking');
+    const userBookingsWithOffer = await Booking.countDocuments({
+      user: req.user.id,
+      couponCode: offer.couponCode,
+      status: { $ne: 'cancelled' }
+    });
+
+    if (userBookingsWithOffer >= offer.usageLimitPerUser) {
+      return res.status(400).json({ success: false, message: `You have already used this offer its maximum allowed times (${offer.usageLimitPerUser})` });
+    }
+
+    res.json({
+      success: true,
+      offer
+    });
+  } catch (error) {
+    next(error);
+  }
+};

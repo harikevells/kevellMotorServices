@@ -37,6 +37,18 @@ const sparePartOrderSchema = new mongoose.Schema({
     type: String,
     enum: ['Pending', 'Paid', 'Failed'],
     default: 'Pending'
+  },
+  paymentId: {
+    type: String,
+    default: null
+  },
+  cancelReason: {
+    type: String,
+    default: null
+  },
+  cancelledAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
