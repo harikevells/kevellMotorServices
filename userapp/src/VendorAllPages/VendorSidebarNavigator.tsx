@@ -23,6 +23,7 @@ import ChallenBooking from './ChallenBooking';
 import api, { SafeStorage } from '../services/api';
 import { getImageUrl } from '../constants/config';
 import VendorFooter from './VendorFooter';
+import Vendorspareshop from './Vendorspareshop';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width * 0.75;
@@ -157,6 +158,7 @@ const VendorSidebarNavigator = () => {
 
   const menuItems = [
     { id: 'Dashboard', title: 'Dashboard', icon: '📊' },
+    { id: 'Vendorspareshop', title: 'Spare Shop', icon: '🛒' },
     { id: 'Orders', title: 'Orders', icon: '📦' },
     { id: 'DeliveryCreate', title: 'Add Delivery Boy', icon: '👤+' },
     { id: 'DeliveryList', title: 'Delivery Boys', icon: '👥' },
@@ -168,6 +170,7 @@ const VendorSidebarNavigator = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard': return <VendorDashboard />;
+      case 'Vendorspareshop': return <Vendorspareshop />;
       case 'Orders': return <VendorOrderList />;
       case 'DeliveryCreate': return <VendorDeliveryCreate />;
       case 'DeliveryList': return <VendorDeliveryList />;

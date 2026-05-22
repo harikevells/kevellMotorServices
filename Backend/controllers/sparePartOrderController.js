@@ -1,11 +1,12 @@
 const SparePartOrder = require('../models/SparePartOrder');
 const SparePart = require('../models/SparePart');
+const UserSubscription = require('../models/UserSubscription');
 
 // @desc    Create new spare part order
 // @route   POST /api/spare-part-orders
 exports.createOrder = async (req, res, next) => {
   try {
-    const { sparePartId, quantity, shippingAddress } = req.body;
+    const { sparePartId, quantity, totalAmount, shippingAddress, offerCode, offerDiscount } = req.body;
 
     const sparePart = await SparePart.findById(sparePartId);
     if (!sparePart) {
@@ -22,15 +23,73 @@ exports.createOrder = async (req, res, next) => {
       });
     }
 
-    const totalAmount = sparePart.amount * quantity;
+    const deliveryCharge = 50;
+    
+    // Apply 10% discount if the user is a vendor
+    let vendorDiscount = 0;
+    if (req.user && req.user.role === 'vendor') {
+      vendorDiscount = (sparePart.amount * quantity) * 0.10;
+    }
 
-    const order = await SparePartOrder.create({
+    // Apply dynamic subscription discount if the user has an active subscription
+    let subscriptionDiscount = 0;
+    if (req.user) {
+      const activeSub = await UserSubscription.findOne({ 
+        user: req.user.id, 
+        status: 'active',
+        expiryDate: { $gt: new Date() }
+      }).populate('plan');
+      
+      if (activeSub && activeSub.plan && activeSub.plan.features) {
+        let discountPercentage = 0;
+        
+        for (const feature of activeSub.plan.features) {
+          const match = feature.match(/(\d+)%\s*off\s*on\s*spare\s*part/i);
+          if (match) {
+            discountPercentage = parseInt(match[1], 10);
+            break;
+          }
+        }
+
+        if (discountPercentage > 0) {
+          subscriptionDiscount = (sparePart.amount * quantity) * (discountPercentage / 100);
+          
+          // Increment usage immediately
+          if (!activeSub.usageTrackers) activeSub.usageTrackers = {};
+          activeSub.usageTrackers.sparePartsUsed = (activeSub.usageTrackers.sparePartsUsed || 0) + 1;
+          await activeSub.save();
+        }
+      }
+    }
+    
+    let totalDiscount = vendorDiscount + subscriptionDiscount;
+    // Cap total discount at 100% of the part amount
+    if (totalDiscount > (sparePart.amount * quantity)) {
+      totalDiscount = (sparePart.amount * quantity);
+    }
+    
+    const computedTotalAmount = (sparePart.amount * quantity) - totalDiscount + deliveryCharge;
+    const finalTotalAmount = totalAmount || computedTotalAmount;
+
+    const orderData = {
       user: req.user.id,
       sparePart: sparePartId,
       quantity,
-      totalAmount,
-      shippingAddress
-    });
+      totalAmount: finalTotalAmount,
+      deliveryCharge,
+      shippingAddress,
+      vendorDiscount: vendorDiscount,
+      subscriptionDiscount: subscriptionDiscount
+    };
+
+    if (offerCode || offerDiscount) {
+      orderData.offerDetails = {
+        offerCode: offerCode || null,
+        discountAmount: offerDiscount || 0
+      };
+    }
+
+    const order = await SparePartOrder.create(orderData);
 
     // Update stock
     sparePart.stockQty -= quantity;
@@ -53,8 +112,8 @@ exports.createOrder = async (req, res, next) => {
 exports.getAllOrders = async (req, res, next) => {
   try {
     const orders = await SparePartOrder.find()
-      .populate('user', 'name email')
-      .populate('sparePart', 'name image partNumber')
+      .populate('user', 'name email role')
+      .populate('sparePart', 'name image partNumber amount')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -197,16 +256,14 @@ exports.cancelOrder = async (req, res, next) => {
     order.cancelReason = cancelReason;
     order.cancelledAt = new Date();
 
-    // Restore stock if payment was not completed
-    if (order.paymentStatus !== 'Paid') {
-      const sparePart = await SparePart.findById(order.sparePart);
-      if (sparePart) {
-        sparePart.stockQty += order.quantity;
-        if (sparePart.status === 'Out of Stock') {
-          sparePart.status = 'In Stock';
-        }
-        await sparePart.save();
+    // Restore stock
+    const sparePart = await SparePart.findById(order.sparePart);
+    if (sparePart) {
+      sparePart.stockQty += order.quantity;
+      if (sparePart.status === 'Out of Stock') {
+        sparePart.status = 'In Stock';
       }
+      await sparePart.save();
     }
 
     await order.save();

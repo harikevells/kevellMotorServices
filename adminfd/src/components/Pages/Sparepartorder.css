@@ -81,9 +81,10 @@
 /* My Orders Grid */
 .my-orders-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
     margin-top: 20px;
+    padding-bottom: 40px;
 }
 
 /* Order Box in My Orders */
@@ -661,13 +662,7 @@
     border-radius: 10px;
 }
 
-/* Responsive Grid */
-.my-orders-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 25px;
-    padding-bottom: 40px;
-}
+/* Grid setup now handled at the top */
 
 /* All Reviews Modal */
 .all-reviews-modal .modal-content {
@@ -712,6 +707,18 @@
     transform: scale(1.1);
     background: #2a2a2c;
     border-color: #f59e0b;
+}
+
+@media (max-width: 1200px) {
+    .my-orders-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .my-orders-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 600px) {

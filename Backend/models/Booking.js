@@ -69,7 +69,10 @@ const bookingSchema = new mongoose.Schema({
     ],
     default: 'pending'
   },
-
+  subscriptionDiscount: {
+    type: Number,
+    default: 0
+  },
   paymentMethod: {
     type: String,
     enum: ['Cash', 'GPay', 'Card', 'Razorpay'],
@@ -105,9 +108,18 @@ const bookingSchema = new mongoose.Schema({
     },
     createdAt: {
       type: Date
+    },
+    reply: {
+      type: String
+    },
+    repliedByRole: {
+      type: String
     }
   },
   bill: {
+    type: String
+  },
+  cancelReason: {
     type: String
   }
 }, {

@@ -364,6 +364,47 @@ const Ordermanagement = () => {
                                     </div>
                                 </div>
                             </Col>
+
+                            {/* Cancellation & Reviews */}
+                            {(selectedBooking.cancelReason || selectedBooking.review?.rating) && (
+                                <Col md={12}>
+                                    <div className="detail-section">
+                                        <h6 className="section-title"><User size={16} /> Additional Feedback</h6>
+                                        
+                                        {selectedBooking.cancelReason && (
+                                            <div className="mb-3 p-3 bg-danger bg-opacity-10 rounded border border-danger">
+                                                <strong className="text-danger">Cancel Reason: </strong>
+                                                <span className="text-danger">{selectedBooking.cancelReason}</span>
+                                            </div>
+                                        )}
+
+                                        {selectedBooking.review?.rating && (
+                                            <div className="mb-3 p-3 bg-black rounded border border-secondary">
+                                                <div className="d-flex justify-content-between mb-2">
+                                                    <strong className="text-warning">Customer Review</strong>
+                                                    <span className="text-warning">
+                                                        {Array.from({ length: 5 }).map((_, i) => (
+                                                            <span key={i} style={{ color: i < selectedBooking.review.rating ? '#FFD700' : '#444' }}>★</span>
+                                                        ))}
+                                                    </span>
+                                                </div>
+                                                {selectedBooking.review.comment && (
+                                                    <p className="mb-2 text-light fst-italic">"{selectedBooking.review.comment}"</p>
+                                                )}
+                                                
+                                                {selectedBooking.review.reply && (
+                                                    <div className="mt-3 p-2 rounded" style={{ backgroundColor: 'rgba(242, 139, 44, 0.1)', borderLeft: '3px solid #f28b2c' }}>
+                                                        <strong style={{ color: '#f28b2c' }}>
+                                                            {selectedBooking.review.repliedByRole === 'admin' ? 'Admin Response:' : 'Vendor Response:'}
+                                                        </strong>
+                                                        <p className="mb-0 mt-1" style={{ color: '#f28b2c' }}>{selectedBooking.review.reply}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </Col>
+                            )}
                         </Row>
                     )}
                 </Modal.Body>

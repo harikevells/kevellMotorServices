@@ -111,8 +111,8 @@
 }
 
 .filter-dropdown-wrapper:focus-within {
-    border-color: #f28b2c;
-    box-shadow: 0 0 0 2px rgba(242, 139, 44, 0.2);
+    /* border-color: #f28b2c; */
+    /* box-shadow: 0 0 0 2px rgba(242, 139, 44, 0.2); */
 }
 
 .filter-icon {
@@ -908,4 +908,112 @@ input:checked + .slider:before {
 
 .italic {
     font-style: italic;
+}
+
+/* Order Tracker */
+.order-tracker {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 10px 0;
+}
+
+.order-tracker::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    right: 40px;
+    height: 3px;
+    background: #333;
+    z-index: 1;
+}
+
+.tracker-step {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.tracker-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #222;
+    border: 3px solid #555;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.tracker-label {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.tracker-step.active .tracker-dot {
+    background: #10b981;
+    border-color: #0d9668;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.tracker-step.active .tracker-label {
+    color: #10b981;
+}
+
+.tracker-step.cancelled.active .tracker-dot {
+    background: #ef4444;
+    border-color: #b91c1c;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.tracker-step.cancelled.active .tracker-label {
+    color: #ef4444;
+}
+
+/* Item Price Breakdown */
+.item-price-breakdown {
+    background: #1a1a1c;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #2a2a2c;
+    margin-top: 15px;
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #aaa;
+}
+
+.breakdown-row:last-child {
+    margin-bottom: 0;
+}
+
+.breakdown-row span:last-child {
+    color: #fff;
+}
+
+.breakdown-row.text-success span {
+    color: #10b981;
+}
+
+.breakdown-row.text-success span:last-child {
+    color: #10b981;
+}
+
+.breakdown-row.font-weight-bold span {
+    font-size: 15px;
+    color: #fff;
+}
+
+.breakdown-row.font-weight-bold .text-primary {
+    color: #f28b2c !important;
 }

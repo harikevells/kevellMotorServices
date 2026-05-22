@@ -43,8 +43,9 @@ const Sparepartorder = () => {
     const [shippingDetails, setShippingDetails] = useState({
         name: '',
         phone: '',
-        address: '',
-        city: '',
+        street: '',
+        district: '',
+        state: '',
         pincode: ''
     });
 
@@ -57,6 +58,11 @@ const Sparepartorder = () => {
     const [isReadOnlyReview, setIsReadOnlyReview] = useState(false);
     const [showAllReviewsModal, setShowAllReviewsModal] = useState(false);
     const [selectedPartForReviews, setSelectedPartForReviews] = useState(null);
+
+    // Cancel Order States
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState(null);
+    const [cancelReason, setCancelReason] = useState('');
 
     const fetchParts = useCallback(async () => {
         setLoading(true);
@@ -110,7 +116,39 @@ const Sparepartorder = () => {
 
     const handleBuyClick = (part) => {
         setSelectedPart(part);
+        
+        const userStr = sessionStorage.getItem('adminUser');
+        if (userStr) {
+            try {
+                const userObj = JSON.parse(userStr);
+                setShippingDetails({
+                    name: userObj.ownerName || userObj.shopName || userObj.name || '',
+                    phone: userObj.phone || userObj.whatsappNumber || '',
+                    street: userObj.address?.street || '',
+                    district: userObj.address?.city || userObj.address?.district || '',
+                    state: userObj.address?.state || '',
+                    pincode: userObj.address?.pincode || ''
+                });
+            } catch (e) {
+                console.error("Error parsing adminUser", e);
+            }
+        }
+        
         setShowBuyModal(true);
+    };
+
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => {
+                resolve(true);
+            };
+            script.onerror = () => {
+                resolve(false);
+            };
+            document.body.appendChild(script);
+        });
     };
 
     const handleOrderSubmit = async (e) => {
@@ -118,19 +156,83 @@ const Sparepartorder = () => {
         setLoading(true);
         try {
             const token = sessionStorage.getItem('token');
+            const user = JSON.parse(sessionStorage.getItem('adminUser') || '{}');
+
+            // Calculate amount with 10% vendor discount and delivery charge
+            const itemTotal = selectedPart.amount * 1;
+            const discount = itemTotal * 0.10;
+            const amount = (itemTotal - discount) + 50;
+
             const response = await axios.post('http://localhost:5000/api/spare-part-orders', {
                 sparePartId: selectedPart._id,
                 quantity: 1,
-                shippingAddress: shippingDetails
+                totalAmount: amount,
+                shippingAddress: shippingDetails,
+                vendorDiscount: discount
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (response.data.success) {
-                showMessage('success', 'Order placed successfully!');
-                setShowBuyModal(false);
-                setShippingDetails({ name: '', phone: '', address: '', city: '', pincode: '' });
-                fetchParts();
+                const orderId = response.data.data._id;
+
+                const res = await loadRazorpay();
+                if (!res) {
+                    showMessage('error', 'Razorpay SDK failed to load. Are you online?');
+                    setLoading(false);
+                    return;
+                }
+
+                const options = {
+                    key: 'rzp_test_SfkV0cySd3CwyQ',
+                    amount: Math.round(amount * 100),
+                    currency: 'INR',
+                    name: 'Kevell Motor Services',
+                    description: `Payment for ${selectedPart.name}`,
+                    image: 'https://i.imgur.com/3g7nmJC.png',
+                    handler: async function (response) {
+                        try {
+                            await axios.put(`http://localhost:5000/api/spare-part-orders/${orderId}/payment`, {
+                                paymentId: response.razorpay_payment_id,
+                                paymentStatus: 'Paid'
+                            }, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+
+                            showMessage('success', 'Order and Payment Successful!');
+                            setShowBuyModal(false);
+                            setShippingDetails({ name: '', phone: '', street: '', district: '', state: '', pincode: '' });
+                            fetchParts();
+                            setActiveTab('MyOrders');
+                        } catch (err) {
+                            showMessage('error', 'Payment successful but failed to update order.');
+                        }
+                    },
+                    prefill: {
+                        name: shippingDetails.name,
+                        email: user.email || 'customer@example.com',
+                        contact: shippingDetails.phone
+                    },
+                    theme: {
+                        color: '#f28b2c'
+                    }
+                };
+
+                const paymentObject = new window.Razorpay(options);
+                paymentObject.on('payment.failed', async function (response) {
+                    try {
+                        await axios.put(`http://localhost:5000/api/spare-part-orders/${orderId}/payment`, {
+                            paymentStatus: 'Failed'
+                        }, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        showMessage('error', 'Payment Failed');
+                    } catch (err) {
+                        console.error('Failed to update failed payment status', err);
+                    }
+                });
+
+                paymentObject.open();
             }
         } catch (error) {
             showMessage('error', error.response?.data?.error || 'Failed to place order');
@@ -178,6 +280,40 @@ const Sparepartorder = () => {
         } catch (error) {
             console.error('Review submission error:', error.response?.data || error.message);
             showMessage('error', error.response?.data?.error || error.response?.data?.message || 'Failed to submit review');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancelClick = (order) => {
+        setOrderToCancel(order);
+        setCancelReason('');
+        setShowCancelModal(true);
+    };
+
+    const handleCancelSubmit = async () => {
+        if (!cancelReason.trim()) {
+            showMessage('error', 'Please provide a reason for cancellation.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.put(`http://localhost:5000/api/spare-part-orders/${orderToCancel._id}/cancel`, {
+                cancelReason
+            }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.data.success) {
+                showMessage('success', 'Order cancelled successfully!');
+                setShowCancelModal(false);
+                fetchMyOrders();
+            }
+        } catch (error) {
+            console.error('Cancellation error:', error.response?.data || error.message);
+            showMessage('error', error.response?.data?.error || 'Failed to cancel order');
         } finally {
             setLoading(false);
         }
@@ -278,8 +414,8 @@ const Sparepartorder = () => {
                                                     <h3 className="card-name">{part.name}</h3>
                                                 </div>
                                                 {part.reviews?.length > 0 && (
-                                                    <div 
-                                                        className="card-rating-circle clickable" 
+                                                    <div
+                                                        className="card-rating-circle clickable"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setSelectedPartForReviews(part);
@@ -367,7 +503,7 @@ const Sparepartorder = () => {
                                                     <h3 className="card-name">{order.sparePart?.name}</h3>
                                                 </div>
                                                 {order.sparePart?.reviews?.length > 0 && (
-                                                    <div 
+                                                    <div
                                                         className="card-rating-circle clickable"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -392,41 +528,6 @@ const Sparepartorder = () => {
                                                 </div>
                                             </div>
 
-                                            {(() => {
-                                                const user = JSON.parse(sessionStorage.getItem('adminUser'));
-                                                const userId = user?.id || user?._id;
-                                                const userReviews = order.sparePart?.reviews?.filter(r => r.user === userId || r.user?._id === userId) || [];
-                                                
-                                                if (userReviews.length > 0) {
-                                                    return (
-                                                        <div className="card-user-reviews-list">
-                                                            {userReviews.map((rev, i) => (
-                                                                <div key={i} className="card-user-review-preview mb-2">
-                                                                    <div className="preview-stars">
-                                                                        {[1, 2, 3, 4, 5].map(star => (
-                                                                            <Star 
-                                                                                key={star} 
-                                                                                size={10} 
-                                                                                fill={rev.rating >= star ? "#f59e0b" : "none"} 
-                                                                                color={rev.rating >= star ? "#f59e0b" : "#444"} 
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                    <div className="preview-text">"{rev.comment}"</div>
-                                                                    {rev.vendorReply && (
-                                                                        <div className="preview-response-msg">
-                                                                            <MessageCircle size={10} className="mr-1 text-success" />
-                                                                            <span>{rev.vendorReply}</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
-
                                             <div className="card-actions">
                                                 <button
                                                     className="btn-card-edit"
@@ -438,6 +539,16 @@ const Sparepartorder = () => {
                                                 >
                                                     <Eye size={16} /> View
                                                 </button>
+
+                                                {(order.status === 'Pending' || order.status === 'Confirmed') && (
+                                                    <button
+                                                        className="btn-card-edit"
+                                                        style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444' }}
+                                                        onClick={() => handleCancelClick(order)}
+                                                    >
+                                                        <XCircle size={16} /> Cancel
+                                                    </button>
+                                                )}
 
                                                 {order.status === 'Delivered' && (
                                                     <button
@@ -454,7 +565,7 @@ const Sparepartorder = () => {
                                 ))}
                             </div>
                             {myOrders.length === 0 && (
-                                <div className="text-center py-5 text-muted">
+                                <div className="text-center py-5">
                                     You haven't placed any orders yet.
                                 </div>
                             )}
@@ -471,7 +582,7 @@ const Sparepartorder = () => {
                 <Modal.Body className="p-4">
                     <Form onSubmit={handleOrderSubmit} className="address-form">
                         <Form.Group className="mb-3 full-row">
-                            <Form.Label className="text-muted small">FULL NAME</Form.Label>
+                            <Form.Label className="small">FULL NAME</Form.Label>
                             <Form.Control
                                 type="text"
                                 required
@@ -481,7 +592,7 @@ const Sparepartorder = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label className="text-muted small">PHONE NUMBER</Form.Label>
+                            <Form.Label className="small">PHONE NUMBER</Form.Label>
                             <Form.Control
                                 type="text"
                                 required
@@ -491,7 +602,7 @@ const Sparepartorder = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label className="text-muted small">PINCODE</Form.Label>
+                            <Form.Label className="small">PINCODE</Form.Label>
                             <Form.Control
                                 type="text"
                                 required
@@ -501,35 +612,52 @@ const Sparepartorder = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3 full-row">
-                            <Form.Label className="text-muted small">STREET ADDRESS</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={2}
-                                required
-                                value={shippingDetails.address}
-                                onChange={(e) => setShippingDetails({ ...shippingDetails, address: e.target.value })}
-                                className="dark-input"
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3 full-row">
-                            <Form.Label className="text-muted small">CITY</Form.Label>
+                            <Form.Label className="small">STREET / AREA</Form.Label>
                             <Form.Control
                                 type="text"
                                 required
-                                value={shippingDetails.city}
-                                onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
+                                value={shippingDetails.street}
+                                onChange={(e) => setShippingDetails({ ...shippingDetails, street: e.target.value })}
+                                className="dark-input"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small">DISTRICT</Form.Label>
+                            <Form.Control
+                                type="text"
+                                required
+                                value={shippingDetails.district}
+                                onChange={(e) => setShippingDetails({ ...shippingDetails, district: e.target.value })}
+                                className="dark-input"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small">STATE</Form.Label>
+                            <Form.Control
+                                type="text"
+                                required
+                                value={shippingDetails.state}
+                                onChange={(e) => setShippingDetails({ ...shippingDetails, state: e.target.value })}
                                 className="dark-input"
                             />
                         </Form.Group>
 
-                        <div className="full-row mt-3">
+                        <div className="full-row mt-3 p-3 bg-dark rounded border border-secondary">
                             <div className="d-flex justify-content-between mb-2">
-                                <span>Item Total:</span>
+                                <span className="">Item Total:</span>
                                 <span>₹{selectedPart?.amount}</span>
                             </div>
-                            <div className="d-flex justify-content-between font-weight-bold h5">
-                                <span>Grand Total:</span>
-                                <span className="text-success">₹{selectedPart?.amount}</span>
+                            <div className="d-flex justify-content-between mb-2">
+                                <span className="text-success">Vendor Discount (10%):</span>
+                                <span className="text-success">-₹{(selectedPart?.amount * 0.10).toFixed(2)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between mb-2 border-bottom border-secondary pb-2">
+                                <span className="text-white">Delivery Charge:</span>
+                                <span>₹50</span>
+                            </div>
+                            <div className="d-flex justify-content-between font-weight-bold h5 mt-2">
+                                <span className="text-white">Grand Total:</span>
+                                <span className="text-success">₹{((selectedPart?.amount * 0.90) + 50).toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -550,21 +678,37 @@ const Sparepartorder = () => {
                         <div className="order-details-content">
                             {/* Status Tracker */}
                             <div className="order-status-tracker mb-5">
-                                {['Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered'].map((status, index, array) => {
-                                    const currentStatusIndex = array.indexOf(selectedOrder.status);
-                                    const isCompleted = array.indexOf(status) <= currentStatusIndex && selectedOrder.status !== 'Cancelled';
-                                    const isCurrent = status === selectedOrder.status;
-
-                                    return (
-                                        <div key={status} className={`status-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
-                                            <div className="step-dot">
-                                                {isCompleted ? <Check size={12} strokeWidth={4} /> : (index + 1)}
+                                {selectedOrder.status === 'Cancelled' ? (
+                                    ['Pending', 'Cancelled'].map((status, index, array) => {
+                                        const isCompleted = index === 0;
+                                        const isCurrent = index === 1;
+                                        return (
+                                            <div key={status} className={`status-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current cancelled' : ''}`}>
+                                                <div className="step-dot" style={isCurrent ? { background: '#ef4444', borderColor: '#ef4444', color: 'white', boxShadow: '0 0 15px rgba(239, 68, 68, 0.3)' } : {}}>
+                                                    {isCompleted ? <Check size={12} strokeWidth={4} /> : <XCircle size={16} strokeWidth={3} />}
+                                                </div>
+                                                <div className="step-label" style={isCurrent ? { color: '#ef4444' } : {}}>{status}</div>
+                                                {index < array.length - 1 && <div className="step-line" style={{ background: '#ef4444' }}></div>}
                                             </div>
-                                            <div className="step-label">{status}</div>
-                                            {index < array.length - 1 && <div className="step-line"></div>}
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })
+                                ) : (
+                                    ['Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered'].map((status, index, array) => {
+                                        const currentStatusIndex = array.indexOf(selectedOrder.status);
+                                        const isCompleted = array.indexOf(status) <= currentStatusIndex && selectedOrder.status !== 'Cancelled';
+                                        const isCurrent = status === selectedOrder.status;
+
+                                        return (
+                                            <div key={status} className={`status-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
+                                                <div className="step-dot">
+                                                    {isCompleted ? <Check size={12} strokeWidth={4} /> : (index + 1)}
+                                                </div>
+                                                <div className="step-label">{status}</div>
+                                                {index < array.length - 1 && <div className="step-line"></div>}
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </div>
 
                             <div className="details-grid-2-col">
@@ -580,15 +724,49 @@ const Sparepartorder = () => {
                                             <span className="value">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
                                         </div>
                                         <div className="detail-row">
-                                            <span className="label">Total Amount:</span>
+                                            <span className="label">Item Total:</span>
+                                            <span className="value">₹{selectedOrder.sparePart?.amount * selectedOrder.quantity}</span>
+                                        </div>
+                                        {selectedOrder.vendorDiscount > 0 && (
+                                            <div className="detail-row">
+                                                <span className="label">Vendor Discount:</span>
+                                                <span className="value text-success">-₹{selectedOrder.vendorDiscount.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                        <div className="detail-row">
+                                            <span className="label">Delivery Charge:</span>
+                                            <span className="value">₹{selectedOrder.deliveryCharge || 50}</span>
+                                        </div>
+                                        <div className="detail-row font-weight-bold border-top border-secondary pt-2 mt-2">
+                                            <span className="label">Grand Total:</span>
                                             <span className="value price">₹{selectedOrder.totalAmount}</span>
                                         </div>
+                                        <div className="detail-row">
+                                            <span className="label">Payment Status:</span>
+                                            <span className={`status-pill status-${selectedOrder.paymentStatus?.toLowerCase() || 'pending'}`}>
+                                                {selectedOrder.paymentStatus || 'Pending'}
+                                            </span>
+                                        </div>
+                                        {selectedOrder.paymentId && (
+                                            <div className="detail-row">
+                                                <span className="label">Payment ID:</span>
+                                                <span className="value">{selectedOrder.paymentId}</span>
+                                            </div>
+                                        )}
                                         <div className="detail-row">
                                             <span className="label">Current Status:</span>
                                             <span className={`status-pill status-${selectedOrder.status.toLowerCase().replace(/\s+/g, '-')}`}>
                                                 {selectedOrder.status}
                                             </span>
                                         </div>
+                                        {selectedOrder.status === 'Cancelled' && selectedOrder.cancelReason && (
+                                            <div className="detail-row mt-2 pt-3 border-top border-secondary">
+                                                <span className="label text-danger" style={{ fontWeight: '600' }}>Cancel Reason:</span>
+                                                <span className="value text-danger" style={{ textAlign: 'right', maxWidth: '65%', fontSize: '13px' }}>
+                                                    {selectedOrder.cancelReason}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -596,8 +774,8 @@ const Sparepartorder = () => {
                                     <h6 className="section-title">SHIPPING ADDRESS</h6>
                                     <div className="detail-box">
                                         <div className="address-name">{selectedOrder.shippingAddress?.name}</div>
-                                        <div className="address-line">{selectedOrder.shippingAddress?.address}</div>
-                                        <div className="address-line">{selectedOrder.shippingAddress?.city} - {selectedOrder.shippingAddress?.pincode}</div>
+                                        <div className="address-line">{selectedOrder.shippingAddress?.street}</div>
+                                        <div className="address-line">{selectedOrder.shippingAddress?.district}, {selectedOrder.shippingAddress?.state} - {selectedOrder.shippingAddress?.pincode}</div>
                                         <div className="address-phone">Ph: {selectedOrder.shippingAddress?.phone}</div>
                                     </div>
                                 </div>
@@ -624,7 +802,7 @@ const Sparepartorder = () => {
                                     const user = JSON.parse(sessionStorage.getItem('adminUser'));
                                     const userId = user?.id || user?._id;
                                     const userReviews = selectedOrder.sparePart?.reviews?.filter(r => r.user === userId || r.user?._id === userId) || [];
-                                    
+
                                     if (userReviews.length > 0) {
                                         return (
                                             <div className="detail-section full-width">
@@ -634,11 +812,11 @@ const Sparepartorder = () => {
                                                         <div key={i} className="detail-box mb-3">
                                                             <div className="d-flex align-items-center gap-2 mb-2">
                                                                 {[1, 2, 3, 4, 5].map(star => (
-                                                                    <Star 
-                                                                        key={star} 
-                                                                        size={14} 
-                                                                        fill={rev.rating >= star ? "#f59e0b" : "none"} 
-                                                                        color={rev.rating >= star ? "#f59e0b" : "#444"} 
+                                                                    <Star
+                                                                        key={star}
+                                                                        size={14}
+                                                                        fill={rev.rating >= star ? "#f59e0b" : "none"}
+                                                                        color={rev.rating >= star ? "#f59e0b" : "#444"}
                                                                     />
                                                                 ))}
                                                                 <span className="ml-2 text-white font-weight-bold">{rev.rating}/5</span>
@@ -673,7 +851,7 @@ const Sparepartorder = () => {
                     </Button>
 
                     {selectedOrder?.status === 'Delivered' && (
-                        <Button 
+                        <Button
                             className="rounded-pill px-4"
                             style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid #f59e0b' }}
                             onClick={() => {
@@ -698,12 +876,12 @@ const Sparepartorder = () => {
                         <div className="d-flex align-items-center justify-content-center gap-2">
                             <Star size={18} fill="#f59e0b" color="#f59e0b" />
                             <span className="text-white h4 mb-0">
-                                {selectedPartForReviews?.reviews?.length > 0 
+                                {selectedPartForReviews?.reviews?.length > 0
                                     ? (selectedPartForReviews.reviews.reduce((acc, r) => acc + r.rating, 0) / selectedPartForReviews.reviews.length).toFixed(1)
                                     : '0.0'
                                 }
                             </span>
-                            <span className="text-muted">({selectedPartForReviews?.reviews?.length || 0} reviews)</span>
+                            <span className="">({selectedPartForReviews?.reviews?.length || 0} reviews)</span>
                         </div>
                     </div>
 
@@ -717,7 +895,7 @@ const Sparepartorder = () => {
                                                 <Star key={s} size={12} fill={rev.rating >= s ? "#f59e0b" : "none"} color={rev.rating >= s ? "#f59e0b" : "#444"} />
                                             ))}
                                         </div>
-                                        <div className="small text-muted">{rev.user?.name || 'Anonymous'}</div>
+                                        <div className="small">{rev.user?.name || 'Anonymous'}</div>
                                     </div>
                                     <div className="review-comment text-white mb-3">"{rev.comment}"</div>
                                     {rev.vendorReply && (
@@ -732,7 +910,7 @@ const Sparepartorder = () => {
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center py-5 text-muted">No reviews yet.</div>
+                            <div className="text-center py-5">No reviews yet.</div>
                         )}
                     </div>
                 </Modal.Body>
@@ -791,11 +969,39 @@ const Sparepartorder = () => {
                         )}
 
                         <div className="text-center mt-3">
-                            <Button variant="link" className="text-muted text-decoration-none" onClick={() => setShowReviewModal(false)}>
+                            <Button variant="link" className="text-decoration-none" onClick={() => setShowReviewModal(false)}>
                                 Close
                             </Button>
                         </div>
                     </Form>
+                </Modal.Body>
+            </Modal>
+
+            {/* Cancel Modal */}
+            <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)} centered className="cancel-modal">
+                <Modal.Header closeButton className="border-0 bg-dark text-white">
+                    <Modal.Title>Cancel Order</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="bg-dark p-4">
+                    <p className="text-white mb-3">Are you sure you want to cancel this order? Please provide a reason.</p>
+                    <Form.Group>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            placeholder="Enter cancellation reason..."
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            className="dark-input text-white"
+                        />
+                    </Form.Group>
+                    <div className="mt-4 d-flex justify-content-end gap-2">
+                        <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
+                            Close
+                        </Button>
+                        <Button variant="danger" onClick={handleCancelSubmit} disabled={loading || !cancelReason.trim()}>
+                            {loading ? 'Cancelling...' : 'Confirm Cancel'}
+                        </Button>
+                    </div>
                 </Modal.Body>
             </Modal>
         </div>

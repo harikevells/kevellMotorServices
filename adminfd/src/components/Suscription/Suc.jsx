@@ -5,9 +5,11 @@ import './Suc.css';
 
 const Suc = () => {
   const [plans, setPlans] = useState([]);
+  const [purchasedPlans, setPurchasedPlans] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('plan'); // 'plan' or 'planBuy'
 
   const [formData, setFormData] = useState({
     name: 'Basic',
@@ -20,7 +22,20 @@ const Suc = () => {
 
   useEffect(() => {
     fetchPlans();
+    fetchPurchasedPlans();
   }, []);
+
+  const fetchPurchasedPlans = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/subscriptions/purchased`);
+      const data = await response.json();
+      if (data.success) {
+        setPurchasedPlans(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching purchased plans:', error);
+    }
+  };
 
   const fetchPlans = async () => {
     try {
@@ -139,14 +154,31 @@ const Suc = () => {
   return (
     <div className="subscription-container">
       <div className="subscription-header">
-        <h2></h2>
-        <button className="btn-venum" onClick={() => handleShowModal()}>
-          <Plus size={18} style={{ marginRight: '5px' }} />
-          Create Plan
-        </button>
+        <div className="toggle-group">
+          <button 
+            className={`toggle-btn ${viewMode === 'plan' ? 'active' : ''}`}
+            onClick={() => setViewMode('plan')}
+          >
+            Plan
+          </button>
+          <button 
+            className={`toggle-btn ${viewMode === 'planBuy' ? 'active' : ''}`}
+            onClick={() => setViewMode('planBuy')}
+          >
+            Plan Buy
+          </button>
+        </div>
+        
+        {viewMode === 'plan' && (
+          <button className="btn-venum" onClick={() => handleShowModal()}>
+            <Plus size={18} style={{ marginRight: '5px' }} />
+            Create Plan
+          </button>
+        )}
       </div>
 
-      <div className="plans-grid">
+      {viewMode === 'plan' ? (
+        <div className="plans-grid">
         {plans.map(plan => (
           <div className="plan-card" key={plan._id}>
             <div className="plan-card-header">
@@ -187,6 +219,45 @@ const Suc = () => {
           </div>
         )}
       </div>
+      ) : (
+        <div className="plan-buy-table-container">
+          <table className="table venum-table">
+            <thead>
+              <tr>
+                <th>User / Shop Name</th>
+                <th>Role</th>
+                <th>Plan</th>
+                <th>Price</th>
+                <th>Purchase Date</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchasedPlans.map(sub => (
+                <tr key={sub._id}>
+                  <td>{sub.user?.shopName || sub.user?.name || 'N/A'}</td>
+                  <td><span className="badge bg-secondary">{sub.userModel}</span></td>
+                  <td><strong>{sub.plan?.name || 'N/A'}</strong></td>
+                  <td>₹{sub.plan?.price || 0}</td>
+                  <td>{new Date(sub.purchaseDate).toLocaleDateString()}</td>
+                  <td>{new Date(sub.expiryDate).toLocaleDateString()}</td>
+                  <td>
+                    <span className={`badge ${sub.status === 'active' ? 'bg-success' : sub.status === 'expired' ? 'bg-danger' : 'bg-warning'}`}>
+                      {sub.status.toUpperCase()}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {purchasedPlans.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center py-4 text-muted">No purchased subscriptions found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <Modal show={showModal} onHide={handleCloseModal} centered contentClassName="venum-modal" size="lg">
         <Modal.Header closeButton>

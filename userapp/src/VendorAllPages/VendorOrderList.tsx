@@ -13,12 +13,13 @@ import {
   StatusBar,
   PermissionsAndroid,
   Platform,
+  TextInput,
 } from 'react-native';
 import { pick, isCancel, types } from '@react-native-documents/picker';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from '@react-native-community/geolocation';
 import { COLORS, SHADOWS } from '../constants/theme';
-import { fetchVendorOrders, updateOrderStatus, uploadBookingBill, updateOrderPaymentStatus } from '../services/api';
+import { fetchVendorOrders, updateOrderStatus, uploadBookingBill, updateOrderPaymentStatus, replyBookingReview } from '../services/api';
 import { startVendorBackgroundLocation } from '../services/backgroundLocation';
 
 const STAGES = [
@@ -47,6 +48,37 @@ const VendorOrderList = () => {
   const [uploading, setUploading] = useState(false);
   const [showPaymentPicker, setShowPaymentPicker] = useState(false);
   const [updatingPayment, setUpdatingPayment] = useState(false);
+
+  const [showReplyModal, setShowReplyModal] = useState(false);
+  const [selectedReviewOrder, setSelectedReviewOrder] = useState<any>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+
+  const handleOpenReply = (order: any) => {
+    setSelectedReviewOrder(order);
+    setReplyText('');
+    setShowReplyModal(true);
+  };
+
+  const handleSubmitReply = async () => {
+    if (!replyText.trim()) {
+      Alert.alert('Error', 'Please enter a response message.');
+      return;
+    }
+    try {
+      setSubmittingReply(true);
+      const res: any = await replyBookingReview(selectedReviewOrder._id, replyText);
+      if (res.success) {
+        Alert.alert('Success', 'Response submitted successfully.');
+        setShowReplyModal(false);
+        fetchOrders(); // Refresh to see the new reply
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to submit response');
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   const handleUpdatePaymentStatus = async (newStatus: string) => {
     if (!selectedOrder) return;
@@ -348,6 +380,21 @@ const VendorOrderList = () => {
                 ) : (
                   <Text style={[styles.reviewComment, { color: '#999' }]}>No written feedback provided.</Text>
                 )}
+                {item.review.reply ? (
+                  <View style={styles.reviewReplyContainer}>
+                    <Text style={styles.reviewReplyTitle}>
+                      {item.review.repliedByRole === 'admin' ? 'Admin Response:' : 'Your Response:'}
+                    </Text>
+                    <Text style={styles.reviewReplyText}>{item.review.reply}</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.replyButton}
+                    onPress={() => handleOpenReply(item)}
+                  >
+                    <Text style={styles.replyButtonText}>Reply to Customer</Text>
+                  </TouchableOpacity>
+                )}
               </>
             ) : (
               <View style={styles.reviewHeader}>
@@ -631,6 +678,64 @@ const VendorOrderList = () => {
 
       <PaymentStatusModal />
 
+      {/* Reply Modal */}
+      <Modal
+        visible={showReplyModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReplyModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowReplyModal(false)}
+        >
+          <View style={styles.replyModalContainer} onStartShouldSetResponder={() => true}>
+            <View style={styles.replyModalHeader}>
+              <Text style={styles.pickerTitle}>Respond to Customer</Text>
+              <TouchableOpacity onPress={() => setShowReplyModal(false)}>
+                <Text style={{ fontSize: 20, color: '#888' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedReviewOrder?.review && (
+              <View style={styles.customerReviewSnapshot}>
+                <View style={styles.starsContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Text key={star} style={{ color: star <= selectedReviewOrder.review.rating ? '#FFD700' : '#DDDDDD', fontSize: 14 }}>★</Text>
+                  ))}
+                </View>
+                {selectedReviewOrder.review.comment && (
+                  <Text style={styles.customerReviewComment}>"{selectedReviewOrder.review.comment}"</Text>
+                )}
+              </View>
+            )}
+
+            <TextInput
+              style={styles.replyInput}
+              placeholder="Type your response here..."
+              placeholderTextColor="#999"
+              multiline
+              value={replyText}
+              onChangeText={setReplyText}
+              autoFocus
+            />
+
+            <TouchableOpacity 
+              style={[styles.submitReplyButton, submittingReply && { opacity: 0.5 }]}
+              onPress={handleSubmitReply}
+              disabled={submittingReply}
+            >
+              {submittingReply ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={styles.submitReplyButtonText}>Submit Response</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -867,6 +972,85 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E9ECEF',
+  },
+  reviewReplyContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: 'rgba(242, 139, 44, 0.1)',
+    borderRadius: 8,
+  },
+  reviewReplyTitle: {
+    fontWeight: 'bold',
+    color: '#f28b2c',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  reviewReplyText: {
+    color: '#f28b2c',
+    fontSize: 13,
+  },
+  replyButton: {
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#f28b2c',
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  replyButtonText: {
+    color: '#f28b2c',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  replyModalContainer: {
+    backgroundColor: COLORS.white,
+    width: '90%',
+    borderRadius: 15,
+    padding: 20,
+    elevation: 5,
+  },
+  replyModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  customerReviewSnapshot: {
+    backgroundColor: '#F9F9F9',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#f28b2c',
+  },
+  customerReviewComment: {
+    color: '#555',
+    fontSize: 13,
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  replyInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    padding: 15,
+    color: '#000',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+    backgroundColor: '#FAFAFA',
+  },
+  submitReplyButton: {
+    backgroundColor: '#f28b2c',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  submitReplyButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

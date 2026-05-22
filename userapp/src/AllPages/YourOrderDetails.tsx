@@ -18,7 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SHADOWS } from '../constants/theme';
-import { fetchUserBookings, addReview } from '../services/api';
+import { fetchUserBookings, addReview, cancelBooking } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -38,6 +38,12 @@ const BookingHistory = () => {
     const [rating, setRating] = useState(5);
     const [reviewComment, setReviewComment] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    // Cancel Modal States
+    const [isCancelModalVisible, setCancelModalVisible] = useState(false);
+    const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<any>(null);
+    const [cancelReason, setCancelReason] = useState('');
+    const [isCanceling, setIsCanceling] = useState(false);
 
     useEffect(() => {
         loadBookings();
@@ -95,6 +101,36 @@ const BookingHistory = () => {
             setReviewModalVisible(false);
         } finally {
             setIsSubmittingReview(false);
+        }
+    };
+
+    const handleOpenCancel = (booking: any) => {
+        setSelectedBookingForCancel(booking);
+        setCancelReason('');
+        setCancelModalVisible(true);
+    };
+
+    const handleCancelSubmit = async () => {
+        if (!selectedBookingForCancel) return;
+        if (!cancelReason.trim()) {
+            Alert.alert('Error', 'Please provide a reason for cancellation');
+            return;
+        }
+
+        try {
+            setIsCanceling(true);
+            const res: any = await cancelBooking(selectedBookingForCancel._id, cancelReason);
+            
+            if (res.success) {
+                Alert.alert('Success', 'Booking cancelled successfully');
+                setCancelModalVisible(false);
+                loadBookings();
+            }
+        } catch (error: any) {
+            console.error('Error cancelling booking:', error);
+            Alert.alert('Oops', error.response?.data?.message || 'Failed to cancel booking');
+        } finally {
+            setIsCanceling(false);
         }
     };
 
@@ -160,22 +196,34 @@ const BookingHistory = () => {
                 <View style={styles.actionRow}>
                     <Text style={styles.priceText}>₹ {booking.totalAmount}</Text>
                     {isUpcoming ? (
-                        <TouchableOpacity
-                            style={styles.trackButton}
-                            onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
-                        >
-                            <Text style={styles.trackButtonText}>View Details</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                                <TouchableOpacity
+                                    style={[styles.trackButton, { backgroundColor: '#f44336' }]}
+                                    onPress={() => handleOpenCancel(booking)}
+                                >
+                                    <Text style={[styles.trackButtonText, { color: '#fff' }]}>✕ Cancel</Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                                style={styles.trackButton}
+                                onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
+                            >
+                                <Text style={styles.trackButtonText}>View Details</Text>
+                            </TouchableOpacity>
+                        </View>
                     ) : (
                         <View style={{ flexDirection: 'row', gap: 10 }}>
-                            <TouchableOpacity
-                                style={styles.ratingButton}
-                                onPress={() => handleOpenReview(booking)}
-                            >
-                                <Text style={styles.ratingText}>
-                                    {booking.review && booking.review.rating ? '★ Rating' : '★ Rating'}
-                                </Text>
-                            </TouchableOpacity>
+                            {booking.status === 'cancelled' && booking.cancelReason ? null : (
+                                !booking.review?.rating && (
+                                    <TouchableOpacity
+                                        style={styles.ratingButton}
+                                        onPress={() => handleOpenReview(booking)}
+                                    >
+                                        <Text style={styles.ratingText}>★ Rating</Text>
+                                    </TouchableOpacity>
+                                )
+                            )}
                             <TouchableOpacity
                                 style={styles.viewDetailsButton}
                                 onPress={() => navigation.navigate('LiveTracking', { bookingId: booking._id })}
@@ -185,6 +233,42 @@ const BookingHistory = () => {
                         </View>
                     )}
                 </View>
+                {booking.status === 'cancelled' && booking.cancelReason && (
+                    <View style={{ marginTop: 10, padding: 10, backgroundColor: 'rgba(244, 67, 54, 0.1)', borderRadius: 8 }}>
+                        <Text style={{ color: '#f44336', fontSize: 13 }}>
+                            <Text style={{ fontWeight: 'bold' }}>Cancel Reason: </Text>
+                            {booking.cancelReason}
+                        </Text>
+                    </View>
+                )}
+                {booking.review?.rating ? (
+                    <View style={{ marginTop: 15, padding: 15, backgroundColor: '#1E1E1E', borderRadius: 10, borderWidth: 1, borderColor: '#333' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 14 }}>Your Review</Text>
+                            <View style={{ flexDirection: 'row' }}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <Text key={star} style={{ color: star <= booking.review.rating ? '#f28b2c' : '#444', fontSize: 14 }}>★</Text>
+                                ))}
+                            </View>
+                        </View>
+                        {booking.review.comment ? (
+                            <Text style={{ color: '#AAA', fontSize: 13, fontStyle: 'italic', marginBottom: booking.review.reply ? 10 : 0 }}>
+                                "{booking.review.comment}"
+                            </Text>
+                        ) : null}
+
+                        {booking.review.reply && (
+                            <View style={{ marginTop: booking.review.comment ? 5 : 10, padding: 10, backgroundColor: 'rgba(242, 139, 44, 0.1)', borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#f28b2c' }}>
+                                <Text style={{ color: '#f28b2c', fontSize: 12, fontWeight: 'bold', marginBottom: 4 }}>
+                                    {booking.review.repliedByRole === 'admin' ? 'Admin Response:' : 'Vendor Response:'}
+                                </Text>
+                                <Text style={{ color: '#f28b2c', fontSize: 13 }}>
+                                    {booking.review.reply}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                ) : null}
             </View>
         );
     };
@@ -252,48 +336,99 @@ const BookingHistory = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Rate Your Experience</Text>
-                            <TouchableOpacity onPress={() => setReviewModalVisible(false)}>
-                                <Text style={styles.closeIcon}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <Text style={styles.modalSubtitle}>
-                            How was the service at {selectedBookingForReview?.center?.shopName || selectedBookingForReview?.center?.ownerName || 'the service center'}?
-                        </Text>
-
+                        <Text style={styles.modalTitle}>Rate your Service</Text>
+                        {selectedBookingForReview?.review?.rating && (
+                            <Text style={{ color: '#888', marginBottom: 15, textAlign: 'center' }}>You have already reviewed this service</Text>
+                        )}
                         <View style={styles.starContainer}>
                             {[1, 2, 3, 4, 5].map((star) => (
-                                <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                                    <Text style={[styles.starIcon, rating >= star && styles.starIconSelected]}>
-                                        ★
-                                    </Text>
+                                <TouchableOpacity
+                                    key={star}
+                                    onPress={() => !selectedBookingForReview?.review?.rating && setRating(star)}
+                                    disabled={!!selectedBookingForReview?.review?.rating}
+                                >
+                                    <Text style={[styles.starIcon, { color: star <= rating ? '#f28b2c' : '#333' }]}>★</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
-
                         <TextInput
-                            style={styles.reviewInput}
-                            placeholder="Share your experience (optional)..."
+                            style={[styles.reviewInput, selectedBookingForReview?.review?.rating && { backgroundColor: '#222', color: '#999' }]}
+                            placeholder="Write your experience..."
                             placeholderTextColor="#666"
                             multiline
                             numberOfLines={4}
                             value={reviewComment}
                             onChangeText={setReviewComment}
+                            editable={!selectedBookingForReview?.review?.rating}
                         />
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={() => setReviewModalVisible(false)}
+                            >
+                                <Text style={styles.cancelButtonText}>Close</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.submitButton, (isSubmittingReview || selectedBookingForReview?.review?.rating) && { opacity: 0.5 }]}
+                                onPress={handleSubmitReview}
+                                disabled={isSubmittingReview || !!selectedBookingForReview?.review?.rating}
+                            >
+                                {isSubmittingReview ? (
+                                    <ActivityIndicator color="#000" />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>{selectedBookingForReview?.review?.rating ? 'Submitted' : 'Submit'}</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
-                        <TouchableOpacity
-                            style={styles.submitReviewButton}
-                            onPress={handleSubmitReview}
-                            disabled={isSubmittingReview}
-                        >
-                            {isSubmittingReview ? (
-                                <ActivityIndicator size="small" color="#000" />
-                            ) : (
-                                <Text style={styles.submitReviewText}>Submit Review</Text>
-                            )}
-                        </TouchableOpacity>
+            {/* Cancel Modal */}
+            <Modal
+                visible={isCancelModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setCancelModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Cancel Booking</Text>
+                        <Text style={{ color: '#aaa', marginBottom: 15, textAlign: 'center' }}>
+                            Are you sure you want to cancel {selectedBookingForCancel?.vehicle?.brand} {selectedBookingForCancel?.vehicle?.model}?
+                        </Text>
+                        
+                        <Text style={{ color: '#fff', marginBottom: 5, alignSelf: 'flex-start' }}>Reason for cancellation</Text>
+                        <TextInput
+                            style={styles.reviewInput}
+                            placeholder="Please tell us why you are cancelling..."
+                            placeholderTextColor="#666"
+                            multiline
+                            numberOfLines={4}
+                            value={cancelReason}
+                            onChangeText={setCancelReason}
+                        />
+                        
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={() => setCancelModalVisible(false)}
+                                disabled={isCanceling}
+                            >
+                                <Text style={styles.cancelButtonText}>Keep Booking</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.submitButton, { backgroundColor: '#f44336' }, isCanceling && { opacity: 0.5 }]}
+                                onPress={handleCancelSubmit}
+                                disabled={isCanceling}
+                            >
+                                {isCanceling ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={[styles.submitButtonText, { color: '#fff' }]}>Confirm Cancel</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -542,6 +677,40 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+        gap: 10,
+    },
+    cancelButton: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#555',
+        borderRadius: 10,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cancelButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    submitButton: {
+        flex: 1,
+        backgroundColor: '#f28b2c',
+        borderRadius: 10,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    submitButtonText: {
+        color: '#000',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
 

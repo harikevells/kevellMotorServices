@@ -13,13 +13,14 @@ import {
   Image,
   TextInput,
   ImageBackground,
+  Modal,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { EVCar } from '../assets/EVIcons';
-import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications, fetchActiveOffers, validateOffer } from '../services/api';
+import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications, fetchActiveOffers, validateOffer, fetchSubscriptions, purchaseSubscription, fetchMySubscriptions } from '../services/api';
 import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
@@ -32,6 +33,7 @@ const V5 = require('../assets/banners/v5.png');
 const V6 = require('../assets/banners/v6.png');
 const OFFER_1 = require('../assets/offers/free_checkup.png');
 const OFFER_2 = require('../assets/offers/battery_repair.png');
+const SUB_BG = require('../assets/subscription_bg.png');
 
 const CATEGORIES = [
   { id: 'General Service', title: 'Periodic Service', icon: '🛠️', color: '#111' },
@@ -86,6 +88,8 @@ const HomeScreen = () => {
   const [loadingServices, setLoadingServices] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showAdPopup, setShowAdPopup] = useState(false);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const [liveOffers, setLiveOffers] = useState<any[]>([]);
   const [usedOfferIds, setUsedOfferIds] = useState<Set<string>>(new Set());
   const scrollRef = useRef<FlatList>(null);
@@ -95,8 +99,68 @@ const HomeScreen = () => {
     React.useCallback(() => {
       loadUser();
       loadNotifications();
+      
+      const timer = setTimeout(async () => {
+        try {
+          const mySub: any = await fetchMySubscriptions();
+          if (mySub.success && mySub.active) {
+            // User already has an active subscription, do not show popup
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to check active subscription for popup', e);
+        }
+        
+        loadSubscriptions();
+        setShowAdPopup(true);
+      }, 1500);
+
+      return () => clearTimeout(timer);
     }, [])
   );
+
+  const loadSubscriptions = async () => {
+    try {
+      const res: any = await fetchSubscriptions();
+      if (res.success && res.data) {
+        const activePlans = res.data.filter((p: any) => p.isActive !== false);
+        if (activePlans.length === 0) {
+          setSubscriptionPlans([
+            { _id: '1', name: 'Basic Plan', price: 499, billingCycle: 'monthly', features: ['1 Free Checkup', '10% Off on Parts', 'Priority Support'] },
+            { _id: '2', name: 'Premium Plan', price: 999, billingCycle: 'monthly', features: ['2 Free Checkups', '20% Off on Parts', 'Free Roadside Asst.', 'Priority Support'] }
+          ]);
+        } else {
+          setSubscriptionPlans(activePlans);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch subscriptions', e);
+      setSubscriptionPlans([
+        { _id: '1', name: 'Basic Plan', price: 499, billingCycle: 'monthly', features: ['1 Free Checkup', '10% Off on Parts', 'Priority Support'] },
+      ]);
+    }
+  };
+
+  const handleSubscribe = async (planId: string) => {
+    try {
+      if (planId === '1' || planId === '2') {
+        // Mock fallback for dummy plans
+        Alert.alert('Success', 'Successfully subscribed!');
+        setShowAdPopup(false);
+        return;
+      }
+      const res: any = await purchaseSubscription(planId);
+      if (res.success) {
+        Alert.alert('Success', 'Successfully subscribed!');
+        setShowAdPopup(false);
+      } else {
+        Alert.alert('Error', res.message || 'Failed to subscribe.');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'An error occurred while subscribing.');
+      console.error(e);
+    }
+  };
 
   const loadNotifications = async () => {
     try {
@@ -384,6 +448,50 @@ const HomeScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Subscription Ad Popup */}
+      <Modal
+        visible={showAdPopup}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAdPopup(false)}
+      >
+        <View style={styles.adModalOverlay}>
+          <ImageBackground source={SUB_BG} style={styles.adModalContainer} imageStyle={{ borderRadius: 20 }}>
+            <View style={styles.adModalDarkOverlay}>
+              <TouchableOpacity style={styles.adModalCloseBtn} onPress={() => setShowAdPopup(false)}>
+                <Text style={styles.adModalCloseText}>✕</Text>
+              </TouchableOpacity>
+              
+              <Text style={styles.adModalTitle}>Subscription Plan</Text>
+              <Text style={styles.adModalSubtitle}>Choose a subscription plan and save big on every service.</Text>
+
+              <FlatList
+                data={subscriptionPlans}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item._id || item.id}
+                renderItem={({ item }) => (
+                  <View style={styles.adPlanCard}>
+                    <Text style={styles.adPlanName}>{item.name}</Text>
+                    <Text style={styles.adPlanPrice}>₹{item.price}/{item.billingCycle === 'yearly' ? 'yr' : 'mo'}</Text>
+                    <View style={styles.adPlanBenefits}>
+                      {(item.features || item.benefits || []).map((b: string, i: number) => (
+                        <Text key={i} style={styles.adPlanBenefitText}>✓ {b}</Text>
+                      ))}
+                    </View>
+                    <TouchableOpacity style={styles.adPlanButton} onPress={() => handleSubscribe(item._id || item.id)}>
+                      <Text style={styles.adPlanButtonText}>Subscribe Now</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            </View>
+          </ImageBackground>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -671,6 +779,104 @@ const styles = StyleSheet.create({
   offerExpiry: {
     color: '#aaa',
     fontSize: 10,
+  },
+  // Subscription Ad Popup Styles
+  adModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adModalContainer: {
+    width: width * 0.85,
+    height: 480, // Fixed height to prevent collapse
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+    overflow: 'hidden',
+  },
+  adModalDarkOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    paddingVertical: 20,
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  adModalCloseBtn: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    backgroundColor: '#333',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adModalCloseText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  adModalTitle: {
+    color: '#f28b2c',
+    fontSize: 22,
+    fontWeight: '900',
+    marginTop: 10,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  adModalSubtitle: {
+    color: '#CCC',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  adPlanCard: {
+    width: width * 0.85, // Same as container to allow paging
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  adPlanName: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  adPlanPrice: {
+    color: '#f28b2c',
+    fontSize: 26,
+    fontWeight: '900',
+    marginBottom: 15,
+  },
+  adPlanBenefits: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(20, 20, 20, 0.85)',
+    padding: 15,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#444',
+    marginBottom: 20,
+  },
+  adPlanBenefitText: {
+    color: '#DDD',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  adPlanButton: {
+    backgroundColor: '#f28b2c',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
+  },
+  adPlanButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

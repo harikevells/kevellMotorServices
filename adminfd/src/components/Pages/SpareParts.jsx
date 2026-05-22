@@ -40,6 +40,7 @@ const SpareParts = () => {
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [ordersPerPage] = useState(5);
     const [filterStatus, setFilterStatus] = useState('All');
+    const [orderUserType, setOrderUserType] = useState('User');
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [currentOrder, setCurrentOrder] = useState(null);
     
@@ -108,7 +109,7 @@ const SpareParts = () => {
     useEffect(() => {
         setCurrentPage(1);
         setOrderCurrentPage(1);
-    }, [searchTerm, filterCategory, filterStatus]);
+    }, [searchTerm, filterCategory, filterStatus, orderUserType]);
 
     const showMessage = (type, text) => {
         setMessage({ type, text });
@@ -293,7 +294,10 @@ const SpareParts = () => {
             order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.sparePart?.name?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === 'All' || order.status === filterStatus;
-        return matchesSearch && matchesStatus;
+        const matchesUserType = orderUserType === 'All' || 
+                                (orderUserType === 'User' && order.user?.role === 'user') || 
+                                (orderUserType === 'Vendor' && order.user?.role === 'vendor');
+        return matchesSearch && matchesStatus && matchesUserType;
     });
 
     const allReviews = spareParts.flatMap(part => 
@@ -363,19 +367,40 @@ const SpareParts = () => {
                         </select>
                     </div>
                 ) : (
-                    <div className="filter-dropdown-wrapper">
-                        <Filter size={18} className="filter-icon" />
-                        <select 
-                            className="filter-select-custom"
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                        >
-                            {['All', 'Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered', 'Cancelled'].map(status => (
-                                <option key={status} value={status}>
-                                    {status === 'All' ? 'All Status' : status} ({status === 'All' ? orders.length : orders.filter(o => o.status === status).length})
-                                </option>
-                            ))}
-                        </select>
+                    <div className="filter-dropdown-wrapper" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                        
+                        {/* User/Vendor Toggle Buttons */}
+                        <div style={{ display: 'flex', width: '220px', background: '#111', borderRadius: '10px', border: '1px solid #333', overflow: 'hidden' }}>
+                            <button 
+                                onClick={() => setOrderUserType('User')}
+                                style={{ flex: 1, padding: '8px 15px', background: orderUserType === 'User' ? '#f28b2c' : 'transparent', color: orderUserType === 'User' ? '#fff' : '#888', border: 'none', outline: 'none', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s', borderRight: '1px solid #333' }}
+                            >
+                                Customer
+                            </button>
+                            <button 
+                                onClick={() => setOrderUserType('Vendor')}
+                                style={{ flex: 1, padding: '8px 15px', background: orderUserType === 'Vendor' ? '#f28b2c' : 'transparent', color: orderUserType === 'Vendor' ? '#fff' : '#888', border: 'none', outline: 'none', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}
+                            >
+                                Vendor
+                            </button>
+                        </div>
+                        
+                        {/* Status Filter */}
+                        <div style={{ display: 'flex', alignItems: 'center', background: '#111', borderRadius: '10px', border: '1px solid #333', padding: '0 10px' }}>
+                            <Filter size={18} className="filter-icon" />
+                            <select 
+                                className="filter-select-custom"
+                                style={{ border: 'none', background: 'transparent' }}
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                            >
+                                {['All', 'Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered', 'Cancelled'].map(status => (
+                                    <option key={status} value={status}>
+                                        {status === 'All' ? 'All Status' : status} ({status === 'All' ? orders.length : orders.filter(o => o.status === status).length})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 )}
             </div>
@@ -786,8 +811,31 @@ const SpareParts = () => {
                 <Modal.Body className="p-4 bg-dark-custom">
                     {currentOrder && (
                         <div className="order-full-details">
+                            {/* Order Status Tracker */}
+                            <div className="order-tracker mt-2 mb-5">
+                                {['Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered'].map((status, index) => {
+                                    const statuses = ['Pending', 'Confirmed', 'Shipped', 'Out of delivery', 'Delivered'];
+                                    const currentIdx = statuses.indexOf(currentOrder.status);
+                                    const isCancelled = currentOrder.status === 'Cancelled';
+                                    const isActive = currentIdx >= index && !isCancelled;
+                                    
+                                    return (
+                                        <div key={status} className={`tracker-step ${isActive ? 'active' : ''}`}>
+                                            <div className="tracker-dot"></div>
+                                            <div className="tracker-label">{status}</div>
+                                        </div>
+                                    );
+                                })}
+                                {currentOrder.status === 'Cancelled' && (
+                                    <div className="tracker-step cancelled active">
+                                        <div className="tracker-dot"></div>
+                                        <div className="tracker-label">Cancelled</div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="row">
-                                <div className="col-md-6 mb-4">
+                                <div className="col-md-6">
                                     <div className="detail-group">
                                         <label>ORDER STATUS</label>
                                         <div className={`status-pill status-${currentOrder.status.toLowerCase().replace(/\s+/g, '-')}`}>
@@ -795,7 +843,7 @@ const SpareParts = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="col-md-6 mb-4">
+                                <div className="col-md-6">
                                     <div className="detail-group">
                                         <label>ORDER DATE</label>
                                         <div className="detail-value text-white">
@@ -809,41 +857,65 @@ const SpareParts = () => {
                             <hr className="border-secondary" />
 
                             <div className="row mt-4">
-                                <div className="col-md-6">
+                                <div className="col-md-6 mb-4">
                                     <label className="small font-weight-bold">CUSTOMER DETAILS</label>
                                     <div className="detail-card">
                                         <div className="detail-row"><strong>Name:</strong> {currentOrder.user?.name}</div>
                                         <div className="detail-row"><strong>Email:</strong> {currentOrder.user?.email}</div>
                                         <div className="detail-row"><strong>Phone:</strong> {currentOrder.shippingAddress?.phone}</div>
+                                        <hr className="border-secondary my-2" />
+                                        <div className="detail-row small mt-2"><strong>Shipping Address:</strong></div>
+                                        <div className="detail-row"><strong>Street:</strong> {currentOrder.shippingAddress?.street || currentOrder.shippingAddress?.address}</div>
+                                        <div className="detail-row"><strong>District:</strong> {currentOrder.shippingAddress?.district || currentOrder.shippingAddress?.city}</div>
+                                        <div className="detail-row"><strong>State:</strong> {currentOrder.shippingAddress?.state}</div>
+                                        <div className="detail-row"><strong>Pincode:</strong> {currentOrder.shippingAddress?.pincode}</div>
                                     </div>
                                 </div>
-                                <div className="col-md-6">
-                                    <label className="small font-weight-bold">SHIPPING ADDRESS</label>
-                                    <div className="detail-card">
-                                        <div className="detail-row">{currentOrder.shippingAddress?.name}</div>
-                                        <div className="detail-row">{currentOrder.shippingAddress?.address}</div>
-                                        <div className="detail-row">{currentOrder.shippingAddress?.city} - {currentOrder.shippingAddress?.pincode}</div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="row mt-4">
-                                <div className="col-md-6">
+                                <div className="col-md-6 mb-4">
                                     <label className="small font-weight-bold">PAYMENT DETAILS</label>
                                     <div className="detail-card">
                                         <div className="detail-row"><strong>Status:</strong> <span className={`font-weight-bold text-${currentOrder.paymentStatus === 'Paid' ? 'success' : 'warning'} ml-2`}>{currentOrder.paymentStatus || 'Pending'}</span></div>
                                         <div className="detail-row"><strong>Payment ID:</strong> {currentOrder.paymentId || 'N/A'}</div>
                                         <div className="detail-row"><strong>Amount:</strong> ₹{currentOrder.totalAmount}</div>
+                                        {(() => {
+                                            const itemTotal = currentOrder.sparePart?.amount ? 
+                                                currentOrder.sparePart.amount * currentOrder.quantity :
+                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0);
+
+                                            const vDiscount = currentOrder.vendorDiscount || (currentOrder.user?.role === 'vendor' ? Math.round(itemTotal * 0.1) : 0);
+                                            const offerDiscount = currentOrder.offerDetails?.discountAmount || 0;
+                                            const offerCode = currentOrder.offerDetails?.offerCode || '';
+
+                                            if (currentOrder.user?.role === 'vendor') {
+                                                return (
+                                                    <div className="detail-row mt-1">
+                                                        <strong>Vendor Discount (10%):</strong> 
+                                                        <span className={vDiscount > 0 ? "text-success ml-2 font-weight-bold" : "ml-2"}>
+                                                            {vDiscount > 0 ? `-₹${vDiscount}` : `₹0`}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <div className="detail-row mt-1">
+                                                        <strong>Offer Discount {offerCode ? `(${offerCode})` : ''}:</strong> 
+                                                        <span className={offerDiscount > 0 ? "text-success ml-2 font-weight-bold" : "ml-2"}>
+                                                            {offerDiscount > 0 ? `-₹${offerDiscount}` : `₹0`}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }
+                                        })()}
                                     </div>
-                                </div>
-                                <div className="col-md-6">
+
                                     {currentOrder.cancelReason && (
-                                        <>
+                                        <div className="mt-4">
                                             <label className="small font-weight-bold text-danger">CANCELLATION DETAILS</label>
                                             <div className="detail-card border-danger">
                                                 <div className="detail-row text-danger"><strong>Reason:</strong> {currentOrder.cancelReason}</div>
                                             </div>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -864,8 +936,68 @@ const SpareParts = () => {
                                                 <div className="item-name">{currentOrder.sparePart?.name}</div>
                                                 <div className="item-qty">Quantity: {currentOrder.quantity}</div>
                                             </div>
-                                            <div className="item-price">₹{currentOrder.totalAmount}</div>
+                                        {(() => {
+                                            const itemTotal = currentOrder.sparePart?.amount ? 
+                                                currentOrder.sparePart.amount * currentOrder.quantity :
+                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0);
+
+                                            return (
+                                                <>
+                                                    <div className="item-price">₹{itemTotal}</div>
+                                                </>
+                                            );
+                                        })()}
                                         </div>
+                                        
+                                        {(() => {
+                                            const itemTotal = currentOrder.sparePart?.amount ? 
+                                                currentOrder.sparePart.amount * currentOrder.quantity :
+                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0);
+
+                                            const vDiscount = currentOrder.vendorDiscount || (currentOrder.user?.role === 'vendor' ? Math.round(itemTotal * 0.1) : 0);
+
+                                            return (
+                                                <div className="item-price-breakdown">
+                                                    <div className="breakdown-row">
+                                                        <span>Item Subtotal (x{currentOrder.quantity})</span>
+                                                        <span>₹{itemTotal}</span>
+                                                    </div>
+                                                    <div className="breakdown-row">
+                                                        <span>Delivery Charge</span>
+                                                        <span>₹{currentOrder.deliveryCharge || 50}</span>
+                                                    </div>
+                                                    
+                                                    {(() => {
+                                                        const isVendor = currentOrder.user?.role === 'vendor';
+                                                        const vDiscount = currentOrder.vendorDiscount || (isVendor ? Math.round(itemTotal * 0.1) : 0);
+                                                        const offerDiscount = currentOrder.offerDetails?.discountAmount || 0;
+                                                        const offerCode = currentOrder.offerDetails?.offerCode || '';
+
+                                                        if (isVendor) {
+                                                            return (
+                                                                <div className={`breakdown-row ${vDiscount > 0 ? 'text-success' : ''}`}>
+                                                                    <span>Vendor Discount (10%)</span>
+                                                                    <span>{vDiscount > 0 ? `-₹${vDiscount}` : `₹0`}</span>
+                                                                </div>
+                                                            );
+                                                        } else {
+                                                            return (
+                                                                <div className={`breakdown-row ${offerDiscount > 0 ? 'text-success' : ''}`}>
+                                                                    <span>Offer Discount {offerCode ? `(${offerCode})` : ''}</span>
+                                                                    <span>{offerDiscount > 0 ? `-₹${offerDiscount}` : `₹0`}</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                    })()}
+
+                                                    <hr className="border-secondary my-2" />
+                                                    <div className="breakdown-row font-weight-bold">
+                                                        <span>Grand Total</span>
+                                                        <span className="text-primary">₹{currentOrder.totalAmount}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>

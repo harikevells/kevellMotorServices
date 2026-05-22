@@ -259,3 +259,92 @@
   gap: 10px;
   margin-bottom: 10px;
 }
+
+/* Toggle Group Styles */
+.toggle-group {
+  display: flex;
+  background-color: #1a1a1a;
+  border-radius: 30px;
+  padding: 4px;
+  border: 1px solid #333;
+}
+
+.toggle-btn {
+  background: transparent;
+  color: #aaa;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 26px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  color: #fff;
+}
+
+.toggle-btn.active {
+  background-color: #f28b2c;
+  color: #000;
+  box-shadow: 0 4px 10px rgba(242, 139, 44, 0.3);
+}
+
+/* Plan Buy Table Styles */
+.plan-buy-table-container {
+  background-color: #1a1a1a;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  overflow-x: auto;
+}
+
+.venum-table {
+  color: #fff;
+  margin-bottom: 0;
+}
+
+.venum-table th {
+  color: #f28b2c;
+  border-bottom: 2px solid #333;
+  padding: 15px;
+  font-weight: 600;
+}
+
+.venum-table td {
+  border-bottom: 1px solid #333;
+  padding: 15px;
+  vertical-align: middle;
+  background-color: transparent !important;
+  color: #ddd;
+}
+
+.venum-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.85em;
+}
+
+.bg-success {
+  background-color: rgba(40, 167, 69, 0.2) !important;
+  color: #28a745 !important;
+  border: 1px solid rgba(40, 167, 69, 0.5);
+}
+
+.bg-danger {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+  color: #dc3545 !important;
+  border: 1px solid rgba(220, 53, 69, 0.5);
+}
+
+.bg-warning {
+  background-color: rgba(242, 139, 44, 0.2) !important;
+  color: #f28b2c !important;
+  border: 1px solid rgba(242, 139, 44, 0.5);
+}
+

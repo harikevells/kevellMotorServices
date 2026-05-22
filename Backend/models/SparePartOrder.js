@@ -24,9 +24,14 @@ const sparePartOrderSchema = new mongoose.Schema({
   shippingAddress: {
     name: String,
     phone: String,
-    address: String,
-    city: String,
+    street: String,
+    district: String,
+    state: String,
     pincode: String
+  },
+  deliveryCharge: {
+    type: Number,
+    default: 50
   },
   status: {
     type: String,
@@ -41,6 +46,18 @@ const sparePartOrderSchema = new mongoose.Schema({
   paymentId: {
     type: String,
     default: null
+  },
+  vendorDiscount: {
+    type: Number,
+    default: 0
+  },
+  subscriptionDiscount: {
+    type: Number,
+    default: 0
+  },
+  offerDetails: {
+    offerCode: { type: String, default: null },
+    discountAmount: { type: Number, default: 0 }
   },
   cancelReason: {
     type: String,

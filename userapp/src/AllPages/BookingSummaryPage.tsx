@@ -18,7 +18,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { fetchCenterDetails, fetchServices, createBooking, fetchUserVehicles, validateOffer, fetchActiveOffers } from '../services/api';
+import { fetchCenterDetails, fetchServices, createBooking, fetchUserVehicles, validateOffer, fetchActiveOffers, fetchMySubscriptions } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type SummaryRouteProp = RouteProp<RootStackParamList, 'BookingSummary'>;
@@ -26,10 +26,10 @@ type SummaryRouteProp = RouteProp<RootStackParamList, 'BookingSummary'>;
 const BookingSummaryPage = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SummaryRouteProp>();
-  const { 
-    centerId, serviceIds, serviceNames, slotDate, slotTime, vehicleId, 
+  const {
+    centerId, serviceIds, serviceNames, slotDate, slotTime, vehicleId,
     category, fuel, vehicleCategory,
-    userName, userPhone, userAddress, latitude, longitude 
+    userName, userPhone, userAddress, latitude, longitude
   } = route.params;
 
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,7 @@ const BookingSummaryPage = () => {
   const [couponInput, setCouponInput] = useState('');
   const [appliedOffer, setAppliedOffer] = useState<any>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [subDiscountAmount, setSubDiscountAmount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
@@ -105,20 +106,49 @@ const BookingSummaryPage = () => {
   const loadSummary = async () => {
     try {
       setLoading(true);
-      
+
       // 1. Fetch Center
       const centerRes = await fetchCenterDetails(centerId);
-      
+
       // 2. Fetch Services (and filter by selected IDs)
-      const servicesRes = await fetchServices('', getApiVehicleCat(vehicleCategory), fuel); 
+      const servicesRes = await fetchServices('', getApiVehicleCat(vehicleCategory), fuel);
       const selectedServices = servicesRes.data.filter((s: any) => serviceIds.includes(s._id));
-      
+
       // 3. Fetch Vehicle
       const vehiclesRes = await fetchUserVehicles();
       const selectedVehicle = vehiclesRes.data.find((v: any) => v._id === vehicleId);
 
       const subtotal = selectedServices.reduce((sum: number, s: any) => sum + (s.price || 0), 0);
-      const tax = Math.round(subtotal * 0.18 * 100) / 100;
+      let calculatedSubDiscount = 0;
+
+      // 4. Check for active subscription discount
+      try {
+        const mySub: any = await fetchMySubscriptions();
+        if (mySub.success && mySub.active && mySub.active.plan && mySub.active.plan.features) {
+          const activeSub = mySub.active;
+          let limit = 0;
+          let subDiscPct = 0;
+          for (const feature of activeSub.plan.features) {
+            const match = feature.match(/(\d+)\s*service[^\d]*(\d+)%/i);
+            if (match) {
+              limit = parseInt(match[1], 10);
+              subDiscPct = parseInt(match[2], 10);
+              break;
+            }
+          }
+          if (subDiscPct > 0) {
+            const currentUsage = activeSub.usageTrackers?.servicesUsed || 0;
+            if (currentUsage < limit) {
+              calculatedSubDiscount = Math.round((subtotal * subDiscPct) / 100 * 100) / 100;
+              setSubDiscountAmount(calculatedSubDiscount);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch subscription for discount', e);
+      }
+
+      const tax = Math.round((subtotal - calculatedSubDiscount) * 0.18 * 100) / 100;
 
       setSummaryData({
         vehicle: selectedVehicle,
@@ -126,7 +156,7 @@ const BookingSummaryPage = () => {
         services: selectedServices,
         subtotal,
         tax,
-        total: subtotal + tax,
+        total: subtotal - calculatedSubDiscount + tax,
       });
     } catch (error) {
       console.error(error);
@@ -239,13 +269,13 @@ const BookingSummaryPage = () => {
         longitude,
         couponCode: appliedOffer ? appliedOffer.couponCode : undefined,
       });
-      
+
       if (paymentMethod === 'Cash') {
         navigation.navigate('BookingConfirmation', { bookingRef: res.data.bookingRef });
       } else {
-        navigation.navigate('PaymentSimulation', { 
+        navigation.navigate('PaymentSimulation', {
           amount: summaryData.total - discountAmount,
-          bookingData: res.data 
+          bookingData: res.data
         });
       }
     } catch (error: any) {
@@ -257,15 +287,15 @@ const BookingSummaryPage = () => {
 
   if (loading || !summaryData) return (
     <View style={styles.loadingContainer}>
-       <ActivityIndicator size="large" color={COLORS.primary} />
-       <Text style={styles.loadingText}>Preparing your summary...</Text>
+      <ActivityIndicator size="large" color={COLORS.primary} />
+      <Text style={styles.loadingText}>Preparing your summary...</Text>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
@@ -361,8 +391,14 @@ const BookingSummaryPage = () => {
             </View>
             {discountAmount > 0 && (
               <View style={styles.priceRow}>
-                <Text style={[styles.priceLabel, { color: '#00d084' }]}>Discount</Text>
+                <Text style={[styles.priceLabel, { color: '#00d084' }]}>Coupon Discount</Text>
                 <Text style={[styles.priceValue, { color: '#00d084' }]}>- ₹{discountAmount}</Text>
+              </View>
+            )}
+            {subDiscountAmount > 0 && (
+              <View style={styles.priceRow}>
+                <Text style={[styles.priceLabel, { color: '#F5A623', width: 140 }]}>⭐ Sub Discount</Text>
+                <Text style={[styles.priceValue, { color: '#F5A623' }]}>- ₹{subDiscountAmount}</Text>
               </View>
             )}
             <View style={[styles.priceRow, { marginTop: 10 }]}>
@@ -508,7 +544,7 @@ const BookingSummaryPage = () => {
         {/* Payment Method */}
         <View style={styles.paymentSection}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.paymentCard}
             onPress={() => setShowPaymentModal(true)}
           >
@@ -517,8 +553,8 @@ const BookingSummaryPage = () => {
                 {paymentMethod === 'Cash' ? '💵' : paymentMethod === 'GPay' ? '📱' : '💳'}
               </Text>
               <Text style={styles.paymentText}>
-                {paymentMethod === 'Cash' ? 'Pay at Center (Cash)' : 
-                 paymentMethod === 'GPay' ? 'Google Pay (UPI)' : 'Credit / Debit Card'}
+                {paymentMethod === 'Cash' ? 'Pay at Center (Cash)' :
+                  paymentMethod === 'GPay' ? 'Google Pay (UPI)' : 'Credit / Debit Card'}
               </Text>
             </View>
             <Text style={styles.changeText}>Change</Text>
@@ -540,7 +576,7 @@ const BookingSummaryPage = () => {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.optionItem, paymentMethod === 'Cash' && styles.selectedOption]}
                 onPress={() => { setPaymentMethod('Cash'); setShowPaymentModal(false); }}
               >
@@ -553,7 +589,7 @@ const BookingSummaryPage = () => {
 
 
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.optionItem, paymentMethod === 'Razorpay' && styles.selectedOption]}
                 onPress={() => { setPaymentMethod('Razorpay'); setShowPaymentModal(false); }}
               >
@@ -569,8 +605,8 @@ const BookingSummaryPage = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.confirmButton, submitting && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[styles.confirmButton, submitting && styles.disabledButton]}
           onPress={handleConfirmBooking}
           disabled={submitting}
         >
@@ -607,7 +643,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    marginTop:30,
+    marginTop: 30,
     backgroundColor: '#060606',
   },
   backButton: {

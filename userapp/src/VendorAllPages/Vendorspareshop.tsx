@@ -14,12 +14,12 @@ import {
     KeyboardAvoidingView,
     Platform
 } from 'react-native';
-import { SafeStorage, fetchProfile, fetchSpareParts, createSparePartOrder, getMySparePartOrders, updateSparePartOrderPayment, cancelSparePartOrder } from '../services/api';
+import { SafeStorage, fetchProfile, fetchSpareParts, createSparePartOrder, getMySparePartOrders, updateSparePartOrderPayment, cancelSparePartOrder, addSparePartReview } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { getImageUrl } from '../constants/config';
 import RazorpayCheckout from 'react-native-razorpay';
 
-const UserProductspare = () => {
+const Vendorspareshop = () => {
     const navigation = useNavigation();
 
     // Tab State
@@ -41,6 +41,13 @@ const UserProductspare = () => {
     const [orderToCancel, setOrderToCancel] = useState<any>(null);
     const [cancelReason, setCancelReason] = useState('');
 
+    // Review State
+    const [reviewModalVisible, setReviewModalVisible] = useState(false);
+    const [partToReview, setPartToReview] = useState<any>(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [existingReview, setExistingReview] = useState<any>(null);
+
     // Orders State
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [ordersLoading, setOrdersLoading] = useState(false);
@@ -48,12 +55,17 @@ const UserProductspare = () => {
     // Search and Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('All');
+    const [filterModalVisible, setFilterModalVisible] = useState(false);
 
     // User Form Details
+    const [userId, setUserId] = useState('');
     const [userName, setUserName] = useState('');
     const [userPhone, setUserPhone] = useState('');
     const [userEmail, setUserEmail] = useState('');
-    const [userAddress, setUserAddress] = useState('');
+    const [userStreet, setUserStreet] = useState('');
+    const [userDistrict, setUserDistrict] = useState('');
+    const [userState, setUserState] = useState('');
+    const [userPincode, setUserPincode] = useState('');
 
     useEffect(() => {
         loadUserDetails();
@@ -100,18 +112,26 @@ const UserProductspare = () => {
             const storedUserStr = await SafeStorage.getItem('user');
             if (storedUserStr) {
                 const storedUser = JSON.parse(storedUserStr);
+                setUserId(storedUser._id || storedUser.id || '');
                 setUserName(storedUser.name || '');
                 setUserPhone(storedUser.phone || '');
                 setUserEmail(storedUser.email || '');
-                setUserAddress(storedUser.address || '');
+                setUserStreet(storedUser.address?.street || '');
+                setUserDistrict(storedUser.address?.city || '');
+                setUserState(storedUser.address?.state || '');
+                setUserPincode(storedUser.address?.pincode || '');
             }
 
             const res: any = await fetchProfile();
             if (res.success && res.user) {
+                setUserId(res.user._id || res.user.id || userId);
                 setUserName(res.user.name || userName);
                 setUserPhone(res.user.phone || userPhone);
                 setUserEmail(res.user.email || userEmail);
-                setUserAddress(res.user.address || userAddress);
+                setUserStreet(res.user.address?.street || userStreet);
+                setUserDistrict(res.user.address?.city || userDistrict);
+                setUserState(res.user.address?.state || userState);
+                setUserPincode(res.user.address?.pincode || userPincode);
             }
         } catch (e) {
             console.warn('Could not load user details for order:', e);
@@ -143,11 +163,49 @@ const UserProductspare = () => {
                 Alert.alert(
                     'Order Cancelled',
                     'Your order has been cancelled successfully.',
-                    [{ text: 'OK', onPress: () => { setCancelReason(''); loadMyOrders(); } }]
+                    [{ text: 'OK', onPress: () => { setCancelReason(''); loadMyOrders(); loadSpareParts(); } }]
                 );
             }
         } catch (error: any) {
             Alert.alert('Error', error.response?.data?.error || 'Failed to cancel order. Please try again.');
+        }
+    };
+
+    const openReviewModal = (order: any) => {
+        setPartToReview(order.sparePart);
+        
+        // Find if user already reviewed
+        const userReview = order.sparePart?.reviews?.find((r: any) => r.user === userId || r.user?._id === userId);
+        
+        if (userReview) {
+            setExistingReview(userReview);
+            setReviewRating(userReview.rating || 5);
+            setReviewComment(userReview.comment || '');
+        } else {
+            setExistingReview(null);
+            setReviewRating(5);
+            setReviewComment('');
+        }
+        
+        setReviewModalVisible(true);
+    };
+
+    const handleSubmitReview = async () => {
+        if (!reviewComment.trim()) {
+            Alert.alert('Error', 'Please provide a comment for your review.');
+            return;
+        }
+
+        try {
+            const res: any = await addSparePartReview(partToReview._id, reviewRating, reviewComment);
+            if (res.success) {
+                setReviewModalVisible(false);
+                Alert.alert('Success', 'Review submitted successfully!', [
+                    { text: 'OK', onPress: () => loadMyOrders() }
+                ]);
+            }
+        } catch (error: any) {
+            Alert.alert('Error', error.response?.data?.error || 'Failed to submit review.');
         }
     };
 
@@ -158,36 +216,40 @@ const UserProductspare = () => {
     };
 
     const handlePlaceOrder = async () => {
-        if (!userName || !userPhone || !userAddress) {
-            Alert.alert('Error', 'Please fill in all mandatory details (Name, Phone, Address).');
+        if (!userName || !userPhone || !userStreet || !userDistrict || !userState || !userPincode) {
+            Alert.alert('Error', 'Please fill in all mandatory details including full address.');
             return;
         }
 
         try {
+            // Calculate amount with 10% vendor discount and delivery charge
+            const itemTotal = selectedPart.amount * (parseInt(quantity, 10) || 1);
+            const discount = itemTotal * 0.10;
+            const amount = (itemTotal - discount) + 50;
+
             const orderData = {
                 sparePartId: selectedPart._id,
                 quantity: parseInt(quantity, 10) || 1,
+                totalAmount: amount,
                 shippingAddress: {
                     name: userName,
                     phone: userPhone,
-                    address: userAddress,
-                    city: '', // Optional fields that could be added later
-                    pincode: ''
+                    street: userStreet,
+                    district: userDistrict,
+                    state: userState,
+                    pincode: userPincode
                 }
             };
 
             const res: any = await createSparePartOrder(orderData);
 
             if (res.success) {
-                // Calculate amount
-                const amount = selectedPart.amount * (parseInt(quantity, 10) || 1);
-
                 const options = {
                     description: `Payment for ${selectedPart.name}`,
                     image: 'https://i.imgur.com/3g7nmJC.png',
                     currency: 'INR',
                     key: 'rzp_test_SfkV0cySd3CwyQ',
-                    amount: amount * 100, // amount in paise
+                    amount: Math.round(amount * 100), // amount in paise, ensure integer
                     name: 'Kevell Motor Services',
                     theme: { color: '#f28b2c' },
                     prefill: {
@@ -281,7 +343,7 @@ const UserProductspare = () => {
                 <View style={styles.orderDetails}>
                     <Text style={styles.orderPartName} numberOfLines={2}>{item.sparePart?.name || 'Unknown Part'}</Text>
                     <Text style={styles.orderPartBrand}>{item.sparePart?.brand || 'Generic'}</Text>
-                    <Text style={styles.orderQtyText}>Qty: <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.quantity}</Text></Text>
+                    <Text style={styles.orderQtyText}>Qty: <Text style={{ color: '#333', fontWeight: 'bold' }}>{item.quantity}</Text></Text>
                     <Text style={styles.orderPriceText}>Total: ₹{item.totalAmount}</Text>
                 </View>
             </View>
@@ -296,47 +358,52 @@ const UserProductspare = () => {
                             <Text style={styles.footerButtonText}>✕ Cancel</Text>
                         </TouchableOpacity>
                     ) : null}
+                    {item.status === 'Delivered' ? (
+                        <TouchableOpacity onPress={() => openReviewModal(item)} style={[styles.footerButton, { backgroundColor: '#f59e0b' }]}>
+                            <Text style={[styles.footerButtonText, { color: '#fff' }]}>⭐ Review</Text>
+                        </TouchableOpacity>
+                    ) : null}
                 </View>
             </View>
         </View>
     );
 
-    const renderProductItem = ({ item }: { item: any }) => (
-        <View style={styles.card}>
-            <Image source={{ uri: getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} style={styles.productImage} />
-            <View style={styles.cardContent}>
-                <View style={styles.categoryBrandRow}>
-                    <Text style={styles.categoryText} numberOfLines={1}>{item.category || 'Spare'}</Text>
-                    <Text style={styles.brandText} numberOfLines={1}>{item.brand || 'Generic'}</Text>
-                </View>
-                <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-                <View style={styles.priceRatingRow}>
-                    <View style={styles.ratingContainer}>
-                        <Text style={styles.starIcon}>⭐</Text>
-                        <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
+    const renderProductItem = ({ item }: { item: any }) => {
+        const isOutOfStock = item.stockQty <= 0;
+        
+        return (
+            <View style={styles.card}>
+                <Image source={{ uri: getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} style={styles.productImage} />
+                <View style={styles.cardContent}>
+                    <View style={styles.categoryBrandRow}>
+                        <Text style={styles.categoryText} numberOfLines={1}>{item.category || 'Spare'}</Text>
+                        <Text style={styles.brandText} numberOfLines={1}>{item.brand || 'Generic'}</Text>
                     </View>
-                    <Text style={styles.productPrice}>₹{item.amount}</Text>
+                    <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+                    <View style={styles.priceRatingRow}>
+                        <View style={styles.ratingContainer}>
+                            <Text style={styles.starIcon}>⭐</Text>
+                            <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
+                        </View>
+                        <Text style={styles.productPrice}>₹{item.amount}</Text>
+                    </View>
+                    <Text style={[styles.stockText, { color: isOutOfStock ? '#ff5252' : '#4caf50' }]} numberOfLines={1}>
+                        {isOutOfStock ? 'Out of Stock' : `${item.stockQty} left`}
+                    </Text>
+                    <TouchableOpacity
+                        style={[styles.buyButton, isOutOfStock && { backgroundColor: '#ccc' }]}
+                        onPress={() => openOrderModal(item)}
+                        disabled={isOutOfStock}
+                    >
+                        <Text style={styles.buyButtonText}>Buy Now</Text>
+                    </TouchableOpacity>
                 </View>
-                <Text style={[styles.stockText, { color: item.status === 'Out of Stock' ? '#ff5252' : '#4caf50' }]} numberOfLines={1}>
-                    {item.status === 'Out of Stock' ? 'Out of Stock' : `${item.stockQty} left`}
-                </Text>
-                <TouchableOpacity
-                    style={[styles.buyButton, item.status === 'Out of Stock' && { backgroundColor: '#555' }]}
-                    onPress={() => openOrderModal(item)}
-                    disabled={item.status === 'Out of Stock'}
-                >
-                    <Text style={styles.buyButtonText}>Buy Now</Text>
-                </TouchableOpacity>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Spare Parts</Text>
-            </View>
-
             <View style={styles.toggleContainer}>
                 <TouchableOpacity
                     style={[styles.toggleButton, activeTab === 'parts' && styles.toggleButtonActive]}
@@ -365,19 +432,10 @@ const UserProductspare = () => {
                                 onChangeText={setSearchQuery}
                             />
                         </View>
+                        <TouchableOpacity style={styles.filterIconButton} onPress={() => setFilterModalVisible(true)}>
+                            <Text style={styles.filterIconText}>⚙️</Text>
+                        </TouchableOpacity>
                     </View>
-
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChipsContainer} contentContainerStyle={{ paddingHorizontal: 20 }}>
-                        {['All', 'Bike', 'Car', 'Heavy'].map(cat => (
-                            <TouchableOpacity
-                                key={cat}
-                                style={[styles.filterChip, filterCategory === cat && styles.filterChipActive]}
-                                onPress={() => setFilterCategory(cat)}
-                            >
-                                <Text style={[styles.filterChipText, filterCategory === cat && styles.filterChipTextActive]}>{cat}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
 
                     <FlatList
                         data={filteredParts}
@@ -417,7 +475,7 @@ const UserProductspare = () => {
                         style={styles.modalContent}
                     >
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Complete Your Order</Text>
+                            <Text style={styles.modalTitle}>Your Order Details</Text>
                             <TouchableOpacity onPress={() => setOrderModalVisible(false)}>
                                 <Text style={styles.closeIcon}>✕</Text>
                             </TouchableOpacity>
@@ -427,7 +485,22 @@ const UserProductspare = () => {
                             {selectedPart && (
                                 <View style={styles.orderSummary}>
                                     <Text style={styles.summaryTitle}>Item: {selectedPart.name}</Text>
-                                    <Text style={styles.summaryPrice}>Total: ₹{selectedPart.amount}</Text>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+                                        <Text style={{ color: '#666', flex: 1 }}>Total:</Text>
+                                        <Text style={{ color: '#333', width: 60 }}>₹{selectedPart.amount * (parseInt(quantity, 10) || 1)}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+                                        <Text style={{ color: '#10b981', flex: 1 }}>Vendor Discount (10%):</Text>
+                                        <Text style={{ color: '#10b981' }}>-₹{(selectedPart.amount * (parseInt(quantity, 10) || 1) * 0.10).toFixed(2)}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+                                        <Text style={{ color: '#666', flex: 1 }}>Delivery Charge:</Text>
+                                        <Text style={{ color: '#333' , width:60 }}>₹50</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10 }}>
+                                        <Text style={[styles.summaryPrice, { marginTop: 0, flex: 1 }]}>Sub Total:</Text>
+                                        <Text style={[styles.summaryPrice, { marginTop: 0 }]}>₹{((selectedPart.amount * (parseInt(quantity, 10) || 1) * 0.90) + 50).toFixed(2)}</Text>
+                                    </View>
                                 </View>
                             )}
 
@@ -460,15 +533,42 @@ const UserProductspare = () => {
                                 keyboardType="email-address"
                             />
 
-                            <Text style={styles.inputLabel}>Delivery Address</Text>
+                            <Text style={styles.inputLabel}>Street / Area</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
-                                value={userAddress}
-                                onChangeText={setUserAddress}
-                                placeholder="Enter delivery address"
+                                style={styles.input}
+                                value={userStreet}
+                                onChangeText={setUserStreet}
+                                placeholder="Enter street or area"
                                 placeholderTextColor="#666"
-                                multiline
-                                numberOfLines={3}
+                            />
+
+                            <Text style={styles.inputLabel}>District</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={userDistrict}
+                                onChangeText={setUserDistrict}
+                                placeholder="Enter district"
+                                placeholderTextColor="#666"
+                            />
+
+                            <Text style={styles.inputLabel}>State</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={userState}
+                                onChangeText={setUserState}
+                                placeholder="Enter state"
+                                placeholderTextColor="#666"
+                            />
+
+                            <Text style={styles.inputLabel}>Pincode</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={userPincode}
+                                onChangeText={setUserPincode}
+                                placeholder="Enter pincode"
+                                placeholderTextColor="#666"
+                                keyboardType="number-pad"
+                                maxLength={6}
                             />
 
                             <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
@@ -523,6 +623,24 @@ const UserProductspare = () => {
                                             <Text style={styles.infoLabel}>Order ID:</Text>
                                             <Text style={styles.infoValue}>{selectedOrder._id}</Text>
                                         </View>
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.infoLabel}>Item Total:</Text>
+                                            <Text style={styles.infoValue}>₹{selectedOrder.sparePart?.amount * selectedOrder.quantity}</Text>
+                                        </View>
+                                        {selectedOrder.vendorDiscount > 0 && (
+                                            <View style={styles.infoRow}>
+                                                <Text style={styles.infoLabel}>Vendor Discount:</Text>
+                                                <Text style={[styles.infoValue, { color: '#10b981' }]}>-₹{selectedOrder.vendorDiscount.toFixed(2)}</Text>
+                                            </View>
+                                        )}
+                                        <View style={styles.infoRow}>
+                                            <Text style={styles.infoLabel}>Delivery Charge:</Text>
+                                            <Text style={styles.infoValue}>₹{selectedOrder.deliveryCharge || 50}</Text>
+                                        </View>
+                                        <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 8, marginTop: 4 }]}>
+                                            <Text style={[styles.infoLabel, { fontWeight: 'bold' }]}>Grand Total:</Text>
+                                            <Text style={[styles.infoValue, { color: '#10b981', fontWeight: 'bold' }]}>₹{selectedOrder.totalAmount}</Text>
+                                        </View>
                                         {selectedOrder.paymentId && (
                                             <View style={styles.infoRow}>
                                                 <Text style={styles.infoLabel}>Payment ID:</Text>
@@ -530,13 +648,19 @@ const UserProductspare = () => {
                                             </View>
                                         )}
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Total Amount:</Text>
-                                            <Text style={[styles.infoValue, { color: '#10b981' }]}>₹{selectedOrder.totalAmount}</Text>
+                                            <Text style={styles.infoLabel}>Payment Status:</Text>
+                                            <Text style={styles.infoValue}>{selectedOrder.paymentStatus || 'Pending'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Status:</Text>
+                                            <Text style={styles.infoLabel}>Order Status:</Text>
                                             <Text style={[styles.infoValue, { color: getStatusColor(selectedOrder.status) }]}>{selectedOrder.status}</Text>
                                         </View>
+                                        {selectedOrder.status === 'Cancelled' && selectedOrder.cancelReason && (
+                                            <View style={[styles.infoRow, { borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 8, marginTop: 4 }]}>
+                                                <Text style={[styles.infoLabel, { color: '#ef4444' }]}>Cancel Reason:</Text>
+                                                <Text style={[styles.infoValue, { color: '#ef4444' }]}>{selectedOrder.cancelReason}</Text>
+                                            </View>
+                                        )}
                                     </View>
 
                                     <View style={styles.detailsSection}>
@@ -596,6 +720,99 @@ const UserProductspare = () => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
+
+            {/* Review Modal */}
+            <Modal
+                visible={reviewModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setReviewModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={styles.modalContent}
+                    >
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Rate & Review</Text>
+                            <TouchableOpacity onPress={() => setReviewModalVisible(false)}>
+                                <Text style={styles.closeIcon}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={[styles.inputLabel, { textAlign: 'center', marginBottom: 15 }]}>How was your experience with {partToReview?.name}?</Text>
+                            
+                            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 25 }}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <TouchableOpacity key={star} onPress={() => !existingReview && setReviewRating(star)} disabled={!!existingReview}>
+                                        <Text style={{ fontSize: 35, color: star <= reviewRating ? '#f59e0b' : '#d1d5db', marginHorizontal: 5 }}>★</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text style={styles.inputLabel}>Review Comment</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea, existingReview && { backgroundColor: '#f0f0f0', color: '#888' }]}
+                                value={reviewComment}
+                                onChangeText={setReviewComment}
+                                placeholder="Share your experience with this part..."
+                                placeholderTextColor="#666"
+                                multiline
+                                numberOfLines={4}
+                                editable={!existingReview}
+                            />
+
+                            {existingReview && existingReview.vendorReply && (
+                                <View style={{ backgroundColor: '#fff7ed', padding: 15, borderRadius: 10, marginTop: 10, marginBottom: 20, borderLeftWidth: 3, borderLeftColor: '#f28b2c' }}>
+                                    <Text style={{ color: '#f28b2c', fontWeight: 'bold', marginBottom: 5 }}>Vendor Response:</Text>
+                                    <Text style={{ color: '#555' }}>{existingReview.vendorReply}</Text>
+                                </View>
+                            )}
+
+                            <TouchableOpacity 
+                                style={[styles.placeOrderButton, existingReview && { backgroundColor: '#ccc' }]} 
+                                onPress={handleSubmitReview}
+                                disabled={!!existingReview}
+                            >
+                                <Text style={styles.placeOrderText}>{existingReview ? 'Already Reviewed' : 'Submit Review'}</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </KeyboardAvoidingView>
+                </View>
+            </Modal>
+
+            {/* Filter Modal */}
+            <Modal
+                visible={filterModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setFilterModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { maxHeight: '50%' }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Filter by Category</Text>
+                            <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                                <Text style={styles.closeIcon}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+                        
+                        {['All', 'Bike', 'Car', 'Heavy'].map(cat => (
+                            <TouchableOpacity
+                                key={cat}
+                                style={[styles.filterModalOption, filterCategory === cat && styles.filterModalOptionActive]}
+                                onPress={() => {
+                                    setFilterCategory(cat);
+                                    setFilterModalVisible(false);
+                                }}
+                            >
+                                <Text style={[styles.filterModalOptionText, filterCategory === cat && styles.filterModalOptionTextActive]}>{cat}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -603,30 +820,30 @@ const UserProductspare = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#f5f5f5',
     },
     header: {
         paddingTop: 50,
         paddingHorizontal: 20,
         paddingBottom: 20,
-        backgroundColor: '#111',
+        backgroundColor: '#ffffff',
         borderBottomWidth: 1,
-        borderBottomColor: '#333',
+        borderBottomColor: '#e0e0e0',
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#fff',
+        color: '#333',
     },
     toggleContainer: {
         flexDirection: 'row',
-        backgroundColor: '#1a1a1c',
+        backgroundColor: '#f0f0f0',
         marginHorizontal: 20,
-        marginTop: 20,
+        marginTop: 10,
         borderRadius: 12,
         padding: 5,
         borderWidth: 1,
-        borderColor: '#2a2a2c',
+        borderColor: '#e0e0e0',
     },
     toggleButton: {
         flex: 1,
@@ -638,7 +855,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f28b2c',
     },
     toggleText: {
-        color: '#888',
+        color: '#666',
         fontWeight: 'bold',
         fontSize: 14,
     },
@@ -656,10 +873,10 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#111',
+        backgroundColor: '#ffffff',
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#ddd',
         paddingHorizontal: 15,
         height: 45,
     },
@@ -670,49 +887,52 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        color: '#fff',
+        color: '#333',
         fontSize: 15,
     },
-    filterChipsContainer: {
-        marginBottom: 15,
-        height: 40,
-        flexGrow: 0,
-    },
-    filterChip: {
-        paddingHorizontal: 25,
-        height: 40,
-        borderRadius: 50,
-        backgroundColor: '#111',
-        marginRight: 10,
+    filterIconButton: {
+        backgroundColor: '#ffffff',
+        borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#ddd',
+        width: 45,
+        height: 45,
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: 10,
     },
-    filterChipActive: {
-        backgroundColor: '#f28b2c',
-        borderColor: '#f28b2c',
+    filterIconText: {
+        fontSize: 18,
     },
-    filterChipText: {
-        color: '#ccc',
-        fontSize: 13,
-        fontWeight: '600',
+    filterModalOption: {
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingHorizontal: 10,
     },
-    filterChipTextActive: {
-        color: '#fff',
+    filterModalOptionActive: {
+        backgroundColor: '#fff7ed', // light orange
+    },
+    filterModalOptionText: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
+    },
+    filterModalOptionTextActive: {
+        color: '#f28b2c',
         fontWeight: 'bold',
     },
     listContainer: {
         paddingHorizontal: 10,
-        paddingBottom: 120, // Leave space for bottom tabs
+        paddingBottom: 20, // Reduced from 120
     },
     card: {
-        backgroundColor: '#111',
+        backgroundColor: '#ffffff',
         borderRadius: 12,
         marginBottom: 15,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#e0e0e0',
         width: '31%',
         marginHorizontal: '1.15%',
     },
@@ -738,7 +958,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     brandText: {
-        color: '#aaa',
+        color: '#888',
         fontSize: 9,
         fontWeight: '600',
         textAlign: 'right',
@@ -747,7 +967,7 @@ const styles = StyleSheet.create({
     productName: {
         fontSize: 12,
         fontWeight: '700',
-        color: '#fff',
+        color: '#333',
         marginBottom: 4,
         height: 19,
     },
@@ -767,12 +987,12 @@ const styles = StyleSheet.create({
     },
     ratingText: {
         fontSize: 10,
-        color: '#ccc',
+        color: '#555',
         fontWeight: 'bold',
     },
     productPrice: {
         fontSize: 13,
-        color: '#ccc',
+        color: '#333',
         fontWeight: '600',
     },
     buyButton: {
@@ -792,7 +1012,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     emptyText: {
-        color: '#888',
+        color: '#666',
         textAlign: 'center',
         marginTop: 50,
         fontSize: 16,
@@ -800,12 +1020,12 @@ const styles = StyleSheet.create({
 
     // Order Cards Styles
     orderCard: {
-        backgroundColor: '#151517',
+        backgroundColor: '#ffffff',
         borderRadius: 16,
         marginBottom: 15,
         padding: 15,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#e0e0e0',
         marginHorizontal: 10,
     },
     orderHeaderRow: {
@@ -814,11 +1034,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#222',
+        borderBottomColor: '#eee',
         paddingBottom: 10,
     },
     orderIdText: {
-        color: '#fff',
+        color: '#333',
         fontWeight: 'bold',
         fontSize: 13,
         fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
@@ -842,16 +1062,16 @@ const styles = StyleSheet.create({
         width: 70,
         height: 70,
         borderRadius: 10,
-        backgroundColor: '#09090b',
+        backgroundColor: '#f5f5f5',
         marginRight: 15,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: '#e0e0e0',
     },
     orderDetails: {
         flex: 1,
     },
     orderPartName: {
-        color: '#fff',
+        color: '#333',
         fontSize: 15,
         fontWeight: 'bold',
         marginBottom: 3,
@@ -864,7 +1084,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     orderQtyText: {
-        color: '#aaa',
+        color: '#666',
         fontSize: 13,
         marginBottom: 3,
     },
@@ -876,19 +1096,19 @@ const styles = StyleSheet.create({
     },
     orderFooter: {
         borderTopWidth: 1,
-        borderTopColor: '#222',
+        borderTopColor: '#eee',
         paddingTop: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     orderDateText: {
-        color: '#666',
+        color: '#888',
         fontSize: 11,
         fontWeight: '600',
     },
     footerButton: {
-        backgroundColor: '#222',
+        backgroundColor: '#f0f0f0',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
@@ -896,7 +1116,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     footerButtonText: {
-        color: '#fff',
+        color: '#333',
         fontSize: 11,
         fontWeight: '600',
     },
@@ -904,11 +1124,11 @@ const styles = StyleSheet.create({
     // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#ffffff',
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         padding: 25,
@@ -923,7 +1143,7 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#fff',
+        color: '#333',
     },
     closeIcon: {
         fontSize: 24,
@@ -931,7 +1151,7 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     orderSummary: {
-        backgroundColor: '#222',
+        backgroundColor: '#f9f9f9',
         padding: 15,
         borderRadius: 10,
         marginBottom: 20,
@@ -939,7 +1159,7 @@ const styles = StyleSheet.create({
         borderLeftColor: '#f28b2c',
     },
     summaryTitle: {
-        color: '#fff',
+        color: '#333',
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 5,
@@ -950,17 +1170,17 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     inputLabel: {
-        color: '#ccc',
+        color: '#555',
         fontSize: 14,
         marginBottom: 8,
         marginLeft: 4,
     },
     input: {
-        backgroundColor: '#111',
+        backgroundColor: '#f9f9f9',
         borderWidth: 1,
-        borderColor: '#333',
+        borderColor: '#ddd',
         borderRadius: 10,
-        color: '#fff',
+        color: '#333',
         paddingHorizontal: 15,
         paddingVertical: 12,
         fontSize: 16,
@@ -985,7 +1205,7 @@ const styles = StyleSheet.create({
     },
     viewIconContainer: {
         padding: 4,
-        backgroundColor: '#222',
+        backgroundColor: '#f0f0f0',
         borderRadius: 6,
     },
     viewIcon: {
@@ -993,7 +1213,7 @@ const styles = StyleSheet.create({
     },
     detailsSection: {
         marginBottom: 20,
-        backgroundColor: '#222',
+        backgroundColor: '#f9f9f9',
         padding: 15,
         borderRadius: 12,
     },
@@ -1003,7 +1223,7 @@ const styles = StyleSheet.create({
         color: '#f28b2c',
         marginBottom: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#333',
+        borderBottomColor: '#eee',
         paddingBottom: 5,
     },
     infoRow: {
@@ -1012,23 +1232,23 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     infoLabel: {
-        color: '#888',
+        color: '#666',
         fontSize: 14,
         flex: 1,
     },
     infoValue: {
-        color: '#fff',
+        color: '#333',
         fontSize: 14,
         fontWeight: '600',
         flex: 2,
         textAlign: 'right',
     },
     addressText: {
-        color: '#ccc',
+        color: '#555',
         fontSize: 14,
         marginBottom: 4,
         lineHeight: 20,
     },
 });
 
-export default UserProductspare;
+export default Vendorspareshop;

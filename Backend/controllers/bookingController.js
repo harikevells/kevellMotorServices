@@ -5,6 +5,7 @@ const ServiceType = require('../models/ServiceType');
 const Slot = require('../models/Slot');
 const Tracking = require('../models/Tracking');
 const User = require('../models/User');
+const UserSubscription = require('../models/UserSubscription');
 const mongoose = require('mongoose');
 const { createNotification } = require('./notificationController');
 
@@ -89,6 +90,42 @@ exports.createBooking = async (req, res, next) => {
       }
     }
 
+    // Apply dynamic subscription discount if active subscription exists
+    let subscriptionDiscount = 0;
+    const activeSub = await UserSubscription.findOne({ 
+      user: req.user.id, 
+      status: 'active',
+      expiryDate: { $gt: new Date() }
+    }).populate('plan');
+    
+    if (activeSub && activeSub.plan && activeSub.plan.features) {
+      // Find a feature matching e.g., "3 service Booking 20%"
+      let limit = 0;
+      let discountPercentage = 0;
+      
+      for (const feature of activeSub.plan.features) {
+        const match = feature.match(/(\d+)\s*service[^\d]*(\d+)%/i);
+        if (match) {
+          limit = parseInt(match[1], 10);
+          discountPercentage = parseInt(match[2], 10);
+          break; // Stop at first match
+        }
+      }
+
+      if (discountPercentage > 0) {
+        const currentUsage = activeSub.usageTrackers?.servicesUsed || 0;
+        if (currentUsage < limit) {
+          subscriptionDiscount = (subtotal * discountPercentage) / 100;
+          subtotal -= subscriptionDiscount;
+          
+          // Increment usage immediately
+          if (!activeSub.usageTrackers) activeSub.usageTrackers = {};
+          activeSub.usageTrackers.servicesUsed = currentUsage + 1;
+          await activeSub.save();
+        }
+      }
+    }
+
     const tax = Math.round(subtotal * 0.18 * 100) / 100; // 18% GST
     const totalAmount = subtotal + tax;
 
@@ -141,10 +178,14 @@ exports.createBooking = async (req, res, next) => {
       bookingDate,
       timeSlot,
       paymentMethod,
-      totalAmount,
-      tax,
-      couponCode,
       specialInstructions,
+      
+      subtotal: Math.round(subtotal * 100) / 100,
+      tax,
+      discountAmount,
+      subscriptionDiscount,
+      totalAmount,
+      appliedOffer: appliedOffer ? appliedOffer._id : null,
       status: 'pending'
     });
 
@@ -260,7 +301,12 @@ exports.cancelBooking = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Cannot cancel active or completed service' });
     }
 
+    const { reason } = req.body;
+
     booking.status = 'cancelled';
+    if (reason) {
+      booking.cancelReason = reason;
+    }
     await booking.save();
 
     // Revert slot count
@@ -275,7 +321,7 @@ exports.cancelBooking = async (req, res, next) => {
     // To Admin
     await createNotification({
       title: 'Booking Cancelled',
-      message: `Booking ${booking.bookingRef} has been cancelled by the user.`,
+      message: `Booking ${booking.bookingRef} has been cancelled by the user. Reason: ${reason || 'Not provided'}`,
       type: 'booking',
       recipientRole: 'admin',
       data: { bookingId: booking._id }
@@ -286,7 +332,7 @@ exports.cancelBooking = async (req, res, next) => {
     if (vendor) {
       await createNotification({
         title: 'Booking Cancelled',
-        message: `Booking ${booking.bookingRef} has been cancelled by the customer.`,
+        message: `Booking ${booking.bookingRef} has been cancelled by the customer. Reason: ${reason || 'Not provided'}`,
         type: 'booking',
         recipientRole: 'vendor',
         recipientId: vendor.user,
@@ -424,6 +470,34 @@ exports.addBookingReview = async (req, res, next) => {
       data: booking
     });
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.replyBookingReview = async (req, res, next) => {
+  try {
+    const { reply } = req.body;
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (!booking.review || !booking.review.rating) {
+      return res.status(400).json({ success: false, message: 'No review found for this booking' });
+    }
+
+    booking.review.reply = reply;
+    booking.review.repliedByRole = req.user.role || 'vendor'; // Fallback if req.user.role is somehow missing
+    booking.markModified('review');
+    await booking.save();
+
+    res.json({
+      success: true,
+      message: 'Reply added successfully',
+      data: booking
+    });
   } catch (error) {
     next(error);
   }

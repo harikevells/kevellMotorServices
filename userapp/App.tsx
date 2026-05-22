@@ -27,6 +27,7 @@ import TrackingPageUs from './src/VendorAllPages/TrackingPageUs';
 import ReviewsRatingsPage from './src/AllPages/ReviewsAndRating';
 import NotificationPage from './src/AllPages/NotificationPage';
 import PaymentSimulationPage from './src/AllPages/PaymentSimulationPage';
+import SubscriptionDetailsPage from './src/AllPages/SubscriptionDetailsPage';
 
 
 export type RootStackParamList = {
@@ -67,6 +68,7 @@ export type RootStackParamList = {
   PaymentSimulation: { amount: number; bookingData: any };
   EditProfile: undefined;
   VendorDrawer: undefined;
+  SubscriptionDetails: undefined;
 };
 
 
@@ -101,6 +103,7 @@ function App() {
           <Stack.Screen name="PaymentSimulation" component={PaymentSimulationPage} />
           <Stack.Screen name="EditProfile" component={require('./src/AllPages/EditProfilePage').default} />
           <Stack.Screen name="VendorDrawer" component={require('./src/VendorAllPages/VendorSidebarNavigator').default} />
+          <Stack.Screen name="SubscriptionDetails" component={SubscriptionDetailsPage} />
         </Stack.Navigator>
 
       </NavigationContainer>

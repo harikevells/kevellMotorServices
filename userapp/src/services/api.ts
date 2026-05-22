@@ -126,6 +126,8 @@ export const fetchSlots = (centerId: string, date: string) =>
 export const createBooking = (data: any) => api.post('/bookings', data);
 export const fetchUserBookings = () => api.get('/bookings');
 export const fetchTracking = (bookingId: string) => api.get('/bookings/' + bookingId + '/track');
+export const cancelBooking = (bookingId: string, reason: string) => api.patch(`/bookings/${bookingId}/cancel`, { reason });
+export const replyBookingReview = (bookingId: string, reply: string) => api.post(`/bookings/${bookingId}/reply`, { reply });
 
 // Offers
 export const fetchActiveOffers = () => api.get('/offers/active');
@@ -160,6 +162,8 @@ export const updateSparePartOrderPayment = (orderId: string, paymentData: any) =
   api.put(`/spare-part-orders/${orderId}/payment`, paymentData);
 export const cancelSparePartOrder = (orderId: string, cancelReason: string) =>
   api.put(`/spare-part-orders/${orderId}/cancel`, { cancelReason });
+export const addSparePartReview = (partId: string, rating: number, comment: string) =>
+  api.post(`/spare-parts/${partId}/reviews`, { rating, comment });
 export const uploadBookingBill = (bookingId: string, formData: FormData) =>
   api.post(`/vendor/orders/${bookingId}/bill`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -178,5 +182,10 @@ export const verifyRazorpayPayment = (data: {
   razorpay_signature: string;
   orderId: string;
 }) => api.post('/razorpay/verify', data);
+
+// Subscriptions
+export const fetchSubscriptions = () => api.get('/subscriptions');
+export const purchaseSubscription = (planId: string) => api.post('/subscriptions/purchase', { planId });
+export const fetchMySubscriptions = () => api.get('/subscriptions/my-subscriptions');
 
 export default api;

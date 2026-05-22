@@ -16,7 +16,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { SafeStorage, fetchProfile } from '../services/api';
+import { SafeStorage, fetchProfile, fetchMySubscriptions } from '../services/api';
 import { getImageUrl } from '../constants/config';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
@@ -27,6 +27,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const ProfilePage = () => {
   const navigation = useNavigation<NavigationProp>();
   const [user, setUser] = useState<any>(null);
+  const [activeSub, setActiveSub] = useState<any>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -45,6 +46,13 @@ const ProfilePage = () => {
       if (res.success) {
         setUser(res.user);
         await SafeStorage.setItem('user', JSON.stringify(res.user));
+      }
+
+      const subRes: any = await fetchMySubscriptions();
+      if (subRes.success && subRes.active) {
+        setActiveSub(subRes.active);
+      } else {
+        setActiveSub(null);
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
@@ -168,6 +176,23 @@ const ProfilePage = () => {
                 </TouchableOpacity>
               </View>
               <Text style={styles.userEmailText}>{user.email?.toLowerCase() || 'user@example.com'}</Text>
+
+              {activeSub && activeSub.plan ? (
+                <TouchableOpacity 
+                  style={styles.subscriptionBadge} 
+                  onPress={() => navigation.navigate('SubscriptionDetails' as any)}
+                >
+                  <Text style={styles.subscriptionBadgeIcon}>⭐</Text>
+                  <Text style={styles.subscriptionBadgeText}>{activeSub.plan.name} Member</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.subscriptionBadgeNone} 
+                  onPress={() => navigation.navigate('Home' as any)}
+                >
+                  <Text style={styles.subscriptionBadgeTextNone}>No Active Plan</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -436,6 +461,39 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingVertical: 10,
   },
+  subscriptionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5A623',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    ...SHADOWS.light,
+  },
+  subscriptionBadgeIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  subscriptionBadgeText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  subscriptionBadgeNone: {
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  subscriptionBadgeTextNone: {
+    color: '#666',
+    fontWeight: '600',
+    fontSize: 12,
+  }
 });
 
 export default ProfilePage;

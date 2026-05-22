@@ -17,6 +17,7 @@ const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onP
   const getLabel = () => {
     switch (name) {
       case 'Dashboard': return 'Dashboard';
+      case 'Vendorspareshop': return 'Shop';
       case 'Orders': return 'Orders';
       case 'Notifications': return 'Notification';
       case 'ChallenBooking': return 'Challen';
@@ -34,6 +35,14 @@ const VendorFooterIcon: React.FC<VendorFooterIconProps> = ({ name, isActive, onP
             <Rect x="14" y="3" width="7" height="5" />
             <Rect x="14" y="12" width="7" height="9" />
             <Rect x="3" y="16" width="7" height="5" />
+          </Svg>
+        );
+      case 'Vendorspareshop':
+        return (
+          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Circle cx="9" cy="21" r="1" />
+            <Circle cx="20" cy="21" r="1" />
+            <Path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
           </Svg>
         );
       case 'Orders':

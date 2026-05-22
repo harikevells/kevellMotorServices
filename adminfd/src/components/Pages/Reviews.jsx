@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-    Spinner
+    Spinner, Modal, Button, Form
 } from 'react-bootstrap';
-import { Search, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Star, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import './Review.css';
 
@@ -28,6 +28,12 @@ const Reviews = () => {
     const [rowsPerPage, setRowsPerPage] = useState(8);
     const [totalReviews, setTotalReviews] = useState(0);
 
+    // Reply Modal States
+    const [showReplyModal, setShowReplyModal] = useState(false);
+    const [selectedReview, setSelectedReview] = useState(null);
+    const [replyText, setReplyText] = useState('');
+    const [submittingReply, setSubmittingReply] = useState(false);
+
     // Fetch Reviews from Backend
     const fetchReviews = useCallback(async () => {
         setLoading(true);
@@ -49,7 +55,9 @@ const Reviews = () => {
                     category: b.vehicleDetails?.vehicle_category || b.vehicle?.vehicle_category || '2 wheeler',
                     createdAt: b.review.createdAt,
                     comment: b.review.comment || '',
-                    rating: b.review.rating
+                    rating: b.review.rating,
+                    reply: b.review.reply || '',
+                    repliedByRole: b.review.repliedByRole || ''
                 }));
 
                 // Apply search
@@ -86,6 +94,38 @@ const Reviews = () => {
     useEffect(() => {
         fetchReviews();
     }, [fetchReviews]);
+
+    const handleOpenReply = (review) => {
+        setSelectedReview(review);
+        setReplyText(review.reply || '');
+        setShowReplyModal(true);
+    };
+
+    const handleReplySubmit = async () => {
+        if (!replyText.trim()) {
+            alert('Please enter a response message.');
+            return;
+        }
+        setSubmittingReply(true);
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.post(
+                `http://localhost:5000/api/bookings/${selectedReview._id}/reply`,
+                { reply: replyText },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                setShowReplyModal(false);
+                fetchReviews(); // Refresh the table
+            }
+        } catch (error) {
+            console.error('Error submitting reply:', error);
+            alert(`Failed to submit reply: ${error.response?.data?.message || error.message}`);
+        } finally {
+            setSubmittingReply(false);
+        }
+    };
 
     // Handle Rating Stars
     const renderStars = (rating) => {
@@ -141,6 +181,7 @@ const Reviews = () => {
                             <th>Review Date & Time</th>
                             <th>Review</th>
                             <th>Ratings</th>
+                            <th>Response</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -164,6 +205,17 @@ const Reviews = () => {
                                         </div>
                                     </td>
                                     <td>{renderStars(review.rating)}</td>
+                                    <td>
+                                        <div className="d-flex align-items-center justify-content-center">
+                                            <MessageCircle 
+                                                size={18} 
+                                                className="cursor-pointer" 
+                                                style={{ color: review.reply ? '#f28b2c' : '#888', cursor: 'pointer' }}
+                                                onClick={() => handleOpenReply(review)}
+                                                title={review.reply ? "Edit Response" : "Add Response"}
+                                            />
+                                        </div>
+                                    </td>
                                 </tr>
                             ))
                         ) : (
@@ -210,6 +262,62 @@ const Reviews = () => {
                     </div>
                 </div>
             </div>
+            {/* Reply Modal */}
+            <Modal show={showReplyModal} onHide={() => setShowReplyModal(false)} centered className="booking-detail-modal">
+                <Modal.Header closeButton className="bg-dark border-secondary">
+                    <Modal.Title className="text-gold text-white">
+                        Respond to Customer Review
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="bg-dark text-white p-4">
+                    {selectedReview && (
+                        <>
+                            <div className="mb-4 p-3 rounded" style={{ backgroundColor: '#111', borderLeft: '3px solid #f28b2c' }}>
+                                <div className="d-flex justify-content-between mb-2">
+                                    <strong className="text-warning">Customer Rating</strong>
+                                    <span>{renderStars(selectedReview.rating)}</span>
+                                </div>
+                                {selectedReview.comment && (
+                                    <p className="mb-0 text-light fst-italic">"{selectedReview.comment}"</p>
+                                )}
+                            </div>
+                            
+                            <Form.Group>
+                                <Form.Label className="text-warning fw-bold">
+                                    {selectedReview.reply 
+                                        ? (selectedReview.repliedByRole === 'admin' ? 'Admin Response' : 'Vendor Response') 
+                                        : 'Your Response'
+                                    }
+                                </Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={4}
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    placeholder="Type your response to the customer here..."
+                                    style={{ backgroundColor: '#222', color: '#FFF', borderColor: '#444' }}
+                                    disabled={!!selectedReview.reply}
+                                />
+                            </Form.Group>
+                        </>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="bg-dark border-secondary">
+                    <Button variant="outline-light" onClick={() => setShowReplyModal(false)} disabled={submittingReply}>
+                        Close
+                    </Button>
+                    {!selectedReview?.reply && (
+                        <Button 
+                            variant="warning" 
+                            onClick={handleReplySubmit}
+                            disabled={submittingReply}
+                            style={{ backgroundColor: '#f28b2c', borderColor: '#f28b2c', color: '#000' }}
+                        >
+                            {submittingReply ? <Spinner size="sm" animation="border" /> : 'Submit Response'}
+                        </Button>
+                    )}
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };
