@@ -55,6 +55,7 @@ const Sparepartorder = () => {
     const [reviewPart, setReviewPart] = useState(null);
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState('');
+    const [reviewVendorReply, setReviewVendorReply] = useState('');
     const [isReadOnlyReview, setIsReadOnlyReview] = useState(false);
     const [showAllReviewsModal, setShowAllReviewsModal] = useState(false);
     const [selectedPartForReviews, setSelectedPartForReviews] = useState(null);
@@ -249,9 +250,17 @@ const Sparepartorder = () => {
         setReviewPart(part);
         setShowReviewModal(true);
 
-        setReviewRating(5);
-        setReviewComment('');
-        setIsReadOnlyReview(false); // Always allow new review
+        if (existingReview) {
+            setReviewRating(existingReview.rating);
+            setReviewComment(existingReview.comment || '');
+            setReviewVendorReply(existingReview.vendorReply || '');
+            setIsReadOnlyReview(true);
+        } else {
+            setReviewRating(5);
+            setReviewComment('');
+            setReviewVendorReply('');
+            setIsReadOnlyReview(false);
+        }
     };
 
     const handleReviewSubmit = async (e) => {
@@ -827,7 +836,7 @@ const Sparepartorder = () => {
                                                             {rev.vendorReply && (
                                                                 <div className="vendor-response-box mt-3">
                                                                     <div className="response-header">
-                                                                        <MessageCircle size={12} className="mr-2" />
+                                                                        <MessageCircle size={12} className="ml-3" />
                                                                         OFFICIAL RESPONSE
                                                                     </div>
                                                                     <div className="response-body">{rev.vendorReply}</div>
@@ -959,6 +968,16 @@ const Sparepartorder = () => {
                                 readOnly={isReadOnlyReview}
                             />
                         </Form.Group>
+
+                        {isReadOnlyReview && reviewVendorReply && (
+                            <div className="vendor-response-box mt-3 p-3 rounded" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                <div className="response-header d-flex align-items-center mb-2" style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold', gap: '8px' }}>
+                                    <MessageCircle size={14} className="mr-2" />
+                                    OFFICIAL RESPONSE
+                                </div>
+                                <div className="response-body text-white" style={{ fontSize: '14px' }}>{reviewVendorReply}</div>
+                            </div>
+                        )}
 
                         {!isReadOnlyReview && (
                             <div className="text-center mt-4">

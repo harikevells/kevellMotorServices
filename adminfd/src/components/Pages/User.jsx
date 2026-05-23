@@ -108,7 +108,10 @@ const UserPage = () => {
                 <tr key={user._id || index}>
                   <td>
                     <div className="d-flex flex-column">
-                      <span className="fw-bold text-white">{user.name || 'Unnamed'}</span>
+                      <span className="fw-bold text-white">
+                        {user.name || 'Unnamed'} 
+                        {user.hasActiveSubscription && <span style={{ color: '#FFD700', marginLeft: '5px' }}>⭐</span>}
+                      </span>
                       {/* <small className="text-muted">{user.address?.city || 'No Location'}</small> */}
                     </div>
                   </td>
@@ -195,6 +198,36 @@ const UserPage = () => {
                   <p><strong>Pincode:</strong> {selectedUser.address?.pincode || 'N/A'}</p>
                 </div>
               </Col>
+              
+              {selectedUser.activeSubscription && (
+                <Col md={12}>
+                  <div className="detail-section" style={{ borderColor: '#f28b2c', borderWidth: 1, borderStyle: 'solid' }}>
+                    <h6 className="section-title" style={{ color: '#f28b2c' }}><Badge bg="warning" className="me-2 text-dark">⭐ Pro</Badge> Active Subscription</h6>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h5 className="text-white mb-0">{selectedUser.activeSubscription.plan?.name || 'Premium Plan'}</h5>
+                      <Badge bg="success">Active</Badge>
+                    </div>
+                    <Row>
+                      <Col md={6}>
+                        <p className="mb-1 text-light"><strong>Purchased:</strong> {new Date(selectedUser.activeSubscription.purchaseDate).toLocaleDateString()}</p>
+                      </Col>
+                      <Col md={6}>
+                        <p className="mb-1 text-light"><strong>Expires:</strong> <span className="text-warning">{new Date(selectedUser.activeSubscription.expiryDate).toLocaleDateString()}</span></p>
+                      </Col>
+                    </Row>
+                    {selectedUser.activeSubscription.plan?.features && selectedUser.activeSubscription.plan.features.length > 0 && (
+                      <div className="mt-3">
+                        <strong className="text-secondary">Plan Benefits:</strong>
+                        <ul className="text-light mt-2 mb-0" style={{ paddingLeft: '20px' }}>
+                          {selectedUser.activeSubscription.plan.features.map((feature, idx) => (
+                            <li key={idx} className="mb-1">{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </Col>
+              )}
             </Row>
           )}
         </Modal.Body>

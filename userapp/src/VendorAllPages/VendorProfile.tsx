@@ -200,7 +200,7 @@ const VendorProfile = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       {/* <View style={styles.header}> */}
-        {/* Header content removed to hide back arrow since it's now a tab */}
+      {/* Header content removed to hide back arrow since it's now a tab */}
       {/* </View> */}
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -228,7 +228,7 @@ const VendorProfile = () => {
         <View style={styles.statsRow}>
           <StatCard label="Active" style={styles.statCard1} value={stats?.totalOrders || 0} isActive />
           <StatCard label="Pending" style={styles.statCard1} value={stats?.pendingOrders || 0} />
-          <StatCard label="Complete" style={styles.statCard1} value={stats?.completedOrders || 0} />
+          <StatCard label="Service" style={styles.statCard1} value={stats?.completedOrders || 0} />
         </View>
 
         {/* Menu Section */}

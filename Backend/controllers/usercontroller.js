@@ -222,7 +222,30 @@ exports.getAllUsers = async (req, res, next) => {
       .skip(skip)
       .limit(limit)
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Check subscriptions for these users
+    const userIds = users.map(u => u._id);
+    const UserSubscription = require('../models/UserSubscription');
+    const activeSubs = await UserSubscription.find({
+      user: { $in: userIds },
+      status: 'active',
+      expiryDate: { $gt: new Date() }
+    }).populate('plan');
+
+    const subMap = {};
+    activeSubs.forEach(sub => {
+      subMap[sub.user.toString()] = sub;
+    });
+
+    users.forEach(user => {
+      const sub = subMap[user._id.toString()];
+      user.hasActiveSubscription = !!sub;
+      if (sub) {
+        user.activeSubscription = sub;
+      }
+    });
     
     // Get total count
     const total = await User.countDocuments(searchQuery);

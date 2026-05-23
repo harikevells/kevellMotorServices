@@ -579,8 +579,8 @@ exports.getVendorOrders = async (req, res, next) => {
     const allOrders = await Order.find({ 'center': vendor._id });
     const statistics = {
       totalOrders: allOrders.length,
-      completedOrders: allOrders.filter(o => ['completed', 'delivered'].includes(o.status)).length,
-      pendingOrders: allOrders.filter(o => ['pending', 'confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery'].includes(o.status)).length,
+      completedOrders: allOrders.filter(o => ['confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery', 'completed', 'delivered'].includes(o.status)).length,
+      pendingOrders: allOrders.filter(o => o.status === 'pending').length,
       cancelledOrders: allOrders.filter(o => o.status === 'cancelled').length,
       totalRevenue: allOrders.reduce((sum, o) => sum + o.totalAmount, 0)
     };
@@ -921,8 +921,8 @@ exports.getOrderStatistics = async (req, res, next) => {
     // Calculate statistics
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status)).length;
-    const pendingOrders = orders.filter(o => !['completed', 'delivered', 'cancelled'].includes(o.status)).length;
+    const completedOrders = orders.filter(o => ['confirmed', 'on_the_way', 'received', 'inspected', 'in_service', 'quality_check', 'ready', 'out_for_delivery', 'completed', 'delivered'].includes(o.status)).length;
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
     const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
 
     // Count Total Delivery Boys for this vendor

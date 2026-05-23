@@ -426,36 +426,33 @@ const BookingSummaryPage = () => {
           )}
 
           {/* Live Offers Radio List */}
-          {liveOffers.length > 0 && (
+          {liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).length > 0 && (
             <View style={styles.offerListCard}>
-              {liveOffers.map((offer: any, idx: number) => {
+              {liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).map((offer: any, idx: number, arr: any[]) => {
                 const isSelected = selectedOfferId === offer._id;
-                const isUsed = usedOfferIds.has(offer._id);
-                const savingsAmt = summaryData && !isUsed ? calcDiscount(offer, summaryData.subtotal) : 0;
-                const isLast = idx === liveOffers.length - 1;
+                const savingsAmt = summaryData ? calcDiscount(offer, summaryData.subtotal) : 0;
+                const isLast = idx === arr.length - 1;
                 return (
                   <TouchableOpacity
                     key={offer._id}
                     style={[
                       styles.offerRadioRow,
                       isSelected && styles.offerRadioRowActive,
-                      isUsed && styles.offerRadioRowUsed,
                       !isLast && styles.offerRadioDivider,
                     ]}
                     onPress={() => handleSelectOffer(offer)}
-                    activeOpacity={isUsed ? 1 : 0.8}
+                    activeOpacity={0.8}
                   >
                     {/* Radio circle */}
-                    <View style={[styles.radioCircle, isSelected && styles.radioCircleActive, isUsed && styles.radioCircleUsed]}>
-                      {isSelected && !isUsed && <View style={styles.radioInner} />}
-                      {isUsed && <Text style={{ color: '#555', fontSize: 10 }}>✕</Text>}
+                    <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
+                      {isSelected && <View style={styles.radioInner} />}
                     </View>
 
                     {/* Offer details */}
-                    <View style={{ flex: 1, marginLeft: 14, opacity: isUsed ? 0.45 : 1 }}>
+                    <View style={{ flex: 1, marginLeft: 14 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
-                        <View style={[styles.discountPill, isUsed && { backgroundColor: '#2a2a2a' }]}>
-                          <Text style={[styles.discountPillText, isUsed && { color: '#555' }]}>
+                        <View style={styles.discountPill}>
+                          <Text style={styles.discountPillText}>
                             {offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `\u20b9${offer.discount} OFF`}
                           </Text>
                         </View>
@@ -464,17 +461,12 @@ const BookingSummaryPage = () => {
                             <Text style={styles.oneTimePillText}>1\u00d7 Only</Text>
                           </View>
                         )}
-                        {isUsed && (
-                          <View style={styles.alreadyUsedPill}>
-                            <Text style={styles.alreadyUsedPillText}>\u2713 Already Used</Text>
-                          </View>
-                        )}
                       </View>
-                      <Text style={[styles.offerRadioTitle, isUsed && { color: '#555' }]}>{offer.offerTitle}</Text>
+                      <Text style={styles.offerRadioTitle}>{offer.offerTitle}</Text>
                       {offer.couponCode ? (
                         <View style={styles.couponCodeChip}>
                           <Text style={styles.couponCodeChipLabel}>CODE: </Text>
-                          <Text style={[styles.couponCodeChipVal, isUsed && { color: '#555' }]}>{offer.couponCode}</Text>
+                          <Text style={styles.couponCodeChipVal}>{offer.couponCode}</Text>
                         </View>
                       ) : null}
                       {offer.minimumBookingValue > 0 && (
@@ -483,16 +475,10 @@ const BookingSummaryPage = () => {
                     </View>
 
                     {/* Savings or Used tag */}
-                    {isUsed ? (
-                      <View style={[styles.savingsTag, { backgroundColor: '#1a1a1a' }]}>
-                        <Text style={[styles.savingsTagText, { color: '#444' }]}>Used</Text>
-                      </View>
-                    ) : (
-                      <View style={styles.savingsTag}>
-                        <Text style={styles.savingsTagText}>Save</Text>
-                        <Text style={styles.savingsTagAmount}>\u20b9{savingsAmt}</Text>
-                      </View>
-                    )}
+                    <View style={styles.savingsTag}>
+                      <Text style={styles.savingsTagText}>Save</Text>
+                      <Text style={styles.savingsTagAmount}>\u20b9{savingsAmt}</Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}

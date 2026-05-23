@@ -219,7 +219,7 @@ const VendorDashboard = () => {
             </Text>
           </View>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.viewBtn}
           onPress={() => setActiveTab('Orders')}
         >
@@ -301,7 +301,7 @@ const VendorDashboard = () => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.dateRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.datePicker}
             onPress={() => period === 'Year' && setShowYearPicker(true)}
           >
@@ -312,7 +312,7 @@ const VendorDashboard = () => {
           </TouchableOpacity>
 
           <View style={styles.tabBar}>
-            {['Today', 'Week', 'Month','Year'].map((p) => (
+            {['Today', 'Week', 'Month', 'Year'].map((p) => (
               <TouchableOpacity
                 key={p}
                 onPress={() => setPeriod(p)}
@@ -326,10 +326,10 @@ const VendorDashboard = () => {
 
         <View style={styles.statGrid}>
           <StatCard
-            title="Total Delivery Boy"
-            value={stats?.totalDeliveryBoys}
+            title="Total Booking service"
+            value={stats?.totalOrders}
             percentage="+5%"
-            icon="👥"
+            icon="📋"
             color="#2F80ED"
             bgColor="#E9F2FF"
           />
@@ -382,8 +382,8 @@ const VendorDashboard = () => {
 
             const todayBookings = recentOrders.filter((o: any) => o.bookingDate === todayStr);
 
-            const displayOrders = todayBookings.length > 0 
-              ? todayBookings.slice(0, 3) 
+            const displayOrders = todayBookings.length > 0
+              ? todayBookings.slice(0, 3)
               : recentOrders.slice(0, 3);
 
             if (displayOrders.length > 0) {

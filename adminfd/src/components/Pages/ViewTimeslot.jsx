@@ -78,6 +78,8 @@ const ViewTimeslot = () => {
     });
   }, [vendors, searchTerm]);
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   return (
     <div className="view-timeslot-container">
       {/* Top Filter Bar instead of text header */}
@@ -125,11 +127,12 @@ const ViewTimeslot = () => {
           filteredVendors.map((vendor) => {
             const lookupId = vendor.user?._id || vendor._id;
             
-            // Filter slots for this vendor based on selected date
+            // Filter slots for this vendor based on selected date and future date
             const vendorAllSlots = vendorSlots[lookupId] || [];
+            let upcomingSlots = vendorAllSlots.filter(slot => slot.date >= todayStr);
             const displaySlots = filterDate 
-              ? vendorAllSlots.filter(slot => slot.date === filterDate) 
-              : vendorAllSlots;
+              ? upcomingSlots.filter(slot => slot.date === filterDate) 
+              : upcomingSlots;
             
             // Use profilePicture, fallback to shopImage or user's profile image
             let imageUrl = vendor.profilePicture || vendor.shopImage || vendor.user?.profileImage;

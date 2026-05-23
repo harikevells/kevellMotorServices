@@ -76,7 +76,7 @@ api.interceptors.response.use(
     if (error.response) {
       // Backend returned an error (4xx, 5xx)
       message = error.response.data?.message || `Server Error: ${error.response.status}`;
-      console.error('[API Error Response]:', error.response.status, message);
+      // console.error('[API Error Response]:', error.response.status, message);
     } else if (error.request) {
       // Request was made but no response received (Network issues)
       message = 'Network error or server unreachable. Check your connection.';

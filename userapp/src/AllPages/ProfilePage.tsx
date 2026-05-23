@@ -224,7 +224,8 @@ const ProfilePage = () => {
                 onPress={() => navigation.navigate('Notifications' as any)}
               />
               <View style={styles.menuDivider} />
-              <MenuRow title="Rating" icon="⭐" />
+              <View style={styles.menuDivider} />
+              <MenuRow title="Subscription" icon="⭐" onPress={() => navigation.navigate('SubscriptionViewpage' as any)} />
               <View style={styles.menuDivider} />
               <MenuRow title="Services" icon="🛠️" onPress={() => navigation.navigate('VehicleSelection', {})} />
               <View style={styles.menuDivider} />

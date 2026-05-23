@@ -371,6 +371,9 @@ const Timeslot = () => {
     return daysOfWeek[d.getDay()].substring(0, 3);
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const upcomingSlots = slots.filter(s => s.date >= todayStr);
+
   return (
     <div className="timeslot-container">
       <div className="timeslot-header">
@@ -509,7 +512,7 @@ const Timeslot = () => {
         <div className="timeslot-card list-card">
           <div className="list-header d-flex justify-content-between align-items-center mb-3">
             <h3 className="card-title m-0">All Scheduled Slots</h3>
-            <span className="badge bg-primary rounded-pill">{slots.length} Slots</span>
+            <span className="badge bg-primary rounded-pill">{upcomingSlots.length} Slots</span>
           </div>
           
           <div className="filter-section mb-3">
@@ -540,9 +543,9 @@ const Timeslot = () => {
                 <Loader2 size={24} className="spin text-muted" />
                 <p>Loading slots...</p>
               </div>
-            ) : (filterDate ? slots.filter(s => s.date === filterDate) : slots).length > 0 ? (
+            ) : (filterDate ? upcomingSlots.filter(s => s.date === filterDate) : upcomingSlots).length > 0 ? (
               <div className="slots-grid">
-                {(filterDate ? slots.filter(s => s.date === filterDate) : slots).map((slot, index) => (
+                {(filterDate ? upcomingSlots.filter(s => s.date === filterDate) : upcomingSlots).map((slot, index) => (
                   <div key={slot._id || index} className={`slot-item ${slot.isActive ? 'active' : 'inactive'}`}>
                     <div className="slot-content">
                         <div className="slot-date-day">

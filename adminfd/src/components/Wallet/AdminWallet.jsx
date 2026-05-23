@@ -38,7 +38,8 @@ const AdminWallet = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [txPerPage] = useState(8);
+  const [txPerPage] = useState(6);
+  const [vendorPage, setVendorPage] = useState(1);
 
   // Moderation Modal States
   const [showRefundModal, setShowRefundModal] = useState(false);
@@ -167,6 +168,13 @@ const AdminWallet = () => {
   const currentTxs = filteredTransactions.slice(indexOfFirstTx, indexOfLastTx);
   const totalPages = Math.ceil(filteredTransactions.length / txPerPage);
 
+  // Vendor Pagination Math
+  const vendorPerPage = 6;
+  const indexOfLastVendor = vendorPage * vendorPerPage;
+  const indexOfFirstVendor = indexOfLastVendor - vendorPerPage;
+  const currentVendors = vendorBalances.slice(indexOfFirstVendor, indexOfLastVendor);
+  const totalVendorPages = Math.ceil(vendorBalances.length / vendorPerPage);
+
   // CSV Export Utility
   const handleExportCSV = () => {
     if (filteredTransactions.length === 0) return;
@@ -284,11 +292,21 @@ const AdminWallet = () => {
             >
               Financial Ledger
             </button>
+            <button 
+              className={`wallet-tab ${activeTab === 'vendor_billing' ? 'active' : ''}`}
+              onClick={() => setActiveTab('vendor_billing')}
+            >
+              Vendor Billing
+            </button>
+            <button 
+              className={`wallet-tab ${activeTab === 'refund_disputes' ? 'active' : ''}`}
+              onClick={() => setActiveTab('refund_disputes')}
+            >
+              Refund & Disputes
+            </button>
           </div>
 
-          {activeTab === 'settlement' ? (
-            <>
-              {/* Dispute & Refund Moderation Row */}
+          {activeTab === 'refund_disputes' && (
           <div className="sec-card mb-4">
             <div className="sec-card-header d-flex align-items-center gap-2">
               <AlertTriangle className="text-orange" size={20} />
@@ -368,8 +386,9 @@ const AdminWallet = () => {
               </table>
             </div>
           </div>
+          )}
 
-          {/* Vendor Payout & Settlement Moderation Board */}
+          {activeTab === 'settlement' && (
           <div className="sec-card mb-4">
             <div className="sec-card-header d-flex align-items-center gap-2">
               <DollarSign className="text-orange" size={20} />
@@ -434,10 +453,9 @@ const AdminWallet = () => {
               </table>
             </div>
           </div>
-            </>
-          ) : (
-            <>
-              {/* Complete Ledger Section */}
+          )}
+
+          {activeTab === 'ledger' && (
           <div className="sec-card">
             <div className="sec-card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
               <div className="d-flex align-items-center gap-2">
@@ -549,19 +567,21 @@ const AdminWallet = () => {
                   <Button 
                     variant="outline-dark" 
                     size="sm" 
-                    className="pagi-btn"
+                    className="pagi-btn text-white"
+                    style={{ minWidth: '90px', padding: '6px 12px' }}
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(prev => prev - 1)}
                   >
                     Previous
                   </Button>
-                  <span className="pagi-indicator">
+                  <span className="pagi-indicator text-white d-flex align-items-center px-2">
                     Page {currentPage} of {totalPages}
                   </span>
                   <Button 
                     variant="outline-dark" 
                     size="sm" 
-                    className="pagi-btn"
+                    className="pagi-btn text-white"
+                    style={{ minWidth: '90px', padding: '6px 12px' }}
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(prev => prev + 1)}
                   >
@@ -571,8 +591,9 @@ const AdminWallet = () => {
               </div>
             )}
           </div>
+          )}
 
-          {/* Vendor Account Balances Table */}
+          {activeTab === 'vendor_billing' && (
           <div className="sec-card mt-4 mb-4">
             <div className="sec-card-header d-flex align-items-center gap-2">
               <DollarSign className="text-orange" size={20} />
@@ -592,8 +613,8 @@ const AdminWallet = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {vendorBalances.length > 0 ? (
-                    vendorBalances.map(vendor => (
+                  {currentVendors.length > 0 ? (
+                    currentVendors.map(vendor => (
                       <tr key={vendor.vendorId}>
                         <td className="fw-bold text-white">{vendor.shopName}</td>
                         <td>{vendor.ownerName}</td>
@@ -613,8 +634,41 @@ const AdminWallet = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Vendor Pagination Controls */}
+            {totalVendorPages > 1 && (
+              <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary p-3">
+                <span className="small text-muted">
+                  Showing {indexOfFirstVendor + 1} to {Math.min(indexOfLastVendor, vendorBalances.length)} of {vendorBalances.length} vendors
+                </span>
+                <div className="d-flex gap-2">
+                  <Button 
+                    variant="outline-dark" 
+                    size="sm" 
+                    className="pagi-btn text-white"
+                    style={{ minWidth: '90px', padding: '6px 12px' }}
+                    disabled={vendorPage === 1}
+                    onClick={() => setVendorPage(prev => prev - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="pagi-indicator text-white d-flex align-items-center px-2">
+                    Page {vendorPage} of {totalVendorPages}
+                  </span>
+                  <Button 
+                    variant="outline-dark" 
+                    size="sm" 
+                    className="pagi-btn text-white"
+                    style={{ minWidth: '90px', padding: '6px 12px' }}
+                    disabled={vendorPage === totalVendorPages}
+                    onClick={() => setVendorPage(prev => prev + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-            </>
           )}
         </>
       )}

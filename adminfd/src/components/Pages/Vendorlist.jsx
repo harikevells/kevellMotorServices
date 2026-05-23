@@ -480,11 +480,13 @@ const Vendorlist = () => {
                   <p><strong>Owner:</strong> {selectedVendor.user?.name || 'N/A'}</p>
                   <p><strong>Email:</strong> {selectedVendor.email || selectedVendor.user?.email}</p>
                   <p><strong>Phone:</strong> {selectedVendor.phone}</p>
+                  <p><strong>Gender:</strong> {selectedVendor.user?.gender || 'N/A'}</p>
                 </div>
               </Col>
               <Col md={6}>
                 <div className="detail-section h-100">
                   <h6 className="section-title"><MapPin size={16} /> Location</h6>
+                  <p><strong>Street:</strong> {selectedVendor.address?.street || 'N/A'}</p>
                   <p><strong>City:</strong> {selectedVendor.address?.city || 'N/A'}</p>
                   <p><strong>State:</strong> {selectedVendor.address?.state || 'N/A'}</p>
                   <p><strong>Pincode:</strong> {selectedVendor.address?.pincode || 'N/A'}</p>

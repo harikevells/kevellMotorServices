@@ -1,6 +1,7 @@
 const SparePartOrder = require('../models/SparePartOrder');
 const SparePart = require('../models/SparePart');
 const UserSubscription = require('../models/UserSubscription');
+const { createNotification } = require('./notificationController');
 
 // @desc    Create new spare part order
 // @route   POST /api/spare-part-orders
@@ -98,6 +99,15 @@ exports.createOrder = async (req, res, next) => {
     }
     await sparePart.save();
 
+    // Notify Admin about the new order
+    await createNotification({
+      title: 'New Spare Part Order',
+      message: `A new order has been placed for ${quantity}x ${sparePart.name}.`,
+      type: 'status_update',
+      recipientRole: 'admin',
+      data: { orderId: order._id }
+    });
+
     res.status(201).json({
       success: true,
       data: order
@@ -114,7 +124,23 @@ exports.getAllOrders = async (req, res, next) => {
     const orders = await SparePartOrder.find()
       .populate('user', 'name email role')
       .populate('sparePart', 'name image partNumber amount')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const userIds = [...new Set(orders.map(o => o.user?._id).filter(Boolean))];
+    const UserSubscription = require('../models/UserSubscription');
+    const activeSubs = await UserSubscription.find({
+      user: { $in: userIds },
+      status: 'active',
+      expiryDate: { $gt: new Date() }
+    });
+    const subscribedUserIds = new Set(activeSubs.map(sub => sub.user.toString()));
+
+    orders.forEach(order => {
+      if (order.user) {
+        order.user.hasActiveSubscription = subscribedUserIds.has(order.user._id.toString());
+      }
+    });
 
     res.status(200).json({
       success: true,
@@ -153,7 +179,7 @@ exports.updateOrderStatus = async (req, res, next) => {
       req.params.id,
       { status },
       { new: true, runValidators: true }
-    );
+    ).populate('sparePart').populate('user');
 
     if (!order) {
       return res.status(404).json({
@@ -161,6 +187,27 @@ exports.updateOrderStatus = async (req, res, next) => {
         error: 'Order not found'
       });
     }
+
+    // Notification to User
+    if (order.user) {
+      await createNotification({
+        title: 'Spare Part Order Update',
+        message: `Your order for ${order.sparePart?.name || 'spare part'} is now ${status}.`,
+        type: 'status_update',
+        recipientRole: order.user.role || 'user',
+        recipientId: order.user._id,
+        data: { orderId: order._id }
+      });
+    }
+
+    // Notification to Admin
+    await createNotification({
+      title: 'Spare Part Order Status',
+      message: `Order #${order._id.toString().slice(-6).toUpperCase()} updated to ${status}.`,
+      type: 'status_update',
+      recipientRole: 'admin',
+      data: { orderId: order._id }
+    });
 
     res.status(200).json({
       success: true,
@@ -184,7 +231,7 @@ exports.updatePaymentDetails = async (req, res, next) => {
       });
     }
 
-    const order = await SparePartOrder.findById(req.params.id);
+    const order = await SparePartOrder.findById(req.params.id).populate('sparePart').populate('user');
 
     if (!order) {
       return res.status(404).json({
@@ -203,6 +250,29 @@ exports.updatePaymentDetails = async (req, res, next) => {
     }
 
     await order.save();
+
+    // To user
+    if (order.user && paymentStatus === 'Paid') {
+      await createNotification({
+        title: 'Payment Successful',
+        message: `Payment for your order ${order.sparePart?.name || ''} was successful!`,
+        type: 'payment',
+        recipientRole: order.user.role || 'user',
+        recipientId: order.user._id,
+        data: { orderId: order._id }
+      });
+    }
+
+    // To Admin
+    if (paymentStatus === 'Paid') {
+      await createNotification({
+        title: 'Payment Received',
+        message: `Payment received for order #${order._id.toString().slice(-6).toUpperCase()}`,
+        type: 'payment',
+        recipientRole: 'admin',
+        data: { orderId: order._id }
+      });
+    }
 
     res.status(200).json({
       success: true,

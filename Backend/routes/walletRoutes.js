@@ -8,6 +8,7 @@ const RefundRequest = require('../models/RefundRequest');
 const Booking = require('../models/Booking');
 const Vendor = require('../models/vendor');
 const User = require('../models/User');
+const { createNotification } = require('../controllers/notificationController');
 
 console.log('✅ Wallet Routes Loaded');
 
@@ -154,6 +155,15 @@ router.post('/withdraw', verifyToken, async (req, res) => {
     });
     await transaction.save();
 
+    // Notify Admin
+    await createNotification({
+      title: 'New Payout Request',
+      message: `New payout request of ₹${amount} received.`,
+      type: 'payment',
+      recipientRole: 'admin',
+      data: { transactionId: transaction._id }
+    });
+
     res.status(200).json({
       success: true,
       message: `Withdrawal request of ₹${amount} submitted successfully. Funds are on hold pending approval.`,
@@ -215,6 +225,16 @@ router.post('/payouts/:transactionId/action', verifyToken, async (req, res) => {
         }
       }
 
+      // Notify Vendor
+      await createNotification({
+        title: 'Payout Approved',
+        message: `Your payout request of ₹${transaction.amount} has been approved.`,
+        type: 'payment',
+        recipientRole: 'vendor',
+        recipientId: transaction.user,
+        data: { transactionId: transaction._id }
+      });
+
       return res.status(200).json({ success: true, message: 'Payout marked as completed', transaction });
     } else if (action === 'reject') {
       transaction.status = 'rejected';
@@ -226,6 +246,16 @@ router.post('/payouts/:transactionId/action', verifyToken, async (req, res) => {
         vendorWallet.pendingBalance = (vendorWallet.pendingBalance || 0) + transaction.amount;
         await vendorWallet.save();
       }
+
+      // Notify Vendor
+      await createNotification({
+        title: 'Payout Rejected',
+        message: `Your payout request of ₹${transaction.amount} was rejected. Funds returned to pending.`,
+        type: 'payment',
+        recipientRole: 'vendor',
+        recipientId: transaction.user,
+        data: { transactionId: transaction._id }
+      });
 
       return res.status(200).json({ success: true, message: 'Payout rejected. Funds returned to pending balance.', transaction });
     } else {
@@ -245,13 +275,18 @@ router.get('/admin/overview', verifyToken, async (req, res) => {
     }
 
     // Get statistics
+    const adminUser = await User.findOne({ role: 'admin' });
+
     // 1. Total platform fee collected
     const feeTrans = await WalletTransaction.find({ type: 'platform_fee', status: 'completed' });
     const totalFees = feeTrans.reduce((sum, t) => sum + t.amount, 0);
 
-    // 2. Total payouts processed
-    const payoutTrans = await WalletTransaction.find({ type: 'payout', status: 'completed' });
-    const totalPayouts = payoutTrans.reduce((sum, t) => sum + t.amount, 0);
+    // 2. Total payouts processed (Sum only admin's ledger entries to avoid double counting)
+    let totalPayouts = 0;
+    if (adminUser) {
+      const payoutTrans = await WalletTransaction.find({ type: 'payout', status: 'completed', user: adminUser._id });
+      totalPayouts = payoutTrans.reduce((sum, t) => sum + t.amount, 0);
+    }
 
     // 3. Current active balances holding in wallets
     const allWallets = await Wallet.find({});
@@ -261,7 +296,6 @@ router.get('/admin/overview', verifyToken, async (req, res) => {
     const pendingRefundCount = await RefundRequest.countDocuments({ status: 'pending' });
 
     // 5. Total Booking Revenue (Admin's actual held wallet balance)
-    const adminUser = await User.findOne({ role: 'admin' });
     let adminWalletBalance = 0;
     if (adminUser) {
       const adminWallet = await Wallet.findOne({ user: adminUser._id });

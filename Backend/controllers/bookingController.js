@@ -185,6 +185,7 @@ exports.createBooking = async (req, res, next) => {
       discountAmount,
       subscriptionDiscount,
       totalAmount,
+      couponCode: couponCode ? couponCode.toUpperCase() : undefined,
       appliedOffer: appliedOffer ? appliedOffer._id : null,
       status: 'pending'
     });
@@ -377,7 +378,25 @@ exports.getAllBookingsAdmin = async (req, res, next) => {
       .populate('vehicle')
       .populate('center')
       .populate('services')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Check subscriptions for unique users
+    const userIds = [...new Set(bookings.map(b => b.user?._id).filter(Boolean))];
+    const UserSubscription = require('../models/UserSubscription');
+    const activeSubs = await UserSubscription.find({
+      user: { $in: userIds },
+      status: 'active',
+      expiryDate: { $gt: new Date() }
+    });
+    const subscribedUserIds = new Set(activeSubs.map(sub => sub.user.toString()));
+
+    bookings.forEach(booking => {
+      if (booking.user) {
+        if (!booking.userDetails) booking.userDetails = {};
+        booking.userDetails.hasActiveSubscription = subscribedUserIds.has(booking.user._id.toString());
+      }
+    });
 
     console.log(`Found ${bookings.length} bookings`);
 
@@ -411,6 +430,32 @@ exports.updateBookingStatusAdmin = async (req, res, next) => {
 
     // Automatically trigger wallet crediting if status and paymentStatus are completed
     await exports.creditWalletIfEligible(booking._id);
+
+    const statusMsg = status.charAt(0).toUpperCase() + status.slice(1);
+    
+    // To User
+    if (booking.user) {
+      await createNotification({
+        title: 'Booking Status Update',
+        message: `Your booking (${booking.bookingRef}) status has been updated to ${statusMsg}.`,
+        type: 'status_update',
+        recipientRole: 'user',
+        recipientId: booking.user._id,
+        data: { bookingId: booking._id }
+      });
+    }
+
+    // To Vendor
+    if (booking.center && booking.center.user) {
+      await createNotification({
+        title: 'Booking Status Update',
+        message: `Booking (${booking.bookingRef}) status changed to ${statusMsg}.`,
+        type: 'status_update',
+        recipientRole: 'vendor',
+        recipientId: booking.center.user,
+        data: { bookingId: booking._id }
+      });
+    }
 
     res.json({
       success: true,
@@ -464,6 +509,27 @@ exports.addBookingReview = async (req, res, next) => {
       await center.save();
     }
 
+    // Notify Admin
+    await createNotification({
+      title: 'New Service Review',
+      message: `A new review was added for booking ${booking.bookingRef || 'a service'} with a ${rating}-star rating.`,
+      type: 'status_update',
+      recipientRole: 'admin',
+      data: { bookingId: booking._id }
+    });
+
+    // Notify Vendor
+    if (center && center.user) {
+      await createNotification({
+        title: 'New Review on your Service',
+        message: `A customer added a ${rating}-star review for booking ${booking.bookingRef || 'your service'}.`,
+        type: 'status_update',
+        recipientRole: 'vendor',
+        recipientId: center.user,
+        data: { bookingId: booking._id }
+      });
+    }
+
     res.json({
       success: true,
       message: 'Review added successfully',
@@ -492,6 +558,27 @@ exports.replyBookingReview = async (req, res, next) => {
     booking.review.repliedByRole = req.user.role || 'vendor'; // Fallback if req.user.role is somehow missing
     booking.markModified('review');
     await booking.save();
+
+    // Notify User
+    if (booking.user) {
+      await createNotification({
+        title: 'Reply to your Review',
+        message: `The vendor replied to your review on booking ${booking.bookingRef || 'your service'}.`,
+        type: 'status_update',
+        recipientRole: 'user',
+        recipientId: booking.user,
+        data: { bookingId: booking._id }
+      });
+    }
+
+    // Notify Admin
+    await createNotification({
+      title: 'Review Reply Added',
+      message: `A vendor replied to the review on booking ${booking.bookingRef || 'a service'}.`,
+      type: 'status_update',
+      recipientRole: 'admin',
+      data: { bookingId: booking._id }
+    });
 
     res.json({
       success: true,

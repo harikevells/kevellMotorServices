@@ -533,7 +533,10 @@ const SpareParts = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="font-weight-bold">{order.user?.name}</div>
+                                        <div className="font-weight-bold">
+                                            {order.user?.name}
+                                            {order.user?.hasActiveSubscription && <span style={{ color: '#FFD700', marginLeft: '5px' }}>⭐</span>}
+                                        </div>
                                         <div className="small">{order.user?.email}</div>
                                     </td>
                                     <td><div className="text-primary font-weight-bold">₹{order.totalAmount}</div></td>
@@ -897,13 +900,24 @@ const SpareParts = () => {
                                                     </div>
                                                 );
                                             } else {
+                                                const subDiscount = currentOrder.subscriptionDiscount || 0;
                                                 return (
-                                                    <div className="detail-row mt-1">
-                                                        <strong>Offer Discount {offerCode ? `(${offerCode})` : ''}:</strong> 
-                                                        <span className={offerDiscount > 0 ? "text-success ml-2 font-weight-bold" : "ml-2"}>
-                                                            {offerDiscount > 0 ? `-₹${offerDiscount}` : `₹0`}
-                                                        </span>
-                                                    </div>
+                                                    <>
+                                                        <div className="detail-row mt-1">
+                                                            <strong>Offer Discount {offerCode ? `(${offerCode})` : ''}:</strong> 
+                                                            <span className={offerDiscount > 0 ? "text-success ml-2 font-weight-bold" : "ml-2"}>
+                                                                {offerDiscount > 0 ? `-₹${offerDiscount}` : `₹0`}
+                                                            </span>
+                                                        </div>
+                                                        {subDiscount > 0 && (
+                                                            <div className="detail-row mt-1">
+                                                                <strong>Subscription Discount:</strong> 
+                                                                <span className="text-success ml-2 font-weight-bold">
+                                                                    -₹{subDiscount}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 );
                                             }
                                         })()}
@@ -939,7 +953,7 @@ const SpareParts = () => {
                                         {(() => {
                                             const itemTotal = currentOrder.sparePart?.amount ? 
                                                 currentOrder.sparePart.amount * currentOrder.quantity :
-                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0);
+                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0) + (currentOrder.subscriptionDiscount || 0);
 
                                             return (
                                                 <>
@@ -952,7 +966,7 @@ const SpareParts = () => {
                                         {(() => {
                                             const itemTotal = currentOrder.sparePart?.amount ? 
                                                 currentOrder.sparePart.amount * currentOrder.quantity :
-                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0);
+                                                currentOrder.totalAmount - (currentOrder.deliveryCharge || 50) + (currentOrder.vendorDiscount || 0) + (currentOrder.offerDetails?.discountAmount || 0) + (currentOrder.subscriptionDiscount || 0);
 
                                             const vDiscount = currentOrder.vendorDiscount || (currentOrder.user?.role === 'vendor' ? Math.round(itemTotal * 0.1) : 0);
 
@@ -971,6 +985,7 @@ const SpareParts = () => {
                                                         const isVendor = currentOrder.user?.role === 'vendor';
                                                         const vDiscount = currentOrder.vendorDiscount || (isVendor ? Math.round(itemTotal * 0.1) : 0);
                                                         const offerDiscount = currentOrder.offerDetails?.discountAmount || 0;
+                                                        const subDiscount = currentOrder.subscriptionDiscount || 0;
                                                         const offerCode = currentOrder.offerDetails?.offerCode || '';
 
                                                         if (isVendor) {
@@ -982,10 +997,20 @@ const SpareParts = () => {
                                                             );
                                                         } else {
                                                             return (
-                                                                <div className={`breakdown-row ${offerDiscount > 0 ? 'text-success' : ''}`}>
-                                                                    <span>Offer Discount {offerCode ? `(${offerCode})` : ''}</span>
-                                                                    <span>{offerDiscount > 0 ? `-₹${offerDiscount}` : `₹0`}</span>
-                                                                </div>
+                                                                <>
+                                                                    {(offerDiscount > 0 || offerCode) && (
+                                                                        <div className={`breakdown-row ${offerDiscount > 0 ? 'text-success' : ''}`}>
+                                                                            <span>Offer Discount {offerCode ? `(${offerCode})` : ''}</span>
+                                                                            <span>{offerDiscount > 0 ? `-₹${offerDiscount}` : `₹0`}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {subDiscount > 0 && (
+                                                                        <div className="breakdown-row text-success">
+                                                                            <span>Subscription Discount</span>
+                                                                            <span>-₹{subDiscount}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </>
                                                             );
                                                         }
                                                     })()}

@@ -14,8 +14,10 @@ import {
   TextInput,
   ImageBackground,
   Modal,
+  Alert,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import RazorpayCheckout from 'react-native-razorpay';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
@@ -99,6 +101,7 @@ const HomeScreen = () => {
     React.useCallback(() => {
       loadUser();
       loadNotifications();
+      loadActiveOffers(); // Fetch active offers on focus to update used status
       
       const timer = setTimeout(async () => {
         try {
@@ -149,15 +152,46 @@ const HomeScreen = () => {
         setShowAdPopup(false);
         return;
       }
-      const res: any = await purchaseSubscription(planId);
-      if (res.success) {
-        Alert.alert('Success', 'Successfully subscribed!');
-        setShowAdPopup(false);
-      } else {
-        Alert.alert('Error', res.message || 'Failed to subscribe.');
-      }
+      
+      const selectedPlan = subscriptionPlans.find(p => (p._id || p.id) === planId);
+      if (!selectedPlan) return;
+
+      const amount = selectedPlan.price;
+
+      const options = {
+        description: `Subscription for ${selectedPlan.name}`,
+        image: 'https://i.imgur.com/3g7nmJC.png',
+        currency: 'INR',
+        key: 'rzp_test_SfkV0cySd3CwyQ',
+        amount: Math.round(amount * 100),
+        name: 'Kevell Motor Services',
+        theme: { color: '#f28b2c' },
+        prefill: {
+          email: user?.email || 'customer@example.com',
+          contact: user?.phone || '9999999999',
+          name: user?.name || 'Customer'
+        }
+      };
+
+      RazorpayCheckout.open(options).then(async (data: any) => {
+        try {
+          const res: any = await purchaseSubscription(planId);
+          if (res.success) {
+            Alert.alert('Success', 'Successfully subscribed! Your plan is now active.');
+            setShowAdPopup(false);
+            loadSubscriptions();
+          } else {
+            Alert.alert('Error', res.message || 'Failed to activate plan after payment.');
+          }
+        } catch (e) {
+            Alert.alert('Error', 'Failed to activate plan after payment.');
+        }
+      }).catch((error: any) => {
+        Alert.alert('Payment Cancelled/Failed', 'Payment was not completed. Plan is not active.');
+      });
+
     } catch (e) {
-      Alert.alert('Error', 'An error occurred while subscribing.');
+      Alert.alert('Error', 'An error occurred while initiating subscription payment.');
       console.error(e);
     }
   };
@@ -177,7 +211,6 @@ const HomeScreen = () => {
   useEffect(() => {
     loadServicesByCategory('General Service');
     startAutoSlide();
-    loadActiveOffers();
     return () => stopAutoSlide();
   }, []);
 
@@ -384,42 +417,33 @@ const HomeScreen = () => {
         </ScrollView>
 
         {/* Exclusive Offers Section */}
-        {(liveOffers.length > 0 || OFFERS.length > 0) && (
+        {(liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).length > 0 || OFFERS.length > 0) && (
           <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Exclusive Offers</Text>
         )}
-        {liveOffers.length > 0 ? (
+        {liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-            {liveOffers.map((offer: any, idx: number) => {
+            {liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).map((offer: any, idx: number) => {
               const bgImages = [OFFER_1, OFFER_2];
               const bgImage = bgImages[idx % bgImages.length];
-              const isUsed = usedOfferIds.has(offer._id);
 
               return (
                 <ImageBackground
                   key={offer._id}
                   source={bgImage}
-                  style={[styles.liveOfferCard, isUsed && { opacity: 0.6 }]}
+                  style={styles.liveOfferCard}
                   imageStyle={{ borderRadius: 18 }}
                 >
-                  <View style={[styles.liveOfferOverlay, isUsed && { backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+                  <View style={styles.liveOfferOverlay}>
                     <View style={styles.liveOfferBadge}>
                       <Text style={styles.liveOfferDiscount}>
                         {offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `₹${offer.discount} OFF`}
                       </Text>
                     </View>
 
-                    {isUsed && (
-                      <View style={{ position: 'absolute', top: '40%', left: 0, right: 0, alignItems: 'center' }}>
-                        <View style={{ backgroundColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#333' }}>
-                          <Text style={{ color: '#aaa', fontWeight: 'bold', fontSize: 13 }}>✓ Already Used</Text>
-                        </View>
-                      </View>
-                    )}
-
                     <View style={styles.liveOfferFooter}>
-                      <Text style={[styles.liveOfferTitle, isUsed && { color: '#888' }]} numberOfLines={2}>{offer.offerTitle}</Text>
-                      <Text style={[styles.offerShop, isUsed && { color: '#555' }]} numberOfLines={1}>🏪 {offer.shopName}</Text>
-                      <Text style={[styles.offerExpiry, isUsed && { color: '#555' }]}>Expires: {new Date(offer.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Text>
+                      <Text style={styles.liveOfferTitle} numberOfLines={2}>{offer.offerTitle}</Text>
+                      <Text style={styles.offerShop} numberOfLines={1}>🏪 {offer.shopName}</Text>
+                      <Text style={styles.offerExpiry}>Expires: {new Date(offer.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Text>
                     </View>
                   </View>
                 </ImageBackground>

@@ -1,6 +1,7 @@
 const SparePart = require('../models/SparePart');
 const fs = require('fs');
 const path = require('path');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get all spare parts
 // @route   GET /api/spare-parts
@@ -181,6 +182,15 @@ exports.addSparePartReview = async (req, res, next) => {
 
     await sparePart.save();
 
+    // Notify Admin
+    await createNotification({
+      title: 'New Spare Part Review',
+      message: `A new review was added for ${sparePart.name} with a ${rating}-star rating.`,
+      type: 'status_update',
+      recipientRole: 'admin',
+      data: { sparePartId: sparePart._id }
+    });
+
     res.status(201).json({
       success: true,
       message: 'Review added successfully'
@@ -216,6 +226,18 @@ exports.respondToReview = async (req, res, next) => {
     review.repliedAt = Date.now();
 
     await sparePart.save();
+
+    // Notify User
+    if (review.user) {
+      await createNotification({
+        title: 'Reply to your Review',
+        message: `Admin/Vendor replied to your review on ${sparePart.name}.`,
+        type: 'status_update',
+        recipientRole: 'user',
+        recipientId: review.user,
+        data: { sparePartId: sparePart._id }
+      });
+    }
 
     res.status(200).json({
       success: true,

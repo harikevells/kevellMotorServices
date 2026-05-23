@@ -228,9 +228,9 @@ const VendorWallet = () => {
                     <button className="btn-wallet-act primary" onClick={() => setShowWithdrawModal(true)}>
                       <Send size={16} /> Request Payout
                     </button>
-                    <button className="btn-wallet-act secondary" onClick={() => setShowAddModal(true)}>
+                    {/* <button className="btn-wallet-act secondary" onClick={() => setShowAddModal(true)}>
                       <PlusCircle size={16} /> Add Funds
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>

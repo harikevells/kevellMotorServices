@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
+import {
     Spinner, Modal, Button, Form
 } from 'react-bootstrap';
 import { Search, Star, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
@@ -45,7 +45,7 @@ const Reviews = () => {
             if (response.data.success && response.data.data) {
                 // Filter only bookings that have a review
                 const bookingsWithReviews = response.data.data.filter(b => b.review && b.review.rating);
-                
+
                 // Format data for the table
                 const formattedReviews = bookingsWithReviews.map(b => ({
                     _id: b._id,
@@ -61,7 +61,7 @@ const Reviews = () => {
                 }));
 
                 // Apply search
-                const filteredReviews = searchTerm ? formattedReviews.filter(r => 
+                const filteredReviews = searchTerm ? formattedReviews.filter(r =>
                     r.order.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     r.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     r.shop.center_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,7 +71,7 @@ const Reviews = () => {
                 // Apply pagination
                 const startIdx = (currentPage - 1) * rowsPerPage;
                 const endIdx = currentPage * rowsPerPage;
-                
+
                 setReviews(filteredReviews.slice(startIdx, endIdx));
                 setTotalReviews(filteredReviews.length);
                 setFetchError(null);
@@ -132,10 +132,10 @@ const Reviews = () => {
         return (
             <div className="rating-stars">
                 {[...Array(5)].map((_, i) => (
-                    <Star 
-                        key={i} 
-                        size={16} 
-                        className={i < rating ? "star-filled" : "star-empty"} 
+                    <Star
+                        key={i}
+                        size={16}
+                        className={i < rating ? "star-filled" : "star-empty"}
                         fill={i < rating ? "#FFD700" : "none"}
                     />
                 ))}
@@ -153,9 +153,9 @@ const Reviews = () => {
             <div className="search-row mb-4">
                 <div className="search-input-group">
                     <Search size={18} color="#888" />
-                    <input 
-                        type="text" 
-                        placeholder="Search" 
+                    <input
+                        type="text"
+                        placeholder="Search"
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -207,9 +207,9 @@ const Reviews = () => {
                                     <td>{renderStars(review.rating)}</td>
                                     <td>
                                         <div className="d-flex align-items-center justify-content-center">
-                                            <MessageCircle 
-                                                size={18} 
-                                                className="cursor-pointer" 
+                                            <MessageCircle
+                                                size={18}
+                                                className="cursor-pointer"
                                                 style={{ color: review.reply ? '#f28b2c' : '#888', cursor: 'pointer' }}
                                                 onClick={() => handleOpenReply(review)}
                                                 title={review.reply ? "Edit Response" : "Add Response"}
@@ -220,7 +220,7 @@ const Reviews = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={7} className="text-center py-5 text-muted">No reviews found.</td>
+                                <td colSpan={8} className="text-center py-5 text-muted">No reviews found.</td>
                             </tr>
                         )}
                     </tbody>
@@ -230,7 +230,7 @@ const Reviews = () => {
             {/* Footer and Pagination */}
             <div className="table-footer">
                 <div className="rows-per-page">
-                    Show rows per page 
+                    Show rows per page
                     <select value={rowsPerPage} onChange={(e) => {
                         setRowsPerPage(Number(e.target.value));
                         setCurrentPage(1);
@@ -245,14 +245,14 @@ const Reviews = () => {
                         {totalReviews > 0 ? `${startRow}-${endRow} of ${totalReviews}` : "0-0 of 0"}
                     </div>
                     <div className="pagi-arrows">
-                        <button 
-                            className="pagi-arrow" 
+                        <button
+                            className="pagi-arrow"
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => prev - 1)}
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        <button 
+                        <button
                             className="pagi-arrow"
                             disabled={currentPage === totalPages || totalPages === 0}
                             onClick={() => setCurrentPage(prev => prev + 1)}
@@ -281,11 +281,11 @@ const Reviews = () => {
                                     <p className="mb-0 text-light fst-italic">"{selectedReview.comment}"</p>
                                 )}
                             </div>
-                            
+
                             <Form.Group>
                                 <Form.Label className="text-warning fw-bold">
-                                    {selectedReview.reply 
-                                        ? (selectedReview.repliedByRole === 'admin' ? 'Admin Response' : 'Vendor Response') 
+                                    {selectedReview.reply
+                                        ? (selectedReview.repliedByRole === 'admin' ? 'Admin Response' : 'Vendor Response')
                                         : 'Your Response'
                                     }
                                 </Form.Label>
@@ -307,8 +307,8 @@ const Reviews = () => {
                         Close
                     </Button>
                     {!selectedReview?.reply && (
-                        <Button 
-                            variant="warning" 
+                        <Button
+                            variant="warning"
                             onClick={handleReplySubmit}
                             disabled={submittingReply}
                             style={{ backgroundColor: '#f28b2c', borderColor: '#f28b2c', color: '#000' }}

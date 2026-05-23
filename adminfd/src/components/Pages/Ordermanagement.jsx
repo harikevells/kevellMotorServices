@@ -91,6 +91,29 @@ const Ordermanagement = () => {
         return styles[status] || { bg: 'secondary', color: 'white' };
     };
 
+    const getCalculatedAmounts = (booking) => {
+        if (!booking) return { subTotal: 0, discount: 0 };
+        let discount = booking.discountAmount || 0;
+        let subTotal = booking.subtotal || 0;
+        
+        if (!discount && booking.couponCode) {
+            const baseSub = booking.services?.reduce((sum, s) => sum + (s.price || 0), 0) || 0;
+            if (baseSub > 0) {
+                const deduced = baseSub - (booking.totalAmount - (booking.tax || 0)) - (booking.subscriptionDiscount || 0);
+                if (deduced > 0) discount = deduced;
+            }
+        }
+        
+        if (!subTotal) {
+            subTotal = booking.totalAmount - (booking.tax || 0) + discount + (booking.subscriptionDiscount || 0);
+        }
+        
+        return { 
+            subTotal: Number(subTotal).toFixed(2), 
+            discount: discount > 0 ? Number(discount).toFixed(2) : 'Applied' 
+        };
+    };
+
     return (
         <div className="order-management-container">
             {/* Search and filter row */}
@@ -132,6 +155,7 @@ const Ordermanagement = () => {
                             <th>Vendor</th>
                             <th>Category</th>
                             <th>Services</th>
+                            <th>Payment Status</th>
                             <th>Status</th>
                             <th>View</th>
                             <th>Track</th>
@@ -140,7 +164,7 @@ const Ordermanagement = () => {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-5">
+                                <td colSpan={9} className="text-center py-5">
                                     <Spinner animation="border" variant="warning" />
                                 </td>
                             </tr>
@@ -148,7 +172,10 @@ const Ordermanagement = () => {
                             currentRows.map((booking) => (
                                 <tr key={booking._id}>
                                     <td className="td-booking-id">{booking.bookingRef}</td>
-                                    <td>{booking.userDetails?.name || "N/A"}</td>
+                                    <td>
+                                        {booking.userDetails?.name || "N/A"} 
+                                        {booking.userDetails?.hasActiveSubscription && <span style={{ color: '#FFD700', marginLeft: '5px' }}>⭐</span>}
+                                    </td>
                                     <td>{booking.vendorDetails?.shopName || "N/A"}</td>
                                     <td>{booking.vehicleDetails?.vehicle_category || "N/A"}</td>
                                     <td>
@@ -159,11 +186,17 @@ const Ordermanagement = () => {
                                         </div>
                                     </td>
                                     <td>
+                                        <Badge bg={booking.paymentStatus === 'completed' ? 'success' : booking.paymentStatus === 'failed' ? 'danger' : 'warning'}>
+                                            {booking.paymentStatus ? booking.paymentStatus.toUpperCase() : 'PENDING'}
+                                        </Badge>
+                                    </td>
+                                    <td>
                                         <Form.Select
                                             size="sm"
                                             className={`status-select-custom ${getStatusClass(booking.status)}`}
                                             value={booking.status}
                                             onChange={(e) => handleStatusChange(booking._id, e.target.value)}
+                                            disabled={booking.status === 'pending'}
                                         >
                                             <option value="pending">Pending</option>
                                             <option value="confirmed">Confirmed</option>
@@ -202,7 +235,7 @@ const Ordermanagement = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={8} className="text-center py-5 text-muted">No bookings found.</td>
+                                <td colSpan={9} className="text-center py-5 text-muted">No bookings found.</td>
                             </tr>
                         )}
                     </tbody>
@@ -339,7 +372,8 @@ const Ordermanagement = () => {
                                     <hr className="border-secondary" />
                                     <div className="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <p className="mb-1 text-white">Payment Method: <strong>{selectedBooking.paymentMethod}</strong></p>
+                                            <p className="mb-2 text-white">Payment Method: <strong>{selectedBooking.paymentMethod}</strong></p>
+                                            <p className="mb-2 text-white">Payment Status: <Badge bg={selectedBooking.paymentStatus === 'completed' ? 'success' : selectedBooking.paymentStatus === 'failed' ? 'danger' : 'warning'} className="ms-1">{selectedBooking.paymentStatus ? selectedBooking.paymentStatus.toUpperCase() : 'PENDING'}</Badge></p>
                                             {selectedBooking.bill && (
                                                 <p className="mb-1 text-white">Bill:
                                                     <a
@@ -357,9 +391,39 @@ const Ordermanagement = () => {
                                                 <p className="small italic text-warning">Note: {selectedBooking.specialInstructions}</p>
                                             )}
                                         </div>
-                                        <div className="text-end">
-                                            <h4 className="text-gold mb-0">Total: ₹ {selectedBooking.totalAmount}</h4>
-                                            <p className="small text-white">(Includes tax: ₹ {selectedBooking.tax})</p>
+                                        <div className="text-end" style={{ minWidth: '200px' }}>
+                                            {(() => {
+                                                const { subTotal, discount } = getCalculatedAmounts(selectedBooking);
+                                                return (
+                                                    <>
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-light">Sub Total:</span>
+                                                            <span className="text-white">₹ {subTotal}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-light">Tax:</span>
+                                                            <span className="text-white">₹ {selectedBooking.tax || 0}</span>
+                                                        </div>
+                                                        {(selectedBooking.discountAmount > 0 || selectedBooking.couponCode) && (
+                                                            <div className="d-flex justify-content-between mb-1">
+                                                                <span className="text-success">Offer Discount:</span>
+                                                                <span className="text-success">- ₹ {discount}</span>
+                                                            </div>
+                                                        )}
+                                                        {(selectedBooking.subscriptionDiscount > 0) && (
+                                                            <div className="d-flex justify-content-between mb-1">
+                                                                <span className="text-success">Subscription:</span>
+                                                                <span className="text-success">- ₹ {selectedBooking.subscriptionDiscount}</span>
+                                                            </div>
+                                                        )}
+                                                        <hr className="border-secondary my-2" />
+                                                        <div className="d-flex justify-content-between">
+                                                            <h5 className="text-gold mb-0">Total:</h5>
+                                                            <h5 className="text-gold mb-0">₹ {selectedBooking.totalAmount}</h5>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

@@ -73,6 +73,14 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  subtotal: {
+    type: Number,
+    default: 0
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
   paymentMethod: {
     type: String,
     enum: ['Cash', 'GPay', 'Card', 'Razorpay'],

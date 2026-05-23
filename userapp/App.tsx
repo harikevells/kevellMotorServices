@@ -28,7 +28,7 @@ import ReviewsRatingsPage from './src/AllPages/ReviewsAndRating';
 import NotificationPage from './src/AllPages/NotificationPage';
 import PaymentSimulationPage from './src/AllPages/PaymentSimulationPage';
 import SubscriptionDetailsPage from './src/AllPages/SubscriptionDetailsPage';
-
+import SubscriptionViewpage from './src/AllPages/SubscriptionViewpage';
 
 export type RootStackParamList = {
   FirstScreen: undefined;
@@ -69,8 +69,8 @@ export type RootStackParamList = {
   EditProfile: undefined;
   VendorDrawer: undefined;
   SubscriptionDetails: undefined;
+  SubscriptionViewpage: undefined;
 };
-
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -104,6 +104,7 @@ function App() {
           <Stack.Screen name="EditProfile" component={require('./src/AllPages/EditProfilePage').default} />
           <Stack.Screen name="VendorDrawer" component={require('./src/VendorAllPages/VendorSidebarNavigator').default} />
           <Stack.Screen name="SubscriptionDetails" component={SubscriptionDetailsPage} />
+          <Stack.Screen name="SubscriptionViewpage" component={SubscriptionViewpage} />
         </Stack.Navigator>
 
       </NavigationContainer>

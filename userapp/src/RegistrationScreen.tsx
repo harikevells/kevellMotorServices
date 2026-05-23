@@ -71,8 +71,8 @@ const RegistrationScreen = () => {
       }
     } else {
       // Vendor validation
-      if (!shopName || !name || !email || !password || !phone || !street) {
-        Alert.alert('Error', 'Please fill all vendor required fields (Shop Name, Owner Name, Email, Password, Phone, Location)');
+      if (!shopName || !name || !email || !password || !phone || !street || !city || !state || !pincode) {
+        Alert.alert('Error', 'Please fill all vendor required fields');
         return;
       }
     }
@@ -209,61 +209,53 @@ const RegistrationScreen = () => {
               />
             </View>
 
-            {role === 'user' && (
-              <>
-                <Text style={styles.label}>Gender</Text>
-                <View style={styles.genderContainer}>
-                  {['Male', 'Female', 'Other'].map((g) => (
-                    <TouchableOpacity
-                      key={g}
-                      style={[styles.genderOption, form.gender === g && styles.genderSelected]}
-                      onPress={() => setForm({ ...form, gender: g })}
-                    >
-                      <Text style={[styles.genderText, form.gender === g && styles.genderTextSelected]}>{g}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.genderContainer}>
+              {['Male', 'Female', 'Other'].map((g) => (
+                <TouchableOpacity
+                  key={g}
+                  style={[styles.genderOption, form.gender === g && styles.genderSelected]}
+                  onPress={() => setForm({ ...form, gender: g })}
+                >
+                  <Text style={[styles.genderText, form.gender === g && styles.genderTextSelected]}>{g}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            <Text style={styles.label}>{role === 'vendor' ? 'Location' : 'Address Details'}</Text>
+            <Text style={styles.label}>Address Details</Text>
             <TextInput
               style={styles.input}
-              placeholder={role === 'vendor' ? "Enter shop location" : "Street / Area"}
+              placeholder="Street / Area"
               placeholderTextColor="#555"
               value={form.street}
               onChangeText={(text) => setForm({ ...form, street: text })}
             />
 
-            {role === 'user' && (
-              <>
-                <View style={styles.row}>
-                  <TextInput
-                    style={[styles.input, { flex: 1, marginRight: 10 }]}
-                    placeholder="City"
-                    placeholderTextColor="#555"
-                    value={form.city}
-                    onChangeText={(text) => setForm({ ...form, city: text })}
-                  />
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="State"
-                    placeholderTextColor="#555"
-                    value={form.state}
-                    onChangeText={(text) => setForm({ ...form, state: text })}
-                  />
-                </View>
-                <TextInput
-                  style={[styles.input, { marginTop: 10 }]}
-                  placeholder="Pincode"
-                  placeholderTextColor="#555"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  value={form.pincode}
-                  onChangeText={(text) => setForm({ ...form, pincode: text })}
-                />
-              </>
-            )}
+            <View style={styles.row}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginRight: 10 }]}
+                placeholder="City"
+                placeholderTextColor="#555"
+                value={form.city}
+                onChangeText={(text) => setForm({ ...form, city: text })}
+              />
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="State"
+                placeholderTextColor="#555"
+                value={form.state}
+                onChangeText={(text) => setForm({ ...form, state: text })}
+              />
+            </View>
+            <TextInput
+              style={[styles.input, { marginTop: 10 }]}
+              placeholder="Pincode"
+              placeholderTextColor="#555"
+              keyboardType="number-pad"
+              maxLength={6}
+              value={form.pincode}
+              onChangeText={(text) => setForm({ ...form, pincode: text })}
+            />
           </View>
 
           <TouchableOpacity
