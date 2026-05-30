@@ -1,0 +1,121 @@
+.aboutfour-section {
+  width: 100%;
+  background-color: #030303; /* Deep black top */
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.aboutfour-top {
+  padding: 100px 5% 50px 5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.aboutfour-badge {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 25px;
+}
+
+.orange-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #FD8A1F;
+  border-radius: 50%;
+}
+
+.aboutfour-title {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.aboutfour-subtitle {
+  color: #888;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 800px;
+  margin-bottom: 60px;
+}
+
+.aboutfour-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 40px; /* Space before the car overlaps */
+}
+
+.aboutfour-card {
+  background-color: #111;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  color: #e0e0e0;
+  white-space: pre-line; /* Allows \n to work in titles */
+  transition: background-color 0.3s;
+}
+
+.aboutfour-card:hover {
+  background-color: #1a1a1a;
+}
+
+/* Bottom Section */
+.aboutfour-bottom {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(to bottom, transparent 35%, #0d0d0d 35%); /* Floor horizon line */
+  display: flex;
+  justify-content: center;
+  /* padding-bottom: 60px; */
+}
+
+.anim-car-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.aboutfour-car {
+  z-index: 2; 
+  max-width: 900px; /* Specific size for perfect scale */
+  width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 30px rgba(255, 140, 0, 0.15));
+}
+
+/* Responsive */
+@media (max-width: 1023px) {
+  .aboutfour-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .aboutfour-title {
+    font-size: 32px;
+  }
+  .aboutfour-grid {
+    grid-template-columns: 1fr;
+  }
+  .aboutfour-car {
+    width: 95%;
+  }
+}

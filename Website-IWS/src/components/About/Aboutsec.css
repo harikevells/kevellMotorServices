@@ -1,0 +1,149 @@
+.aboutsec-section {
+  background-color: #0d0d0d;
+  color: #fff;
+  padding-bottom: 100px;
+}
+
+.aboutsec-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+/* Left Side Images */
+.aboutsec-left {
+  width: 100%;
+}
+
+.aboutsec-images {
+  position: relative;
+  width: 100%;
+  height: 600px;
+}
+
+.top-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: calc(100% - 120px); /* Leaves 100px for badge + 20px gap */
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.bottom-img-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 52%; 
+  height: 55%; 
+  background-color: #0d0d0d; /* Same as background to create visual gap */
+  padding-top: 20px;
+  padding-right: 20px;
+}
+
+.bottom-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.aboutsec-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 48%; /* Remaining width */
+  height: 100px;
+  background-color: #161616;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.badge-number {
+  color: var(--primary);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.badge-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Right Side Content */
+.aboutsec-right {
+  display: flex;
+  flex-direction: column;
+  padding-right: 40px;
+}
+
+.aboutsec-right .orange-accent {
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.aboutsec-title {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 50px;
+  letter-spacing: -0.5px;
+}
+
+.aboutsec-feature-block h4 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.aboutsec-feature-block p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.aboutsec-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 30px 0;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1023px) {
+  .aboutsec-container {
+    grid-template-columns: 1fr;
+    gap: 50px;
+  }
+  .aboutsec-right {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .aboutsec-title {
+    font-size: 36px;
+  }
+  .bottom-row {
+    flex-direction: column;
+    height: auto;
+  }
+  .bottom-img {
+    width: 100%;
+    height: 300px;
+  }
+  .aboutsec-badge {
+    width: 100%;
+    height: auto;
+    padding: 30px;
+    align-self: flex-start;
+  }
+}

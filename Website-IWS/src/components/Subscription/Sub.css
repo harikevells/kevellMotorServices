@@ -1,0 +1,362 @@
+.sub-page-wrapper {
+  background-color: #050505;
+  color: white;
+  font-family: 'Inter', 'Roboto', sans-serif;
+  min-height: 100vh;
+  padding-top: 3%;
+}
+
+/* --- Banner --- */
+.sub-banner {
+  background-color: #111111;
+  padding: 80px 20px 60px;
+  text-align: center;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.sub-banner h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.sub-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sub-breadcrumb .dot {
+  width: 8px;
+  height: 8px;
+  background-color: #f78d1e;
+  border-radius: 50%;
+}
+
+.sub-breadcrumb .active {
+  color: #f78d1e;
+}
+
+/* --- Main Content --- */
+.sub-main-content {
+  padding: 100px 5%;
+}
+
+.sub-container {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.sub-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 60px;
+}
+
+.mt-100 {
+  margin-top: 100px;
+}
+
+.sub-left-col {
+  flex: 1;
+  max-width: 500px;
+  padding-top: 20px;
+}
+
+.sub-right-col {
+  flex: 1.5;
+  display: flex;
+  gap: 30px;
+}
+
+/* --- Typography --- */
+.orange-title {
+  color: #f78d1e;
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 25px;
+}
+
+.white-title {
+  color: #ffffff;
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 25px;
+}
+
+.sub-left-col p {
+  color: #a0a0a0;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+/* --- Bullets --- */
+.sub-bullet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.sub-bullet-list li {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #c0c0c0;
+}
+
+.bullet-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #f78d1e;
+  border-radius: 50%;
+}
+
+/* --- Buttons --- */
+.sub-book-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border: none;
+  border-radius: 30px;
+  padding: 8px 8px 8px 25px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sub-book-btn:hover {
+  background-color: #333333;
+}
+
+.btn-icon-orange {
+  background-color: #f78d1e;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #000;
+  font-size: 1.2rem;
+}
+
+/* --- Pricing Cards --- */
+.sub-pricing-card {
+  background-color: #0c0c0c;
+  border-radius: 10px;
+  padding: 40px 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.sub-pricing-card.highlighted {
+  border-color: #f78d1e;
+}
+
+.sub-pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+  border-color: #f78d1e;
+}
+
+.sub-save-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #1a1a1a;
+  color: #f78d1e;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sub-card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #ffffff;
+}
+
+.sub-price {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.currency {
+  font-size: 1.5rem;
+  margin-top: 5px;
+}
+
+.sub-period {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #a0a0a0;
+  margin-bottom: 25px;
+}
+
+.sub-divider {
+  width: 100%;
+  height: 1px;
+  background-color: #222222;
+  margin-bottom: 30px;
+}
+
+.sub-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 40px 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sub-features li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #d0d0d0;
+}
+
+.check-icon {
+  color: #ffffff;
+  font-size: 1.2rem;
+}
+
+.sub-subscribe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #f78d1e;
+  color: #ffffff;
+  border: none;
+  border-radius: 30px;
+  padding: 6px 20px 6px 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  max-width: 200px;
+  transition: all 0.3s ease;
+}
+
+.sub-subscribe-btn:hover {
+  background-color: #e67d12;
+}
+
+.btn-icon {
+  background-color: #000000;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #f78d1e;
+  font-size: 1.2rem;
+}
+
+
+/* --- Responsive Design --- */
+@media (max-width: 1200px) {
+  .sub-right-col {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .sub-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .sub-left-col {
+    max-width: 100%;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  
+  .sub-bullet-list {
+    align-items: center;
+  }
+  
+  .sub-right-col {
+    width: 100%;
+    max-width: 800px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sub-banner h1 {
+    font-size: 2rem;
+  }
+  
+  .orange-title, .white-title {
+    font-size: 2.2rem;
+  }
+  
+  .sub-right-col {
+    flex-direction: column;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sub-main-content {
+    padding: 60px 5%;
+  }
+  
+  .mt-100 {
+    margin-top: 60px;
+  }
+
+  .orange-title, .white-title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 2500px) {
+  .sub-container {
+    max-width: 1600px;
+  }
+  
+  .orange-title, .white-title {
+    font-size: 3.5rem;
+  }
+  
+  .sub-left-col p {
+    font-size: 1.2rem;
+  }
+}

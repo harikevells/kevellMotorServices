@@ -1,0 +1,140 @@
+.aboutthird-section {
+  display: flex;
+  width: 100%;
+  min-height: 500px;
+}
+
+/* Left Panel */
+.aboutthird-left {
+  width: 50%;
+  background-color: #FD8A1F; /* Brand orange */
+  padding: 100px 5% 100px max(5%, calc((100vw - 1500px) / 2)); /* Aligns text with max-width container */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #000;
+}
+
+.aboutthird-left h2 {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 25px;
+  color: #000;
+}
+
+.aboutthird-left p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  color: #fff;
+  max-width: 90%;
+}
+
+/* Right Panel */
+.aboutthird-right {
+  width: 50%;
+  /* Dark tint overlay over car interior image */
+  background-image: linear-gradient(rgba(10, 10, 10, 0.8), rgba(10, 10, 10, 0.8)), url('../../assets/carmotor.png');
+  background-size: cover;
+  background-position: center;
+  padding: 100px max(5%, calc((100vw - 1500px) / 2)) 100px 5%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #fff;
+}
+
+.aboutthird-right h2 {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 25px;
+  color: #fff;
+}
+
+.aboutthird-right p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  color: #e0e0e0;
+  max-width: 90%;
+}
+
+/* Buttons */
+.aboutthird-btn-black {
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 24px 6px 6px;
+  gap: 15px;
+  width: fit-content;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.btn-icon-orange {
+  background: #FD8A1F;
+  color: #000;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.aboutthird-btn-orange {
+  background: #FD8A1F;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 24px 6px 6px;
+  gap: 15px;
+  width: fit-content;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.btn-icon-black {
+  background: #000;
+  color: #FD8A1F;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.aboutthird-btn-black:hover, .aboutthird-btn-orange:hover {
+  transform: translateY(-3px);
+}
+
+/* Responsive */
+@media (max-width: 1023px) {
+  .aboutthird-section {
+    flex-direction: column;
+  }
+  .aboutthird-left, .aboutthird-right {
+    width: 100%;
+    padding: 80px 5%;
+  }
+}
+
+@media (max-width: 600px) {
+  .aboutthird-left h2, .aboutthird-right h2 {
+    font-size: 36px;
+  }
+}
