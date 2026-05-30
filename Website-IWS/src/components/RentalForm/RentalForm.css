@@ -1,0 +1,115 @@
+.rental-form-wrapper {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 5%;
+  /* Lift it over the hero section */
+  position: relative;
+  z-index: 10;
+}
+
+.rental-form {
+  background: rgba(30, 40, 50, 0.85);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.form-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-light);
+  min-width: 150px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 20px;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.form-group input {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  width: 100%;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.form-submit {
+  padding-left: 20px;
+}
+
+.search-btn {
+  padding: 12px 30px;
+}
+
+/* Responsive */
+@media (max-width: 1023px) {
+  .rental-form {
+    flex-wrap: wrap;
+  }
+  .form-group {
+    flex: 1 1 40%;
+    margin-bottom: 15px;
+  }
+  .form-header {
+    flex: 1 1 100%;
+    margin-bottom: 10px;
+  }
+  .form-submit {
+    flex: 1 1 100%;
+    border-left: none;
+    padding-left: 0;
+    text-align: right;
+  }
+}
+
+@media (max-width: 600px) {
+  .rental-form {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .form-group {
+    width: 100%;
+    border-left: none;
+    padding-left: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+  }
+  .form-group:last-of-type {
+    border-bottom: none;
+  }
+  .form-submit {
+    width: 100%;
+  }
+  .search-btn {
+    width: 100%;
+  }
+}

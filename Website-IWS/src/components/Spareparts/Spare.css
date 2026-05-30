@@ -1,0 +1,232 @@
+.spare-parts-section {
+  background-color: #050505;
+  color: #ffffff;
+  padding: 100px 5%;
+  font-family: 'Inter', 'Roboto', sans-serif;
+  min-height: 800px;
+}
+
+.spare-parts-container {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* --- Header Section --- */
+.spare-header-wrapper {
+  text-align: center;
+  margin-bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spare-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #1a1a1a;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b0b0b0;
+  margin-bottom: 25px;
+}
+
+.spare-orange-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #f78d1e;
+  border-radius: 50%;
+}
+
+.spare-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* --- Tabs Section --- */
+.spare-tabs-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 70px;
+  flex-wrap: wrap;
+}
+
+.spare-tab-button {
+  background-color: transparent;
+  border: 1px solid #1f1f1f;
+  color: #e0e0e0;
+  padding: 20px 40px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  text-align: center;
+}
+
+.spare-tab-button:hover {
+  background-color: rgba(247, 141, 30, 0.1);
+  border-color: #f78d1e;
+}
+
+.spare-tab-button.active {
+  background-color: #df7a19;
+  border-color: #df7a19;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(223, 122, 25, 0.2);
+}
+
+/* --- Grid Section --- */
+.spare-grid-wrapper {
+  min-height: 400px; /* Prevents layout jump during tab switch */
+}
+
+.spare-parts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+.spare-part-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* The subtle top line above each card */
+.spare-card-line {
+  width: 100%;
+  height: 1px;
+  background-color: #1a1a1a;
+  margin-bottom: 20px;
+}
+
+.spare-image-box {
+  width: 100%;
+  aspect-ratio: 15 / 15;
+  background-color: #111111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin-bottom: 25px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: transform 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.spare-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+  transition: transform 0.4s ease;
+}
+
+.spare-part-card:hover .spare-image-box img {
+  transform: scale(1.05);
+}
+
+.spare-part-card:hover .spare-image-box {
+  background-color: #141414;
+  border-color: #f78d1e;
+}
+
+.spare-part-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0;
+  text-align: center;
+}
+
+
+/* --- Responsive Design --- */
+@media (max-width: 1200px) {
+  .spare-parts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .spare-parts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .spare-parts-section {
+    padding: 80px 5%;
+  }
+
+  .spare-title {
+    font-size: 1.8rem;
+  }
+
+  .spare-tabs-container {
+    gap: 15px;
+    margin-bottom: 50px;
+  }
+
+  .spare-tab-button {
+    padding: 15px 25px;
+    font-size: 0.95rem;
+    min-width: 150px;
+    flex: 1 1 calc(50% - 15px);
+  }
+}
+
+@media (max-width: 600px) {
+  .spare-parts-section {
+    padding: 60px 5%;
+  }
+
+  .spare-title {
+    font-size: 1.5rem;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .spare-tabs-container {
+    flex-direction: column;
+  }
+
+  .spare-tab-button {
+    width: 100%;
+  }
+
+  .spare-parts-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 2500px) {
+  .spare-parts-section {
+    padding: 120px 10%;
+  }
+
+  .spare-parts-container {
+    max-width: 1800px;
+  }
+
+  .spare-title {
+    font-size: 3rem;
+  }
+
+  .spare-tab-button {
+    font-size: 1.3rem;
+    padding: 25px 60px;
+  }
+
+  .spare-part-name {
+    font-size: 1.4rem;
+  }
+}
