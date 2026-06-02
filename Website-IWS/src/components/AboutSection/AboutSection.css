@@ -4,7 +4,7 @@
 }
 
 .about-container {
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -15,7 +15,8 @@
 .about-images {
   position: relative;
   width: 100%;
-  aspect-ratio: 1; /* Square container for perfectly overlapping images */
+  aspect-ratio: 1;
+  /* Square container for perfectly overlapping images */
   max-width: 550px;
   margin: 0 auto;
 }
@@ -148,7 +149,7 @@
   .about-images {
     max-width: 400px;
   }
-  
+
   .img-2 {
     border-width: 5px;
   }

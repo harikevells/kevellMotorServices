@@ -7,7 +7,7 @@
 }
 
 .contactus-container {
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
   padding: 0 5%;
   padding-top: 3%;
@@ -46,7 +46,8 @@
   width: 180px;
   height: 220px;
   background-color: #f78d1e;
-  border-radius: 0 0 100px 100px; /* U-shape */
+  border-radius: 0 0 100px 100px;
+  /* U-shape */
   margin-left: 20px;
 }
 
@@ -142,7 +143,8 @@
 }
 
 .submit-btn {
-  background-color: #5deb5d; /* Bright green like image */
+  background-color: #5deb5d;
+  /* Bright green like image */
   color: black;
   font-weight: 700;
   border: none;
@@ -324,7 +326,8 @@
 .map-pin {
   position: absolute;
   top: 30%;
-  left: 20%; /* Just an example position for Paris */
+  left: 20%;
+  /* Just an example position for Paris */
   transform: translate(-50%, -50%);
 }
 
@@ -342,15 +345,27 @@
 .pin-inner {
   width: 16px;
   height: 16px;
-  background-color: #4285f4; /* Blue pin like in image */
+  background-color: #4285f4;
+  /* Blue pin like in image */
   border-radius: 50%;
   border: 2px solid white;
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.9); opacity: 1; }
-  70% { transform: scale(1.5); opacity: 0; }
-  100% { transform: scale(0.9); opacity: 0; }
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+
+  70% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
 }
 
 
@@ -363,7 +378,7 @@
   .contact-top-left {
     max-width: 100%;
   }
-  
+
   .contact-image-wrapper img {
     height: auto;
   }
@@ -398,7 +413,7 @@
   .contact-map-section h3 {
     font-size: 1.6rem;
   }
-  
+
   .map-image-container {
     height: 300px;
   }
@@ -413,7 +428,7 @@
     width: 120px;
     height: 150px;
   }
-  
+
   .contact-form-container {
     padding: 20px;
   }
@@ -421,21 +436,21 @@
 
 @media (min-width: 1024px) and (max-width: 2500px) {
   .contactus-container {
-    max-width: 1600px;
+    max-width: 1900px;
   }
-  
+
   .contact-top-left h2 {
     font-size: 4rem;
   }
-  
+
   .contact-info-text h3 {
     font-size: 3rem;
   }
-  
+
   .contact-map-section h3 {
     font-size: 2.5rem;
   }
-  
+
   .map-image-container {
     height: 600px;
   }

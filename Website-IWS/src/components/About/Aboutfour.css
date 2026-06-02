@@ -1,6 +1,7 @@
 .aboutfour-section {
   width: 100%;
-  background-color: #030303; /* Deep black top */
+  background-color: #030303;
+  /* Deep black top */
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -12,7 +13,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
   width: 100%;
 }
@@ -58,7 +59,8 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   width: 100%;
-  margin-bottom: 40px; /* Space before the car overlaps */
+  margin-bottom: 40px;
+  /* Space before the car overlaps */
 }
 
 .aboutfour-card {
@@ -69,7 +71,8 @@
   font-size: 18px;
   font-weight: 500;
   color: #e0e0e0;
-  white-space: pre-line; /* Allows \n to work in titles */
+  white-space: pre-line;
+  /* Allows \n to work in titles */
   transition: background-color 0.3s;
 }
 
@@ -81,7 +84,8 @@
 .aboutfour-bottom {
   position: relative;
   width: 100%;
-  background: linear-gradient(to bottom, transparent 35%, #0d0d0d 35%); /* Floor horizon line */
+  background: linear-gradient(to bottom, transparent 35%, #0d0d0d 35%);
+  /* Floor horizon line */
   display: flex;
   justify-content: center;
   /* padding-bottom: 60px; */
@@ -94,8 +98,9 @@
 }
 
 .aboutfour-car {
-  z-index: 2; 
-  max-width: 900px; /* Specific size for perfect scale */
+  z-index: 2;
+  max-width: 900px;
+  /* Specific size for perfect scale */
   width: 100%;
   object-fit: contain;
   filter: drop-shadow(0 20px 30px rgba(255, 140, 0, 0.15));
@@ -112,9 +117,11 @@
   .aboutfour-title {
     font-size: 32px;
   }
+
   .aboutfour-grid {
     grid-template-columns: 1fr;
   }
+
   .aboutfour-car {
     width: 95%;
   }

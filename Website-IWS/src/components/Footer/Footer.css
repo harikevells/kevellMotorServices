@@ -5,7 +5,7 @@
 }
 
 .footer-container {
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.5fr;
@@ -88,7 +88,8 @@
   font-weight: 600;
 }
 
-.links-col ul, .contact-col ul {
+.links-col ul,
+.contact-col ul {
   display: flex;
   flex-direction: column;
   gap: 15px;

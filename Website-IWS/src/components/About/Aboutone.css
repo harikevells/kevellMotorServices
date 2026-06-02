@@ -1,12 +1,14 @@
 .aboutone-page {
-  background-color: #111; /* Extremely dark background */
+  background-color: #111;
+  /* Extremely dark background */
   min-height: 100vh;
-  padding-top: 50px; /* Offset for fixed header */
+  padding-top: 50px;
+  /* Offset for fixed header */
   color: #fff;
 }
 
 .aboutone-container {
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
 }
 
@@ -137,11 +139,25 @@
 }
 
 @keyframes iconWiggle {
-  0% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(-15deg) scale(1.2); }
-  50% { transform: rotate(15deg) scale(1.2); }
-  75% { transform: rotate(-15deg) scale(1.2); }
-  100% { transform: rotate(0deg) scale(1.1); }
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    transform: rotate(-15deg) scale(1.2);
+  }
+
+  50% {
+    transform: rotate(15deg) scale(1.2);
+  }
+
+  75% {
+    transform: rotate(-15deg) scale(1.2);
+  }
+
+  100% {
+    transform: rotate(0deg) scale(1.1);
+  }
 }
 
 .service-grid-icon {
@@ -167,6 +183,7 @@
     grid-template-columns: 1fr;
     gap: 50px;
   }
+
   .services-grid-new {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -176,6 +193,7 @@
   .aboutone-title {
     font-size: 36px;
   }
+
   .services-grid-new {
     grid-template-columns: 1fr;
   }

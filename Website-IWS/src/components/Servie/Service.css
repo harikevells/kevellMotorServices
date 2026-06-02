@@ -1,12 +1,13 @@
 /* Service.css */
 .services-page {
-  background-color: #050505; /* Deep black theme */
+  background-color: #050505;
+  /* Deep black theme */
   color: #fff;
   min-height: 100vh;
 }
 
 .services-container {
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
   padding: 0 5%;
   /* margin-bottom: 70px; */
@@ -16,24 +17,27 @@
   padding-top: 0px !important;
   /* padding-bottom: 100px; */
 }
-.ring{
 
-    padding-top: 70px;
-    padding-bottom: 70px;
+.ring {
+
+  padding-top: 70px;
+  padding-bottom: 70px;
 }
+
 /* Hero Header */
 .services-hero {
   position: relative;
   height: 280px;
   background-color: #000;
-  background-image: linear-gradient(to right, rgba(0,0,0,1) 40%, rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1620882813876-0f331908bd16?q=80&w=1600&auto=format&fit=crop');
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0.3)), url('https://images.unsplash.com/photo-1620882813876-0f331908bd16?q=80&w=1600&auto=format&fit=crop');
   background-size: cover;
   background-position: right center;
   display: flex;
   align-items: center;
   padding: 0 6%;
   border-bottom: 1px solid #111;
-  margin-top: 80px; /* Offset for fixed header */
+  margin-top: 80px;
+  /* Offset for fixed header */
 }
 
 .services-hero-content .orange-accent {
@@ -176,7 +180,7 @@
 .services-split {
   display: flex;
   width: 100%;
-  padding: 0; 
+  padding: 0;
 }
 
 .services-split.reverse {
@@ -213,9 +217,9 @@
   position: absolute;
   top: 20px;
   left: 30px;
-  font-size: 90px; 
+  font-size: 90px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.03); 
+  color: rgba(255, 255, 255, 0.03);
   z-index: 0;
   pointer-events: none;
   white-space: nowrap;
@@ -229,8 +233,8 @@
   background-color: #0a0a0a;
 }
 
-.split-content-wrapper h2, 
-.split-content-wrapper p, 
+.split-content-wrapper h2,
+.split-content-wrapper p,
 .split-content-wrapper .bullet-grid,
 .split-content-wrapper .pill-btn-outline {
   position: relative;
@@ -285,6 +289,7 @@
 .pill-btn-outline:hover {
   opacity: 0.9;
 }
+
 .pill-btn-outline .btn-icon-orange {
   background: #000;
   color: #FD8A1F;
@@ -310,7 +315,7 @@
 .gallery-card {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4; 
+  aspect-ratio: 3 / 4;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -333,7 +338,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -342,7 +347,7 @@
 }
 
 .gallery-card:hover .gallery-overlay {
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .gallery-category {
@@ -371,6 +376,7 @@
   .gallery-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .split-content-wrapper {
     padding: 60px 5%;
   }
@@ -380,21 +386,28 @@
   .services-grid {
     grid-template-columns: 1fr;
   }
+
   .services-split .services-container {
     flex-direction: column !important;
   }
+
   .services-split.reverse .services-container {
     flex-direction: column-reverse !important;
   }
-  .split-img-wrapper, .split-content-wrapper {
+
+  .split-img-wrapper,
+  .split-content-wrapper {
     width: 100%;
   }
+
   .bullet-grid {
     grid-template-columns: 1fr;
   }
+
   .gallery-grid {
     grid-template-columns: 1fr;
   }
+
   .services-hero-content h1 {
     font-size: 40px;
   }

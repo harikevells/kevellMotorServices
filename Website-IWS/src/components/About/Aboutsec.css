@@ -5,7 +5,7 @@
 }
 
 .aboutsec-container {
-  max-width: 1500px;
+  max-width: 1900px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -29,7 +29,8 @@
   top: 0;
   right: 0;
   width: 100%;
-  height: calc(100% - 120px); /* Leaves 100px for badge + 20px gap */
+  height: calc(100% - 120px);
+  /* Leaves 100px for badge + 20px gap */
   object-fit: cover;
   border-radius: 12px;
 }
@@ -38,9 +39,10 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 52%; 
-  height: 55%; 
-  background-color: #0d0d0d; /* Same as background to create visual gap */
+  width: 52%;
+  height: 55%;
+  background-color: #0d0d0d;
+  /* Same as background to create visual gap */
   padding-top: 20px;
   padding-right: 20px;
 }
@@ -56,7 +58,8 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 48%; /* Remaining width */
+  width: 48%;
+  /* Remaining width */
   height: 100px;
   background-color: #161616;
   border-radius: 12px;
@@ -123,6 +126,7 @@
     grid-template-columns: 1fr;
     gap: 50px;
   }
+
   .aboutsec-right {
     padding-right: 0;
   }
@@ -132,14 +136,17 @@
   .aboutsec-title {
     font-size: 36px;
   }
+
   .bottom-row {
     flex-direction: column;
     height: auto;
   }
+
   .bottom-img {
     width: 100%;
     height: 300px;
   }
+
   .aboutsec-badge {
     width: 100%;
     height: auto;
