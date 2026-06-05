@@ -25,32 +25,32 @@ import Suc from './components/Suscription/Suc';
 import Offer from './components/Offers/Offer';
 
 const pageToPathMap = {
-  Dashboard: '/dashboard',
-  'Service Management': '/service-management',
-  'Order Management': '/order-management',
-  'Vendor Management': '/vendor-management',
-  'Vendor Slot': '/view-timeslot',
-  'Add Vendor': '/add-vendor',
-  'User Management': '/user-management',
-  Notification: '/notification',
-  'Reviews & Ratings': '/reviews',
-  Payment: '/payment',
-  Tracking: '/tracking',
-  'Spare Parts Management': '/spare-parts',
-  'Spare Parts Shop': '/spare-parts-shop',
-  'Car Management': '/car-management',
-  Transactions: '/transactions',
-  Content: '/content',
-  CRM: '/crm',
-  Settings: '/settings',
-  Reports: '/reports',
-  Support: '/support',
-  'Roles': '/roles',
-  'Challen Bill': '/challen',
-  'Time Slot': '/time-slot',
-  'Wallet': '/wallet',
-  'Subscription Management': '/subscriptions',
-  'Offer Management': '/offers'
+  Dashboard: '#/dashboard',
+  'Service Management': '#/service-management',
+  'Order Management': '#/order-management',
+  'Vendor Management': '#/vendor-management',
+  'Vendor Slot': '#/view-timeslot',
+  'Add Vendor': '#/add-vendor',
+  'User Management': '#/user-management',
+  Notification: '#/notification',
+  'Reviews & Ratings': '#/reviews',
+  Payment: '#/payment',
+  Tracking: '#/tracking',
+  'Spare Parts Management': '#/spare-parts',
+  'Spare Parts Shop': '#/spare-parts-shop',
+  'Car Management': '#/car-management',
+  Transactions: '#/transactions',
+  Content: '#/content',
+  CRM: '#/crm',
+  Settings: '#/settings',
+  Reports: '#/reports',
+  Support: '#/support',
+  'Roles': '#/roles',
+  'Challen Bill': '#/challen',
+  'Time Slot': '#/time-slot',
+  'Wallet': '#/wallet',
+  'Subscription Management': '#/subscriptions',
+  'Offer Management': '#/offers'
 };
 
 const pathToPageMap = Object.entries(pageToPathMap).reduce((acc, [page, path]) => {
@@ -58,14 +58,14 @@ const pathToPageMap = Object.entries(pageToPathMap).reduce((acc, [page, path]) =
   return acc;
 }, {});
 
-const normalizePath = (path) => path.replace(/\/+$/, '').toLowerCase() || '/dashboard';
+const normalizePath = (path) => path.replace(/\/+$/, '').toLowerCase() || '#/dashboard';
 
-const getPageFromPath = (pathname) => {
-  const normalized = normalizePath(pathname);
+const getPageFromPath = (hashpath) => {
+  const normalized = normalizePath(hashpath);
   return pathToPageMap[normalized] || null;
 };
 
-const getPathFromPage = (page) => pageToPathMap[page] || '/dashboard';
+const getPathFromPage = (page) => pageToPathMap[page] || '#/dashboard';
 
 function App() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -82,7 +82,7 @@ function App() {
       setUser(JSON.parse(savedUser));
     }
 
-    const routePage = getPageFromPath(window.location.pathname);
+    const routePage = getPageFromPath(window.location.hash || '#/dashboard');
     if (routePage) {
       setActivePage(routePage);
       sessionStorage.setItem('activePage', routePage);
@@ -105,7 +105,7 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       const newPath = getPathFromPage(activePage);
-      if (normalizePath(window.location.pathname) !== normalizePath(newPath)) {
+      if (normalizePath(window.location.hash || '#/dashboard') !== normalizePath(newPath)) {
         window.history.replaceState(null, '', newPath);
       }
       sessionStorage.setItem('activePage', activePage);
@@ -124,7 +124,7 @@ function App() {
     setIsAuthenticated(false);
     setUser(null);
     setActivePage('Dashboard');
-    window.history.replaceState(null, '', '/dashboard');
+    window.history.replaceState(null, '', '#/dashboard');
   };
 
   const handleSetPage = (page) => {

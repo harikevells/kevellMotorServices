@@ -18,7 +18,7 @@ import { RootStackParamList } from '../../App';
 import { fetchSubscriptions, purchaseSubscription, SafeStorage, fetchProfile, fetchMySubscriptions } from '../services/api';
 
 const { width } = Dimensions.get('window');
-const SUB_BG = require('../assets/subscription_bg.png');
+const SUB_BG = require('../assets/subscription_bg.jpg');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

@@ -14,11 +14,11 @@ const InvoiceContent = ({ selectedBooking, customerName, vehicleNumber, vehicleD
         <div className="bill-header">
             <div className="brand-section">
                 <img src={logoPdf} alt="Logo" className="bill-logo" />
-                <h2 className="vendor-name">{selectedBooking?.vendorDetails?.shopName || 'Kevell Motor Services'}</h2>
+                <h2 className="vendor-name">{selectedBooking?.vendorDetails?.shopName || 'IWS'}</h2>
                 <p className="vendor-info">
                     {selectedBooking?.vendorDetails?.address || '123 Service Road, Madurai'}<br/>
                     Phone: {selectedBooking?.vendorDetails?.phone || '+91 98765 43210'}<br/>
-                    Email: {selectedBooking?.vendorDetails?.email || 'support@kevell.com'}
+                    Email: {selectedBooking?.vendorDetails?.email || 'support@iws.com'}
                 </p>
             </div>
             <div className="invoice-meta text-end">

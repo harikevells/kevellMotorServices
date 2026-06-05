@@ -188,7 +188,7 @@ const Sparepartorder = () => {
                     key: 'rzp_test_SfkV0cySd3CwyQ',
                     amount: Math.round(amount * 100),
                     currency: 'INR',
-                    name: 'Kevell Motor Services',
+                    name: 'IWS',
                     description: `Payment for ${selectedPart.name}`,
                     image: 'https://i.imgur.com/3g7nmJC.png',
                     handler: async function (response) {

@@ -6,6 +6,7 @@ import './Login.css';
 // Assets
 import clouds from '../../assets/logincloude.png';
 import downImage from '../../assets/logindownimage.png';
+import desktopLogo from '../../assets/DesktopLogo.png';
 
 const Login = ({ onLoginSuccess }) => {
     const [email, setEmail] = useState('');
@@ -74,9 +75,15 @@ const Login = ({ onLoginSuccess }) => {
             {/* Login Card */}
             <div className="login-card">
                 <div className="login-card-content">
-                    <h1 className="card-title">Let's Get Started</h1>
-                    <p className="card-subtitle">Sign into continue to DRZEUS</p>
-
+                    <div className="d1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '5px' }}>
+                    <div style={{}}>
+                        <img src={desktopLogo} alt="Logo" style={{ width: '60px', height: '60px' }} />
+                    </div>
+                    <div className="d2">
+                        <h1 className="card-title" style={{ margin: 0 }}>Let's Get Started</h1>
+                            <p className="card-subtitle">Sign into continue to IWS</p>
+                    </div>
+                </div>
                     {error && <div className="login-error-msg">{error}</div>}
 
                     <form onSubmit={handleSubmit} className="login-form-custom">

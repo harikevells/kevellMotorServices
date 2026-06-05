@@ -8,6 +8,7 @@ import {
   Dimensions,
   SafeAreaView,
   Image,
+  ImageBackground,
   Alert,
   BackHandler,
 } from 'react-native';
@@ -20,6 +21,7 @@ import VendorDeliveryList from './VendorDeliveryList';
 import VendorNotificationPage from './NotificationPage';
 import VendorProfile from './VendorProfile';
 import ChallenBooking from './ChallenBooking';
+import VendorWallet from './VendorWallet';
 import api, { SafeStorage } from '../services/api';
 import { getImageUrl } from '../constants/config';
 import VendorFooter from './VendorFooter';
@@ -159,7 +161,8 @@ const VendorSidebarNavigator = () => {
   const menuItems = [
     { id: 'Dashboard', title: 'Dashboard', icon: '📊' },
     { id: 'Vendorspareshop', title: 'Spare Shop', icon: '🛒' },
-    { id: 'Orders', title: 'Orders', icon: '📦' },
+    { id: 'Orders', title: 'Booking Orders', icon: '📦' },
+    { id: 'VendorWallet', title: 'Wallet', icon: '💰' },
     { id: 'DeliveryCreate', title: 'Add Delivery Boy', icon: '👤+' },
     { id: 'DeliveryList', title: 'Delivery Boys', icon: '👥' },
     { id: 'Notifications', title: 'Notifications', icon: '🔔' },
@@ -172,6 +175,7 @@ const VendorSidebarNavigator = () => {
       case 'Dashboard': return <VendorDashboard />;
       case 'Vendorspareshop': return <Vendorspareshop />;
       case 'Orders': return <VendorOrderList />;
+      case 'VendorWallet': return <VendorWallet />;
       case 'DeliveryCreate': return <VendorDeliveryCreate />;
       case 'DeliveryList': return <VendorDeliveryList />;
       case 'Notifications': return <VendorNotificationPage />;
@@ -183,34 +187,43 @@ const VendorSidebarNavigator = () => {
 
   return (
     <VendorNavContext.Provider value={{ activeTab, setActiveTab: handleTabChange, toggleDrawer, unreadCount, refreshNotifications: fetchUnreadNotifications }}>
-      <View style={styles.container}>
-        {activeTab !== 'Dashboard' && (
-          <SafeAreaView style={styles.header}>
-            <View style={{ width: 40 }} />
-            <Text style={styles.headerTitle}>{menuItems.find(i => i.id === activeTab)?.title || activeTab}</Text>
-            {activeTab === 'DeliveryList' ? (
-              <TouchableOpacity
-                style={styles.headerAddBtn}
-                onPress={() => handleTabChange('DeliveryCreate')}
-              >
-                <Text style={styles.headerAddBtnText}>Add +</Text>
-              </TouchableOpacity>
-            ) : (
+      {['Orders', 'Profile', 'ChallenBooking', 'Vendorspareshop', 'VendorWallet'].includes(activeTab) ? (
+        <ImageBackground source={require('../assets/vendorbackgroundimageAll.png')} style={styles.container}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}>
+            <View style={styles.content}>
+              {renderContent()}
+            </View>
+            <VendorFooter unreadCount={unreadCount} />
+          </View>
+        </ImageBackground>
+      ) : (
+        <View style={styles.container}>
+          {activeTab !== 'Dashboard' && !['Profile', 'ChallenBooking', 'Vendorspareshop', 'VendorWallet'].includes(activeTab) && (
+            <SafeAreaView style={styles.header}>
               <View style={{ width: 40 }} />
-            )}
-          </SafeAreaView>
-        )}
+              <Text style={styles.headerTitle}>{menuItems.find(i => i.id === activeTab)?.title || activeTab}</Text>
+              {activeTab === 'DeliveryList' ? (
+                <TouchableOpacity
+                  style={styles.headerAddBtn}
+                  onPress={() => handleTabChange('DeliveryCreate')}
+                >
+                  <Text style={styles.headerAddBtnText}>Add +</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={{ width: 40 }} />
+              )}
+            </SafeAreaView>
+          )}
 
-        <View style={styles.content}>
-          {renderContent()}
+          <View style={styles.content}>
+            {renderContent()}
+          </View>
+          <VendorFooter unreadCount={unreadCount} />
         </View>
-
-        <VendorFooter unreadCount={unreadCount} />
-      </View>
+      )}
     </VendorNavContext.Provider>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {

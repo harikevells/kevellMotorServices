@@ -104,7 +104,7 @@
 
 .card-title {
     color: #f28b2c;
-    font-size: 26px;
+    font-size: 20px !important;
     font-weight: 700;
     margin-bottom: 6px;
     letter-spacing: 0.5px;
@@ -112,8 +112,8 @@
 
 .card-subtitle {
     color: #ffffff;
-    font-size: 13px;
-    margin-bottom: 35px;
+    font-size: 15px;
+    margin-bottom: 12px;
     opacity: 0.8;
 }
 

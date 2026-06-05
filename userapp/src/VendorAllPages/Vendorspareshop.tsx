@@ -57,6 +57,9 @@ const Vendorspareshop = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [filterModalVisible, setFilterModalVisible] = useState(false);
 
+    // Full Screen Image State
+    const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+
     // User Form Details
     const [userId, setUserId] = useState('');
     const [userName, setUserName] = useState('');
@@ -336,10 +339,12 @@ const Vendorspareshop = () => {
                 </View>
             </View>
             <View style={styles.orderBody}>
-                <Image
-                    source={{ uri: getImageUrl(item.sparePart?.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }}
-                    style={styles.orderImage}
-                />
+                <TouchableOpacity onPress={() => setFullScreenImage(getImageUrl(item.sparePart?.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image')}>
+                    <Image
+                        source={{ uri: getImageUrl(item.sparePart?.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }}
+                        style={styles.orderImage}
+                    />
+                </TouchableOpacity>
                 <View style={styles.orderDetails}>
                     <Text style={styles.orderPartName} numberOfLines={2}>{item.sparePart?.name || 'Unknown Part'}</Text>
                     <Text style={styles.orderPartBrand}>{item.sparePart?.brand || 'Generic'}</Text>
@@ -355,7 +360,7 @@ const Vendorspareshop = () => {
                     </TouchableOpacity>
                     {item.status === 'Pending' || item.status === 'Confirmed' ? (
                         <TouchableOpacity onPress={() => openCancelModal(item)} style={[styles.footerButton, { backgroundColor: '#ef4444' }]}>
-                            <Text style={styles.footerButtonText}>✕ Cancel</Text>
+                            <Text style={[styles.footerButtonText, { color: '#fff' }]}>✕ Cancel</Text>
                         </TouchableOpacity>
                     ) : null}
                     {item.status === 'Delivered' ? (
@@ -373,29 +378,38 @@ const Vendorspareshop = () => {
         
         return (
             <View style={styles.card}>
-                <Image source={{ uri: getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} style={styles.productImage} />
+                <TouchableOpacity style={styles.imageContainer} onPress={() => setFullScreenImage(getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image')}>
+                    <Image source={{ uri: getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} style={styles.productImage} />
+                </TouchableOpacity>
                 <View style={styles.cardContent}>
-                    <View style={styles.categoryBrandRow}>
-                        <Text style={styles.categoryText} numberOfLines={1}>{item.category || 'Spare'}</Text>
-                        <Text style={styles.brandText} numberOfLines={1}>{item.brand || 'Generic'}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+                            {item.description ? (
+                                <Text style={styles.productDescription} numberOfLines={2}>{item.description}</Text>
+                            ) : null}
+                        </View>
+                        <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+                            <Text style={styles.categoryText} numberOfLines={1}>{item.category || 'Spare'}</Text>
+                            <Text style={styles.brandText} numberOfLines={1}>{item.brand || 'Generic'}</Text>
+                        </View>
                     </View>
-                    <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
                     <View style={styles.priceRatingRow}>
                         <View style={styles.ratingContainer}>
                             <Text style={styles.starIcon}>⭐</Text>
                             <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
                         </View>
-                        <Text style={styles.productPrice}>₹{item.amount}</Text>
+                        <Text style={[styles.stockText, { color: isOutOfStock ? '#ff5252' : '#ff4444' }]} numberOfLines={1}>
+                            {isOutOfStock ? 'OUT OF STOCK' : `${item.stockQty} LEFT`}
+                        </Text>
                     </View>
-                    <Text style={[styles.stockText, { color: isOutOfStock ? '#ff5252' : '#4caf50' }]} numberOfLines={1}>
-                        {isOutOfStock ? 'Out of Stock' : `${item.stockQty} left`}
-                    </Text>
+                    <Text style={styles.productPrice}>₹{item.amount}</Text>
                     <TouchableOpacity
                         style={[styles.buyButton, isOutOfStock && { backgroundColor: '#ccc' }]}
                         onPress={() => openOrderModal(item)}
                         disabled={isOutOfStock}
                     >
-                        <Text style={styles.buyButtonText}>Buy Now</Text>
+                        <Text style={styles.buyButtonText}>SHOP NOW</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -404,18 +418,24 @@ const Vendorspareshop = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
+            <View style={styles.customHeader}>
+              <Text style={styles.headerTitle}>Spare Shop</Text>
+            </View>
+
             <View style={styles.toggleContainer}>
                 <TouchableOpacity
-                    style={[styles.toggleButton, activeTab === 'parts' && styles.toggleButtonActive]}
+                    style={styles.toggleButton}
                     onPress={() => setActiveTab('parts')}
                 >
-                    <Text style={[styles.toggleText, activeTab === 'parts' && styles.toggleTextActive]}>Parts</Text>
+                    <Text style={[styles.toggleText, activeTab === 'parts' && styles.toggleTextActive]}>SPARE PARTS</Text>
+                    {activeTab === 'parts' && <View style={styles.activeTabLine} />}
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.toggleButton, activeTab === 'orders' && styles.toggleButtonActive]}
+                    style={styles.toggleButton}
                     onPress={() => setActiveTab('orders')}
                 >
-                    <Text style={[styles.toggleText, activeTab === 'orders' && styles.toggleTextActive]}>My Orders</Text>
+                    <Text style={[styles.toggleText, activeTab === 'orders' && styles.toggleTextActive]}>MY ORDERS</Text>
+                    {activeTab === 'orders' && <View style={styles.activeTabLine} />}
                 </TouchableOpacity>
             </View>
 
@@ -423,14 +443,16 @@ const Vendorspareshop = () => {
                 <>
                     <View style={styles.searchRow}>
                         <View style={styles.searchContainer}>
-                            <Text style={styles.searchIcon}>🔍</Text>
                             <TextInput
                                 style={styles.searchInput}
-                                placeholder="Search spare parts..."
-                                placeholderTextColor="#666"
+                                placeholder="Search..."
+                                placeholderTextColor="#999"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                             />
+                            <View style={styles.searchIconInsideBtn}>
+                                <Text style={styles.searchIconInsideText}>🔍</Text>
+                            </View>
                         </View>
                         <TouchableOpacity style={styles.filterIconButton} onPress={() => setFilterModalVisible(true)}>
                             <Text style={styles.filterIconText}>⚙️</Text>
@@ -441,7 +463,6 @@ const Vendorspareshop = () => {
                         data={filteredParts}
                         keyExtractor={(item) => item._id}
                         renderItem={renderProductItem}
-                        numColumns={3}
                         contentContainerStyle={styles.listContainer}
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
@@ -790,7 +811,7 @@ const Vendorspareshop = () => {
                 onRequestClose={() => setFilterModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { maxHeight: '50%' }]}>
+                    <View style={[styles.modalContent, { maxHeight: '50%', paddingBottom: 10 }]}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Filter by Category</Text>
                             <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
@@ -798,20 +819,43 @@ const Vendorspareshop = () => {
                             </TouchableOpacity>
                         </View>
                         
-                        {['All', 'Bike', 'Car', 'Heavy'].map(cat => (
-                            <TouchableOpacity
-                                key={cat}
-                                style={[styles.filterModalOption, filterCategory === cat && styles.filterModalOptionActive]}
-                                onPress={() => {
-                                    setFilterCategory(cat);
-                                    setFilterModalVisible(false);
-                                }}
-                            >
-                                <Text style={[styles.filterModalOptionText, filterCategory === cat && styles.filterModalOptionTextActive]}>{cat}</Text>
-                            </TouchableOpacity>
-                        ))}
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {['All', 'Bike', 'Car', 'Heavy'].map((category) => (
+                                <TouchableOpacity 
+                                    key={category} 
+                                    style={[styles.filterModalOption, filterCategory === category && styles.filterModalOptionActive]}
+                                    onPress={() => {
+                                        setFilterCategory(category);
+                                        setFilterModalVisible(false);
+                                    }}
+                                >
+                                    <Text style={[styles.filterModalOptionText, filterCategory === category && styles.filterModalOptionTextActive]}>
+                                        {category}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Full Screen Image Modal */}
+            <Modal
+                visible={!!fullScreenImage}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setFullScreenImage(null)}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}
+                    activeOpacity={1}
+                    onPress={() => setFullScreenImage(null)}
+                >
+                    <Image 
+                        source={{ uri: fullScreenImage || '' }} 
+                        style={{ width: '90%', height: '70%', resizeMode: 'contain' }} 
+                    />
+                </TouchableOpacity>
             </Modal>
         </SafeAreaView>
     );
@@ -820,47 +864,54 @@ const Vendorspareshop = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'transparent',
     },
-    header: {
-        paddingTop: 50,
+    customHeader: {
+        alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: 20,
-        paddingBottom: 20,
-        backgroundColor: '#ffffff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        paddingTop: Platform.OS === 'ios' ? 50 : 20,
+        paddingBottom: 15,
+    },
+    backBtn: {
+        padding: 5,
+    },
+    backBtnText: {
+        color: '#FFF',
+        fontSize: 24,
+        fontWeight: 'bold',
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: '#333',
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#FFF',
+        paddingTop:30
     },
     toggleContainer: {
         flexDirection: 'row',
-        backgroundColor: '#f0f0f0',
-        marginHorizontal: 20,
+        justifyContent: 'center',
         marginTop: 10,
-        borderRadius: 12,
-        padding: 5,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
+        marginBottom: 10,
     },
     toggleButton: {
-        flex: 1,
         paddingVertical: 10,
+        paddingHorizontal: 20,
         alignItems: 'center',
-        borderRadius: 8,
-    },
-    toggleButtonActive: {
-        backgroundColor: '#f28b2c',
     },
     toggleText: {
         color: '#666',
         fontWeight: 'bold',
         fontSize: 14,
+        textTransform: 'uppercase',
     },
     toggleTextActive: {
         color: '#fff',
+    },
+    activeTabLine: {
+        height: 2,
+        backgroundColor: '#f28b2c',
+        width: '100%',
+        marginTop: 5,
     },
     searchRow: {
         flexDirection: 'row',
@@ -874,27 +925,34 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#ffffff',
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        paddingHorizontal: 15,
+        borderRadius: 25,
+        paddingLeft: 20,
+        paddingRight: 5,
         height: 45,
-    },
-    searchIcon: {
-        fontSize: 16,
-        color: '#666',
-        marginRight: 10,
     },
     searchInput: {
         flex: 1,
         color: '#333',
         fontSize: 15,
+        height: '100%',
+    },
+    searchIconInsideBtn: {
+        backgroundColor: '#f28b2c',
+        width: 35,
+        height: 35,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    searchIconInsideText: {
+        color: '#fff',
+        fontSize: 14,
     },
     filterIconButton: {
-        backgroundColor: '#ffffff',
+        backgroundColor: 'rgba(255,255,255,0.1)',
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: 'rgba(255,255,255,0.2)',
         width: 45,
         height: 45,
         justifyContent: 'center',
@@ -903,73 +961,60 @@ const styles = StyleSheet.create({
     },
     filterIconText: {
         fontSize: 18,
-    },
-    filterModalOption: {
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingHorizontal: 10,
-    },
-    filterModalOptionActive: {
-        backgroundColor: '#fff7ed', // light orange
-    },
-    filterModalOptionText: {
-        fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
-    },
-    filterModalOptionTextActive: {
-        color: '#f28b2c',
-        fontWeight: 'bold',
+        color: '#fff',
     },
     listContainer: {
-        paddingHorizontal: 10,
-        paddingBottom: 20, // Reduced from 120
+        paddingHorizontal: 15,
+        paddingBottom: 20,
     },
     card: {
-        backgroundColor: '#ffffff',
+        flexDirection: 'row',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         borderRadius: 12,
         marginBottom: 15,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#e0e0e0',
-        width: '31%',
-        marginHorizontal: '1.15%',
+        borderColor: 'rgba(255,255,255,0.2)',
+        width: '100%',
+    },
+    imageContainer: {
+        width: 140,
+        backgroundColor: '#FFF',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     productImage: {
-        width: '100%',
-        height: 130,
-        resizeMode: 'cover',
+        width: 120,
+        height: 140,
+        resizeMode: 'contain',
     },
     cardContent: {
-        padding: 8,
-    },
-    categoryBrandRow: {
-        flexDirection: 'row',
+        flex: 1,
+        padding: 12,
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 3,
     },
     categoryText: {
         color: '#f28b2c',
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 'bold',
+        textAlign: 'right',
         textTransform: 'uppercase',
-        flex: 1,
+        marginBottom: 2,
     },
     brandText: {
-        color: '#888',
+        color: '#AAA',
         fontSize: 9,
-        fontWeight: '600',
+        fontWeight: 'bold',
         textAlign: 'right',
-        flex: 1,
+        textTransform: 'uppercase',
+        marginBottom: 2,
     },
     productName: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#333',
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#FFF',
         marginBottom: 4,
-        height: 19,
+        flex: 1,
     },
     priceRatingRow: {
         flexDirection: 'row',
@@ -982,35 +1027,36 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     starIcon: {
-        fontSize: 10,
+        fontSize: 12,
         marginRight: 3,
     },
     ratingText: {
+        fontSize: 12,
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    stockText: {
         fontSize: 10,
-        color: '#555',
         fontWeight: 'bold',
     },
     productPrice: {
-        fontSize: 13,
-        color: '#333',
-        fontWeight: '600',
+        fontSize: 18,
+        color: '#FFF',
+        fontWeight: 'bold',
+        marginBottom: 8,
     },
     buyButton: {
         backgroundColor: '#f28b2c',
-        paddingVertical: 6,
-        borderRadius: 6,
+        paddingVertical: 8,
+        borderRadius: 20,
         alignItems: 'center',
     },
     buyButtonText: {
         color: '#fff',
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 'bold',
     },
-    stockText: {
-        fontSize: 9,
-        fontWeight: '600',
-        marginBottom: 8,
-    },
+
     emptyText: {
         color: '#666',
         textAlign: 'center',
@@ -1020,12 +1066,12 @@ const styles = StyleSheet.create({
 
     // Order Cards Styles
     orderCard: {
-        backgroundColor: '#ffffff',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         borderRadius: 16,
         marginBottom: 15,
         padding: 15,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: 'rgba(255,255,255,0.2)',
         marginHorizontal: 10,
     },
     orderHeaderRow: {
@@ -1034,11 +1080,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: 'rgba(255,255,255,0.2)',
         paddingBottom: 10,
     },
     orderIdText: {
-        color: '#333',
+        color: '#FFF',
         fontWeight: 'bold',
         fontSize: 13,
         fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
@@ -1062,16 +1108,28 @@ const styles = StyleSheet.create({
         width: 70,
         height: 70,
         borderRadius: 10,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#FFF',
         marginRight: 15,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: 'rgba(255,255,255,0.2)',
     },
     orderDetails: {
         flex: 1,
     },
+    productName: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    productDescription: {
+        color: '#BBB',
+        fontSize: 12,
+        marginTop: 2,
+        lineHeight: 16,
+    },
     orderPartName: {
-        color: '#333',
+        color: '#FFF',
         fontSize: 15,
         fontWeight: 'bold',
         marginBottom: 3,
@@ -1084,7 +1142,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     orderQtyText: {
-        color: '#666',
+        color: '#CCC',
         fontSize: 13,
         marginBottom: 3,
     },
@@ -1096,27 +1154,29 @@ const styles = StyleSheet.create({
     },
     orderFooter: {
         borderTopWidth: 1,
-        borderTopColor: '#eee',
+        borderTopColor: 'rgba(255,255,255,0.2)',
         paddingTop: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     orderDateText: {
-        color: '#888',
+        color: '#AAA',
         fontSize: 11,
         fontWeight: '600',
     },
     footerButton: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: 'rgba(255,255,255,0.1)',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
         flexDirection: 'row',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
     },
     footerButtonText: {
-        color: '#333',
+        color: '#FFF',
         fontSize: 11,
         fontWeight: '600',
     },
@@ -1124,15 +1184,17 @@ const styles = StyleSheet.create({
     // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.85)',
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#1E1E1E',
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         padding: 25,
-        maxHeight: '90%',
+        maxHeight: '100%',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.2)',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -1143,15 +1205,15 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#333',
+        color: '#FFF',
     },
     closeIcon: {
         fontSize: 24,
-        color: '#888',
+        color: '#AAA',
         padding: 5,
     },
     orderSummary: {
-        backgroundColor: '#f9f9f9',
+        backgroundColor: 'rgba(255,255,255,0.05)',
         padding: 15,
         borderRadius: 10,
         marginBottom: 20,
@@ -1159,7 +1221,7 @@ const styles = StyleSheet.create({
         borderLeftColor: '#f28b2c',
     },
     summaryTitle: {
-        color: '#333',
+        color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 5,
@@ -1170,17 +1232,17 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     inputLabel: {
-        color: '#555',
+        color: '#CCC',
         fontSize: 14,
         marginBottom: 8,
         marginLeft: 4,
     },
     input: {
-        backgroundColor: '#f9f9f9',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: 'rgba(255,255,255,0.2)',
         borderRadius: 10,
-        color: '#333',
+        color: '#FFF',
         paddingHorizontal: 15,
         paddingVertical: 12,
         fontSize: 16,
@@ -1205,7 +1267,7 @@ const styles = StyleSheet.create({
     },
     viewIconContainer: {
         padding: 4,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: 'rgba(255,255,255,0.1)',
         borderRadius: 6,
     },
     viewIcon: {
@@ -1213,7 +1275,7 @@ const styles = StyleSheet.create({
     },
     detailsSection: {
         marginBottom: 20,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: 'rgba(255,255,255,0.05)',
         padding: 15,
         borderRadius: 12,
     },
@@ -1223,7 +1285,7 @@ const styles = StyleSheet.create({
         color: '#f28b2c',
         marginBottom: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: 'rgba(255,255,255,0.1)',
         paddingBottom: 5,
     },
     infoRow: {
@@ -1232,22 +1294,40 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     infoLabel: {
-        color: '#666',
+        color: '#CCC',
         fontSize: 14,
         flex: 1,
     },
     infoValue: {
-        color: '#333',
+        color: '#FFF',
         fontSize: 14,
         fontWeight: '600',
         flex: 2,
         textAlign: 'right',
     },
     addressText: {
-        color: '#555',
+        color: '#DDD',
         fontSize: 14,
         marginBottom: 4,
         lineHeight: 20,
+    },
+    filterModalOption: {
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.1)',
+        paddingHorizontal: 10,
+    },
+    filterModalOptionActive: {
+        backgroundColor: 'rgba(242,139,44,0.1)',
+    },
+    filterModalOptionText: {
+        fontSize: 16,
+        color: '#CCC',
+        fontWeight: '500',
+    },
+    filterModalOptionTextActive: {
+        color: '#f28b2c',
+        fontWeight: 'bold',
     },
 });
 

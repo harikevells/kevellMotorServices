@@ -11,3 +11,17 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Make entire layout responsive between 1024px and 1500px */
+@media screen and (min-width: 1024px) and (max-width: 1536px) {
+  html {
+    zoom: calc(100vw / 1536);
+  }
+}
+
+/* Capped scale for very small screens or tablets */
+@media screen and (max-width: 1023px) {
+  html {
+    zoom: 0.65;
+  }
+}

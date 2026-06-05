@@ -944,43 +944,37 @@ const ChallenBooking = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* <View style={styles.header}>
-          <TouchableOpacity onPress={() => setActiveTab('Dashboard')}>
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
+        <View style={styles.customHeader}>
           <Text style={styles.headerTitle}>Challen Service Bill</Text>
-          <View style={{ width: 24 }} />
-        </View> */}
+        </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Booking Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Booking ID</Text>
-            <TouchableOpacity
-              style={styles.dropdownButton}
-              onPress={() => setBookingModalVisible(true)}
-            >
-              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginRight: 10 }}>
-                <Text style={selectedBooking ? styles.dropdownTextActive : styles.dropdownText}>
-                  {selectedBooking ? selectedBooking.bookingRef : 'Select Booking ID'}
-                </Text>
-                {selectedBooking && (
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ fontSize: 13, color: '#F28B2C', fontWeight: 'bold' }}>
-                      {formatDate(selectedBooking.bookingDate)}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: '#F28B2C', fontWeight: '500' }}>
-                      {selectedBooking.timeSlot || selectedBooking.timeslot || selectedBooking.slotTime || selectedBooking.time}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.dropdownArrow}>▼</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.inputLabel, { marginTop: 0 }]}>Booking ID</Text>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setBookingModalVisible(true)}
+          >
+            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginRight: 10 }}>
+              <Text style={selectedBooking ? styles.inputText : styles.inputTextPlaceholder}>
+                {selectedBooking ? selectedBooking.bookingRef : 'Select Booking ID'}
+              </Text>
+              {selectedBooking && (
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontSize: 13, color: '#F28B2C', fontWeight: 'bold' }}>
+                    {formatDate(selectedBooking.bookingDate)}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#F28B2C', fontWeight: '500' }}>
+                    {selectedBooking.timeSlot || selectedBooking.timeslot || selectedBooking.slotTime || selectedBooking.time}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.dropdownArrow}>▼</Text>
+          </TouchableOpacity>
 
           {/* Category Selection */}
-          <Text style={styles.sectionTitle}>Select Category</Text>
+          <Text style={styles.inputLabel}>Select Category</Text>
           <View style={styles.categoryContainer}>
             {categories.map((cat) => (
               <TouchableOpacity
@@ -1001,70 +995,64 @@ const ChallenBooking = () => {
           </View>
 
           {/* Customer Info */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Customer Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter name"
-              placeholderTextColor="#999"
-              value={customerName}
-              onChangeText={setCustomerName}
-            />
-          </View>
+          <Text style={styles.inputLabel}>Customer Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter name"
+            placeholderTextColor="#888"
+            value={customerName}
+            onChangeText={setCustomerName}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Vehicle Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. TN 01 AB 1234"
-              placeholderTextColor="#999"
-              value={vehicleNumber}
-              onChangeText={setVehicleNumber}
-              autoCapitalize="characters"
-            />
-          </View>
+          <Text style={styles.inputLabel}>vehicle number</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. TN 01 AB 1234"
+            placeholderTextColor="#888"
+            value={vehicleNumber}
+            onChangeText={setVehicleNumber}
+            autoCapitalize="characters"
+          />
 
           {/* Vehicle Details */}
           <View style={styles.rowInputs}>
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+            <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.inputLabel}>Brand</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Honda"
-                placeholderTextColor="#999"
+                placeholder="e.g. Hero Motocorp"
+                placeholderTextColor="#888"
                 value={vehicleDetails.brand}
                 onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, brand: val })}
               />
             </View>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
+            <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Model</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Activa"
-                placeholderTextColor="#999"
+                placeholder="e.g. Habbs"
+                placeholderTextColor="#888"
                 value={vehicleDetails.model}
                 onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, model: val })}
               />
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Year</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 2022"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={vehicleDetails.year}
-              onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, year: val })}
-            />
-          </View>
+          <Text style={styles.inputLabel}>Year</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 2016"
+            placeholderTextColor="#888"
+            keyboardType="numeric"
+            value={vehicleDetails.year}
+            onChangeText={(val) => setVehicleDetails({ ...vehicleDetails, year: val })}
+          />
 
           {/* Spare Parts Section */}
           <View style={styles.spareHeader}>
-            <Text style={styles.sectionTitle}>Spare Parts & Services</Text>
+            <Text style={styles.sectionTitle}>Spare parts & services</Text>
             <TouchableOpacity style={styles.addButton} onPress={() => setSpareModalVisible(true)}>
-              <Text style={styles.addButtonText}>+ Add</Text>
+              <Text style={styles.addButtonText}>+Add</Text>
             </TouchableOpacity>
           </View>
 
@@ -1076,41 +1064,36 @@ const ChallenBooking = () => {
 
           {spareParts.map((part, index) => (
             <View key={part.id} style={styles.partRow}>
-              <View style={[styles.partInfo, { flex: 2 }]}>
-                <Text style={styles.partNameText}>{part.name}</Text>
+              <Text style={styles.partNameText}>{part.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.partAmountText}>Rs.{part.amount}</Text>
+                <TouchableOpacity style={styles.removeButton} onPress={() => removeSparePart(part.id)}>
+                  <Text style={styles.removeButtonText}>✕</Text>
+                </TouchableOpacity>
               </View>
-              <View style={[styles.partInfo, { flex: 1, alignItems: 'flex-end' }]}>
-                <Text style={styles.partAmountText}>₹{part.amount}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => removeSparePart(part.id)}
-              >
-                <Text style={styles.removeButtonText}>✕</Text>
-              </TouchableOpacity>
             </View>
           ))}
 
           {/* Labor Charges Section */}
-          <View style={[styles.spareHeader, { marginTop: 20 }]}>
-            <Text style={styles.sectionTitle}>Labor Charges</Text>
+          <View style={styles.spareHeader}>
+            <Text style={styles.sectionTitle}>Labor charges</Text>
             <TouchableOpacity style={styles.addButton} onPress={addLaborCharge}>
-              <Text style={styles.addButtonText}>+ Add Labor</Text>
+              <Text style={styles.addButtonText}>+Add</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.laborInputRow}>
             <TextInput
-              style={[styles.laborInput, { flex: 1 }]}
-              placeholder="Labor Description"
-              placeholderTextColor="#999"
+              style={[styles.input, { flex: 1, marginRight: 10 }]}
+              placeholder="Labour description"
+              placeholderTextColor="#888"
               value={newLaborCharge.name}
               onChangeText={(val) => setNewLaborCharge({ ...newLaborCharge, name: val })}
             />
             <TextInput
-              style={[styles.laborInput, { flex: 1, marginLeft: 10 }]}
+              style={[styles.input, { flex: 1 }]}
               placeholder="Amount"
-              placeholderTextColor="#999"
+              placeholderTextColor="#888"
               keyboardType="numeric"
               value={newLaborCharge.amount}
               onChangeText={(val) => setNewLaborCharge({ ...newLaborCharge, amount: val })}
@@ -1119,46 +1102,39 @@ const ChallenBooking = () => {
 
           {laborCharges.map((charge) => (
             <View key={charge.id} style={styles.partRow}>
-              <View style={[styles.partInfo, { flex: 2 }]}>
-                <Text style={styles.partNameText}>{charge.name}</Text>
+              <Text style={styles.partNameText}>{charge.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.partAmountText}>Rs.{charge.amount}</Text>
+                <TouchableOpacity style={styles.removeButton} onPress={() => removeLaborCharge(charge.id)}>
+                  <Text style={styles.removeButtonText}>✕</Text>
+                </TouchableOpacity>
               </View>
-              <View style={[styles.partInfo, { flex: 1, alignItems: 'flex-end' }]}>
-                <Text style={styles.partAmountText}>₹{charge.amount}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => removeLaborCharge(charge.id)}
-              >
-                <Text style={styles.removeButtonText}>✕</Text>
-              </TouchableOpacity>
             </View>
           ))}
+
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{calculateTotal()}</Text>
+            <Text style={styles.totalLabel}>Total Amount:</Text>
+            <Text style={styles.totalValue}>Rs.{calculateTotal()}</Text>
           </View>
 
-          <View style={{ marginTop: 20 }}>
-            <TouchableOpacity
-              style={[styles.generateButton, { backgroundColor: '#F28B2C' }]}
-              onPress={handlePrintPDF}
-            >
-              <Text style={styles.generateButtonText}>Challen View & Download Bill</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handlePrintPDF}
+          >
+            <Text style={styles.primaryButtonText}>Challen view & Download bill</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.generateButton, { backgroundColor: '#000000', marginTop: 10 }]}
-              onPress={handleUploadBillAndDone}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.generateButtonText}>Done</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
+          <TouchableOpacity
+            style={styles.doneButton}
+            onPress={handleUploadBillAndDone}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.doneButtonText}>Done</Text>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -1193,7 +1169,7 @@ const ChallenBooking = () => {
                   b.userDetails?.name?.toLowerCase().includes(bookingSearch.toLowerCase());
 
                 const status = b.status?.toLowerCase();
-                const isExcludedStatus = status === 'delivered' || status === 'delivery' || status === 'cancelled';
+                const isExcludedStatus = status === 'delivered' || status === 'delivery' || status === 'cancelled' || status === 'pending';
 
                 return matchesSearch && !isExcludedStatus;
               }) : []}
@@ -1205,7 +1181,14 @@ const ChallenBooking = () => {
                 >
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={styles.selectionTitle}>{item.bookingRef}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={styles.selectionTitle}>{item.bookingRef}</Text>
+                        {item.bill && (
+                          <Text style={{ color: '#10b981', fontSize: 10, fontWeight: 'bold', marginLeft: 8, backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                            Already uploaded
+                          </Text>
+                        )}
+                      </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={{ fontSize: 12, color: '#F28B2C', fontWeight: 'bold' }}>{formatDate(item.bookingDate)}</Text>
                         <Text style={{ fontSize: 11, color: '#F28B2C', fontWeight: '500' }}>{item.timeSlot || item.timeslot || item.slotTime || item.time}</Text>
@@ -1217,7 +1200,7 @@ const ChallenBooking = () => {
               )}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  {loading ? <ActivityIndicator color={COLORS.primary} /> : <Text>No bookings match your search</Text>}
+                  {loading ? <ActivityIndicator color="#F28B2C" /> : <Text>No bookings match your search</Text>}
                 </View>
               }
             />
@@ -1237,9 +1220,9 @@ const ChallenBooking = () => {
             <Text style={styles.modalTitle}>Add Spare Part</Text>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.inputLabel}>Select Part from Inventory</Text>
+              <Text style={styles.modalInputLabel}>Select Part from Inventory</Text>
               <TouchableOpacity
-                style={styles.dropdownButton}
+                style={styles.modalDropdownButton}
                 onPress={() => setSpareDropdownOpen(!spareDropdownOpen)}
               >
                 <Text style={newSparePart.name ? styles.dropdownTextActive : styles.dropdownText}>
@@ -1287,7 +1270,7 @@ const ChallenBooking = () => {
             </View>
 
             <View style={styles.modalInputGroup}>
-              <Text style={styles.inputLabel}>Final Item Details</Text>
+              <Text style={styles.modalInputLabel}>Final Item Details</Text>
               <TextInput
                 style={styles.modalInput}
                 placeholder="Part Name"
@@ -1329,99 +1312,107 @@ const ChallenBooking = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FB',
+    backgroundColor: 'transparent',
   },
-  header: {
-    flexDirection: 'row',
+  customHeader: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingBottom: 15,
   },
-  backIcon: {
-    fontSize: 24,
-    color: '#333',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+  backBtn: { padding: 10, marginLeft: -10 },
+  backBtnText: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
+  headerTitle: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
   scrollContent: {
     padding: 20,
     paddingBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 15,
+  inputLabel: {
+    fontSize: 14,
+    color: '#FFF',
+    marginBottom: 8,
+    marginTop: 15,
+    fontWeight: '600',
+  },
+  input: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 10,
+    height: 50,
+    paddingHorizontal: 15,
+    color: '#FFF',
+    fontSize: 15,
+  },
+  inputTextPlaceholder: { color: '#888', fontSize: 15 },
+  inputText: { color: '#FFF', fontSize: 15 },
+  dropdownButton: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 10,
+    height: 50,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownArrow: {
+    color: '#FFF',
+    fontSize: 12,
   },
   categoryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 25,
   },
   categoryCard: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
     padding: 15,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: '#EEE',
-    ...SHADOWS.light,
   },
   categoryCardActive: {
-    borderColor: '#1B4D6B',
-    backgroundColor: '#F0F7FF',
+    borderColor: '#F28B2C',
+    backgroundColor: 'rgba(242,139,44,0.2)',
   },
   categoryIcon: {
     fontSize: 24,
-    marginBottom: 8,
+    marginBottom: 5,
   },
   categoryLabel: {
+    color: '#FFF',
     fontSize: 13,
-    color: '#666',
     fontWeight: '600',
   },
   categoryLabelActive: {
-    color: '#1B4D6B',
+    color: '#F28B2C',
   },
-  inputGroup: {
-    marginBottom: 15,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-    color: '#333',
+  rowInputs: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   spareHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: 30,
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   addButton: {
     backgroundColor: '#F28B2C',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   addButtonText: {
     color: '#FFF',
@@ -1431,114 +1422,77 @@ const styles = StyleSheet.create({
   partRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 15,
   },
-  partInputContainer: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 8,
-  },
-  partInput: {
-    padding: 10,
+  partNameText: {
+    color: '#DDD',
     fontSize: 14,
-    color: '#333',
+    flex: 2,
+  },
+  partAmountText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 10,
   },
   removeButton: {
-    marginLeft: 10,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#FFE5E5',
+    backgroundColor: '#F28B2C',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   removeButtonText: {
-    color: '#FF4444',
-    fontSize: 12,
+    color: '#FFF',
+    fontSize: 10,
     fontWeight: 'bold',
+  },
+  laborInputRow: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  emptyParts: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  emptyText: {
+    color: '#888',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   totalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#000000',
-    padding: 20,
-    borderRadius: 12,
-    marginTop: 25,
-    ...SHADOWS.medium,
+    marginTop: 30,
+    marginBottom: 40,
   },
   totalLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#FFF',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
   totalValue: {
     color: '#FFF',
     fontSize: 22,
     fontWeight: 'bold',
   },
-  generateButton: {
-    backgroundColor: '#00E676',
-    padding: 18,
-    borderRadius: 12,
+  primaryButton: {
+    backgroundColor: '#F28B2C',
+    borderRadius: 25,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 0,
-    ...SHADOWS.light,
   },
-  generateButtonText: {
+  primaryButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  qrContainer: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 30,
-  },
-  billSummary: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  billId: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 5,
-  },
-  billTotal: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: '#1B4D6B',
-  },
-  billDetail: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 5,
-  },
-  qrWrapper: {
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    ...SHADOWS.medium,
-  },
-  qrCode: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
-  },
-  qrText: {
-    fontSize: 13,
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
   doneButton: {
-    marginTop: 'auto',
-    width: '100%',
-    backgroundColor: '#1B4D6B',
-    padding: 18,
-    borderRadius: 12,
+    marginTop: 20,
     alignItems: 'center',
   },
   doneButtonText: {
@@ -1546,33 +1500,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  rowInputs: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dropdownButton: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dropdownText: {
-    color: '#999',
-    fontSize: 15,
-  },
-  dropdownTextActive: {
-    color: '#333',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  dropdownArrow: {
-    color: '#1B4D6B',
-    fontSize: 12,
-  },
+  
+  // MODAL STYLES (Kept Original)
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1603,6 +1532,23 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#666',
   },
+  searchContainer: {
+    marginBottom: 5,
+  },
+  modalInput: {
+    backgroundColor: '#F8F9FB',
+    borderWidth: 1,
+    borderColor: '#EEE',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+  },
+  modalInputLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
   selectionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1621,10 +1567,6 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 2,
   },
-  selectionArrow: {
-    fontSize: 20,
-    color: '#CCC',
-  },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
@@ -1634,18 +1576,66 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     margin: 20,
     padding: 20,
-    ...SHADOWS.medium,
   },
   modalInputGroup: {
     marginTop: 20,
   },
-  modalInput: {
-    backgroundColor: '#F8F9FB',
+  modalDropdownButton: {
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 10,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownTextActive: {
+    color: '#333',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  dropdownText: {
+    color: '#999',
+    fontSize: 15,
+  },
+  spareDropdownList: {
+    marginTop: 5,
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: '#EEE',
     borderRadius: 10,
+    overflow: 'hidden',
+  },
+  modalInputSmall: {
+    backgroundColor: '#F8F9FB',
+    padding: 8,
+    fontSize: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  spareSelectItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     padding: 12,
-    fontSize: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  spareSelectItemActive: {
+    backgroundColor: '#F0F7FF',
+  },
+  spareSelectText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  spareSelectTextActive: {
+    color: '#1B4D6B',
+    fontWeight: 'bold',
+  },
+  spareSelectAmount: {
+    fontSize: 14,
+    color: '#1B4D6B',
+    fontWeight: 'bold',
   },
   modalActions: {
     flexDirection: 'row',
@@ -1675,92 +1665,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
   },
-  spareSelectItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  spareSelectItemActive: {
-    backgroundColor: '#F0F7FF',
-  },
-  spareSelectText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  spareSelectTextActive: {
-    color: '#1B4D6B',
-    fontWeight: 'bold',
-  },
-  spareSelectAmount: {
-    fontSize: 14,
-    color: '#1B4D6B',
-    fontWeight: 'bold',
-  },
-  emptyParts: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 10,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: '#CCC',
-  },
-  emptyText: {
-    color: '#999',
-    fontSize: 14,
-  },
-  partInfo: {
-    justifyContent: 'center',
-  },
-  partNameText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-  },
-  partAmountText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#1B4D6B',
-  },
-  searchContainer: {
-    marginBottom: 5,
-  },
-  spareDropdownList: {
-    marginTop: 5,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#EEE',
-    borderRadius: 10,
-    overflow: 'hidden',
-    ...SHADOWS.light,
-  },
-  modalInputSmall: {
-    backgroundColor: '#F8F9FB',
-    padding: 8,
-    fontSize: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
-  },
-  laborInputRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    paddingHorizontal: 5,
-  },
-  laborInput: {
-    backgroundColor: '#F8F9FB',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  removeIcon: {
-    fontSize: 18,
-    color: '#FF5252',
-    padding: 5,
-  }
 });
 
 export default ChallenBooking;

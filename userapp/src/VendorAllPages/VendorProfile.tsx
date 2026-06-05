@@ -12,6 +12,9 @@ import {
   Modal,
   TextInput,
   Dimensions,
+  ImageBackground,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -59,20 +62,29 @@ const VendorProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const res: any = await api.get('/auth/profile');
-      if (res.success) {
-        setUser(res.user);
+      const [authRes, vendorRes]: any = await Promise.all([
+        api.get('/auth/profile'),
+        api.get('/vendor/profile')
+      ]);
+
+      if (authRes.success) {
+        // Merge vendor details into user for easy access in UI
+        const mergedUser = {
+          ...authRes.user,
+          ...(vendorRes?.success ? vendorRes.vendor : {})
+        };
+        setUser(mergedUser);
         setEditForm({
-          name: res.user.name || '',
-          email: res.user.email || '',
-          phone: res.user.phone || '',
-          gender: res.user.gender || 'Other',
+          name: mergedUser.name || '',
+          email: mergedUser.email || '',
+          phone: mergedUser.phone || '',
+          gender: mergedUser.gender || 'Other',
           address: {
-            street: res.user.address?.street || '',
-            city: res.user.address?.city || '',
-            state: res.user.address?.state || '',
-            pincode: res.user.address?.pincode || '',
-            country: res.user.address?.country || 'India'
+            street: mergedUser.address?.street || '',
+            city: mergedUser.address?.city || '',
+            state: mergedUser.address?.state || '',
+            pincode: mergedUser.address?.pincode || '',
+            country: mergedUser.address?.country || 'India'
           }
         });
       }
@@ -197,282 +209,376 @@ const VendorProfile = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      {/* <View style={styles.header}> */}
-      {/* Header content removed to hide back arrow since it's now a tab */}
-      {/* </View> */}
+    <View style={styles.container}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' }}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Profile Info */}
-        <View style={styles.profileInfoSection}>
-          <View style={styles.avatarWrapper}>
-            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
-              <View style={styles.avatarContainer}>
-                {user?.profileImage ? (
-                  <Image source={{ uri: getImageUrl(user.profileImage) as string }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarPlaceholder}>{user?.name?.charAt(0) || 'V'}</Text>
-                )}
-                <View style={styles.editBadge}>
-                  <Text style={styles.editBadgeText}>✎</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+        {/* Custom Header */}
+        <View style={[styles.customHeader, { justifyContent: 'center' }]}>
+          <Text style={styles.headerTitle}>Profile</Text>
         </View>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <StatCard label="Active" style={styles.statCard1} value={stats?.totalOrders || 0} isActive />
-          <StatCard label="Pending" style={styles.statCard1} value={stats?.pendingOrders || 0} />
-          <StatCard label="Service" style={styles.statCard1} value={stats?.completedOrders || 0} />
-        </View>
-
-        {/* Menu Section */}
-        <View style={styles.menuCard}>
-          <ListItem
-            title="Edit Profile"
-            subtitle="Update your personal details"
-            icon="✏️"
-            onPress={() => setEditModalVisible(true)}
-          />
-          <View style={styles.divider} />
-          <ListItem
-            title="Order History"
-            subtitle="View all past and current orders"
-            icon="🕒"
-            onPress={() => setActiveTab('Orders')}
-          />
-          <View style={styles.divider} />
-          <ListItem
-            title="Notifications"
-            subtitle="Mute, Push, Email"
-            icon="🔔"
-            onPress={() => { }}
-          />
-          <View style={styles.divider} />
-          <ListItem
-            title="Logout"
-            subtitle="Sign out of your account"
-            icon="🚪"
-            onPress={handleLogout}
-          />
-        </View>
-      </ScrollView>
-
-      {/* Expanded Edit Modal */}
-      <Modal visible={editModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Update Profile</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.closeModal}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalFormScroll}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={editForm.name}
-                onChangeText={(t) => setEditForm({ ...editForm, name: t })}
-                placeholder="Name"
-              />
-
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                value={editForm.email}
-                onChangeText={(t) => setEditForm({ ...editForm, email: t })}
-                placeholder="Email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-
-              <Text style={styles.inputLabel}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                value={editForm.phone}
-                onChangeText={(t) => setEditForm({ ...editForm, phone: t })}
-                placeholder="Phone"
-                keyboardType="phone-pad"
-              />
-
-              <Text style={styles.inputLabel}>Gender</Text>
-              <View style={styles.genderRow}>
-                {['Male', 'Female', 'Other'].map((g) => (
-                  <TouchableOpacity
-                    key={g}
-                    style={[styles.genderBtn, editForm.gender === g && styles.genderBtnActive]}
-                    onPress={() => setEditForm({ ...editForm, gender: g })}
-                  >
-                    <Text style={[styles.genderText, editForm.gender === g && styles.genderTextActive]}>{g}</Text>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* Profile Info */}
+          <View style={styles.profileInfoSection}>
+            <View style={styles.avatarWrapper}>
+              <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
+                <View style={styles.avatarContainer}>
+                  {user?.profileImage ? (
+                    <Image source={{ uri: getImageUrl(user.profileImage) as string }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={styles.avatarPlaceholder}>{user?.name?.charAt(0) || 'V'}</Text>
+                  )}
+                  <TouchableOpacity style={styles.editBadge} onPress={() => setEditModalVisible(true)}>
+                    <Text style={styles.editBadgeText}>✎</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.sectionDivider}>Address Details</Text>
-
-              <Text style={styles.inputLabel}>Street / Area</Text>
-              <TextInput
-                style={styles.input}
-                value={editForm.address.street}
-                onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, street: t } })}
-                placeholder="Street"
-              />
-
-              <View style={styles.inputRow}>
-                <View style={{ flex: 1, marginRight: 10 }}>
-                  <Text style={styles.inputLabel}>City</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editForm.address.city}
-                    onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, city: t } })}
-                    placeholder="City"
-                  />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.inputLabel}>State</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editForm.address.state}
-                    onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, state: t } })}
-                    placeholder="State"
-                  />
-                </View>
-              </View>
-
-              <Text style={styles.inputLabel}>Pincode</Text>
-              <TextInput
-                style={styles.input}
-                value={editForm.address.pincode}
-                onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, pincode: t } })}
-                placeholder="Pincode"
-                keyboardType="numeric"
-              />
-
-              <View style={{ height: 20 }} />
-            </ScrollView>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleUpdateProfile} disabled={updating}>
-                {updating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
               </TouchableOpacity>
             </View>
+            <Text style={styles.userName}>{user?.name || 'Vendor Name'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'vendor@example.com'}</Text>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+
+          {/* Profile Information Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Profile Information</Text>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Owner Name</Text>
+              <View style={styles.inputBox}>
+                <Text style={styles.inputIcon}>🪪</Text>
+                <TextInput
+                  style={styles.inputText}
+                  value={user?.name || ''}
+                  editable={false}
+                  placeholder="Owner Name"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Shop Name</Text>
+              <View style={styles.inputBox}>
+                <Text style={styles.inputIcon}>🏪</Text>
+                <TextInput
+                  style={styles.inputText}
+                  value={user?.shopName || user?.businessName || ''}
+                  editable={false}
+                  placeholder="Shop Name"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Your Email</Text>
+              <View style={styles.inputBox}>
+                <Text style={styles.inputIcon}>✉️</Text>
+                <TextInput
+                  style={styles.inputText}
+                  value={user?.email || ''}
+                  editable={false}
+                  placeholder="Email"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Phone Number</Text>
+              <View style={styles.inputBox}>
+                <Text style={styles.inputIcon}>📞</Text>
+                <TextInput
+                  style={styles.inputText}
+                  value={user?.phone || ''}
+                  editable={false}
+                  placeholder="Phone"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Street / Area</Text>
+              <View style={styles.inputBox}>
+                <Text style={styles.inputIcon}>🛣️</Text>
+                <TextInput
+                  style={styles.inputText}
+                  value={user?.address?.street || ''}
+                  editable={false}
+                  placeholder="Street"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row' }}>
+              <View style={[styles.inputWrapper, { flex: 1, marginRight: 5 }]}>
+                <Text style={styles.fieldLabel}>District</Text>
+                <View style={styles.inputBox}>
+                  <Text style={styles.inputIcon}>🏙️</Text>
+                  <TextInput
+                    style={styles.inputText}
+                    value={user?.address?.city || ''}
+                    editable={false}
+                    placeholder="District"
+                    placeholderTextColor="#888"
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.inputWrapper, { flex: 1, marginLeft: 5 }]}>
+                <Text style={styles.fieldLabel}>State</Text>
+                <View style={styles.inputBox}>
+                  <Text style={styles.inputIcon}>🗺️</Text>
+                  <TextInput
+                    style={styles.inputText}
+                    value={user?.address?.state || ''}
+                    editable={false}
+                    placeholder="State"
+                    placeholderTextColor="#888"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Pincode</Text>
+              <View style={styles.inputBox}>
+                <Text style={styles.inputIcon}>📮</Text>
+                <TextInput
+                  style={styles.inputText}
+                  value={user?.address?.pincode || ''}
+                  editable={false}
+                  placeholder="Pincode"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Business Information Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Business Information</Text>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>GST Number</Text>
+              <View style={styles.inputBox}>
+                <TextInput
+                  style={[styles.inputText, { marginLeft: 0 }]}
+                  value={user?.gstNumber || user?.gstNo || ''}
+                  editable={false}
+                  placeholder="GSTINXXXXXXXXX"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.fieldLabel}>Service Type</Text>
+              <View style={styles.inputBox}>
+                <TextInput
+                  style={[styles.inputText, { marginLeft: 0 }]}
+                  value={user?.serviceType || user?.serviceCategory || 'Bike Repair & Maintenance'}
+                  editable={false}
+                  placeholder="Service Type"
+                  placeholderTextColor="#888"
+                />
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={styles.logoutBtnText}>Logout</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Expanded Edit Modal */}
+        <Modal visible={editModalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Update Profile</Text>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.closeModal}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalFormScroll}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.name}
+                  onChangeText={(t) => setEditForm({ ...editForm, name: t })}
+                  placeholder="Name"
+                />
+
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.email}
+                  onChangeText={(t) => setEditForm({ ...editForm, email: t })}
+                  placeholder="Email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+
+                <Text style={styles.inputLabel}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.phone}
+                  onChangeText={(t) => setEditForm({ ...editForm, phone: t })}
+                  placeholder="Phone"
+                  keyboardType="phone-pad"
+                />
+
+                <Text style={styles.inputLabel}>Gender</Text>
+                <View style={styles.genderRow}>
+                  {['Male', 'Female', 'Other'].map((g) => (
+                    <TouchableOpacity
+                      key={g}
+                      style={[styles.genderBtn, editForm.gender === g && styles.genderBtnActive]}
+                      onPress={() => setEditForm({ ...editForm, gender: g })}
+                    >
+                      <Text style={[styles.genderText, editForm.gender === g && styles.genderTextActive]}>{g}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.sectionDivider}>Address Details</Text>
+
+                <Text style={styles.inputLabel}>Street / Area</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.address.street}
+                  onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, street: t } })}
+                  placeholder="Street"
+                />
+
+                <View style={styles.inputRow}>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={styles.inputLabel}>City</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editForm.address.city}
+                      onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, city: t } })}
+                      placeholder="City"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>State</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editForm.address.state}
+                      onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, state: t } })}
+                      placeholder="State"
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.inputLabel}>Pincode</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.address.pincode}
+                  onChangeText={(t) => setEditForm({ ...editForm, address: { ...editForm.address, pincode: t } })}
+                  placeholder="Pincode"
+                  keyboardType="numeric"
+                />
+
+                <View style={{ height: 20 }} />
+              </ScrollView>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleUpdateProfile} disabled={updating}>
+                  {updating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFC' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
+  container: { flex: 1, backgroundColor: 'transparent' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+  customHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingBottom: 15,
   },
-  iconBtn: {
-    width: 45,
-    height: 45,
-    borderRadius: 12,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.light,
-  },
-  statCard1: {
-    width: '100%',
-    // height: 110,
-
-  },
-  backArrow: { fontSize: 24, color: '#333' },
-  logoutIcon: { fontSize: 24, color: '#333' },
-  scroll: { paddingBottom: 20 },
-  profileInfoSection: { alignItems: 'center', marginTop: 10 },
-  avatarWrapper: { marginBottom: 20 },
+  backBtn: { padding: 10, marginLeft: -10 },
+  backBtnText: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
+  headerTitle: { color: '#FFF', fontSize: 22, fontWeight: 'bold' },
+  scroll: { paddingBottom: 10, paddingHorizontal: 20 },
+  profileInfoSection: { alignItems: 'center', marginTop: 10, marginBottom: 20 },
+  avatarWrapper: { marginBottom: 15 },
   avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#FFF',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    ...SHADOWS.medium,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  avatarImage: { width: 120, height: 120, borderRadius: 60 },
-  avatarPlaceholder: { fontSize: 40, fontWeight: 'bold', color: '#1B4D6B' },
+  avatarImage: { width: 100, height: 100, borderRadius: 50 },
+  avatarPlaceholder: { fontSize: 36, fontWeight: 'bold', color: '#FFF' },
   editBadge: {
     position: 'absolute',
     bottom: 0,
-    right: 5,
+    right: 0,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1B4D6B',
+    backgroundColor: '#EF6C00',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFF',
+    borderWidth: 2,
+    borderColor: '#000',
   },
   editBadgeText: { color: '#FFF', fontSize: 14 },
-  userName: { fontSize: 26, fontWeight: '800', color: '#1A1A1A', width: '100%', textAlign: 'center' },
-  userEmail: { fontSize: 14, color: '#A0A0A0', marginTop: 5, width: '100%', textAlign: 'center' },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    marginTop: 30,
-  },
-  statCard: {
-    width: (width - 60) / 3,
-    height: 110,
-    backgroundColor: '#F1F3F9',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.light,
-  },
-  statValue: { fontSize: 24, fontWeight: 'bold', color: '#1A1A1A' },
-  statLabel: { fontSize: 14, color: '#A0A0A0', marginTop: 5, width: '100%', textAlign: 'center' },
-  menuCard: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 20,
-    marginTop: 40,
-    borderRadius: 30,
-    padding: 10,
-    ...SHADOWS.medium,
-  },
-  listItem: {
+  userName: { fontSize: 24, fontWeight: 'bold', color: '#FFF', width: '100%', textAlign: 'center' },
+  userEmail: { fontSize: 14, color: '#AAA', marginTop: 5, width: '100%', textAlign: 'center' },
+
+  sectionContainer: { marginTop: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF', marginBottom: 15 },
+  inputWrapper: { marginBottom: 15 },
+  fieldLabel: { color: '#FFF', fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-  },
-  listIconContainer: {
-    width: 50,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 12,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F9FAFC',
+    paddingHorizontal: 15,
+  },
+  inputIcon: { fontSize: 16, marginRight: 10, color: '#FFF' },
+  inputText: { flex: 1, color: '#FFF', fontSize: 14 },
+  logoutBtn: {
+    marginTop: 30,
+    backgroundColor: 'rgba(255,50,50,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,50,50,0.5)',
+    borderRadius: 12,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listIconEmoji: { fontSize: 22 },
-  listTextContainer: { flex: 1, marginLeft: 15 },
-  listTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A1A' },
-  listSubtitle: { fontSize: 13, color: '#A0A0A0', marginTop: 2 },
-  chevron: { fontSize: 28, color: '#E0E0E0', fontWeight: '300' },
-  divider: { height: 1, backgroundColor: '#F0F0F0', marginHorizontal: 20 },
+  logoutBtnText: { color: '#FF5252', fontSize: 16, fontWeight: 'bold' },
 
   // Modal Styles
   modalOverlay: {
@@ -530,7 +636,7 @@ const styles = StyleSheet.create({
   saveBtn: {
     flex: 2,
     height: 50,
-    backgroundColor: '#1B4D6B',
+    backgroundColor: '#EF6C00',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',

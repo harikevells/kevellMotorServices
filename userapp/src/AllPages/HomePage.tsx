@@ -35,7 +35,7 @@ const V5 = require('../assets/banners/v5.png');
 const V6 = require('../assets/banners/v6.png');
 const OFFER_1 = require('../assets/offers/free_checkup.png');
 const OFFER_2 = require('../assets/offers/battery_repair.png');
-const SUB_BG = require('../assets/subscription_bg.png');
+const SUB_BG = require('../assets/subscription_bg.jpg');
 
 const CATEGORIES = [
   { id: 'General Service', title: 'Periodic Service', icon: '🛠️', color: '#111' },

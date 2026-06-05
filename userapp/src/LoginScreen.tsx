@@ -21,7 +21,8 @@ import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import SecondSVG from './assets/service_illustration1.png'; // Service illustration instead of logo
+import VendorImage from './assets/logoimage.png';
+import UserImage from './assets/logoimage1.png';
 import { login, SafeStorage } from './services/api';
 import { SHADOWS } from './constants/theme';
 
@@ -137,12 +138,12 @@ const LoginScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={BG} />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           bounces={false}
           showsVerticalScrollIndicator={false}
@@ -150,7 +151,7 @@ const LoginScreen = () => {
         >
           <Animated.View style={[styles.topHalf, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <Animated.View style={[styles.illustrationContainer, { transform: [{ scale: logoScale }] }]}>
-              <Image source={SecondSVG} style={styles.logoImage} resizeMode="contain" />
+              <Image source={role === 'vendor' ? VendorImage : UserImage} style={styles.logoImage} resizeMode="contain" />
             </Animated.View>
             <Text style={styles.heading}>
               {'Welcome back'}
@@ -246,8 +247,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   logoImage: {
-    width: width * 1.2,
-    height: width * 0.9,
+    width: width * 1,
+    height: width * 0.85,
+    marginTop: 20,
   },
   heading: {
     color: '#FFFFFF',
