@@ -22,6 +22,7 @@ import VendorNotificationPage from './NotificationPage';
 import VendorProfile from './VendorProfile';
 import ChallenBooking from './ChallenBooking';
 import VendorWallet from './VendorWallet';
+import VendorTimeslot from './VendorTimeslot';
 import api, { SafeStorage } from '../services/api';
 import { getImageUrl } from '../constants/config';
 import VendorFooter from './VendorFooter';
@@ -167,6 +168,7 @@ const VendorSidebarNavigator = () => {
     { id: 'DeliveryList', title: 'Delivery Boys', icon: '👥' },
     { id: 'Notifications', title: 'Notifications', icon: '🔔' },
     { id: 'Profile', title: 'Profile', icon: '👤' },
+    { id: 'VendorTimeslot', title: 'Manage Timeslots', icon: '⏰' },
     { id: 'ChallenBooking', title: 'Challen Service Bill', icon: '📝' },
   ];
 
@@ -180,6 +182,7 @@ const VendorSidebarNavigator = () => {
       case 'DeliveryList': return <VendorDeliveryList />;
       case 'Notifications': return <VendorNotificationPage />;
       case 'Profile': return <VendorProfile />;
+      case 'VendorTimeslot': return <VendorTimeslot />;
       case 'ChallenBooking': return <ChallenBooking />;
       default: return <VendorDashboard />;
     }
@@ -187,13 +190,13 @@ const VendorSidebarNavigator = () => {
 
   return (
     <VendorNavContext.Provider value={{ activeTab, setActiveTab: handleTabChange, toggleDrawer, unreadCount, refreshNotifications: fetchUnreadNotifications }}>
-      {['Orders', 'Profile', 'ChallenBooking', 'Vendorspareshop', 'VendorWallet'].includes(activeTab) ? (
+      {['Dashboard', 'Orders', 'Profile', 'ChallenBooking', 'Vendorspareshop', 'VendorWallet', 'VendorTimeslot', 'Notifications'].includes(activeTab) ? (
         <ImageBackground source={require('../assets/vendorbackgroundimageAll.png')} style={styles.container}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)' }}>
-            <View style={styles.content}>
+            <View style={[styles.content, activeTab === 'Notifications' && { paddingBottom: 0 }]}>
               {renderContent()}
             </View>
-            <VendorFooter unreadCount={unreadCount} />
+            {activeTab !== 'Notifications' && <VendorFooter unreadCount={unreadCount} />}
           </View>
         </ImageBackground>
       ) : (

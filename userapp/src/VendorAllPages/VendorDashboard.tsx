@@ -11,7 +11,11 @@ import {
   Modal,
   FlatList,
   Image,
+  ImageBackground,
+  Linking,
+  Alert,
 } from 'react-native';
+import Svg, { Path, Defs, LinearGradient, Stop, Circle, Line } from 'react-native-svg';
 import { COLORS, SHADOWS, SIZES } from '../constants/theme';
 import { fetchVendorDashboard, fetchOrderStatistics, fetchProfile, fetchNotifications } from '../services/api';
 import { useVendorNav } from './VendorSidebarNavigator';
@@ -86,145 +90,187 @@ const VendorDashboard = () => {
     }
   };
 
-  const StatCard = ({ title, value, percentage, icon, color, bgColor }: any) => (
-    <View style={[styles.statCard, { backgroundColor: bgColor }]}>
-      <View style={styles.statCardHeader}>
-        <View style={[styles.statIconContainer, { backgroundColor: color }]}>
-          <Text style={styles.statEmoji}>{icon}</Text>
-        </View>
-        <Text style={[styles.percentageText, { color }]}>{percentage}</Text>
-      </View>
-      <View style={styles.statCardBody}>
-        <Text style={styles.statValue}>{value || 0}</Text>
-        <Text style={styles.statLabel}>{title}</Text>
-      </View>
-    </View>
-  );
-
   const RevenueChart = ({ data }: { data: number[] }) => {
-    // Exact month names as requested
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const maxRevenue = Math.max(...data, 1000);
-    const chartHeight = 180;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const safeData = Array.isArray(data) && data.length === 12 ? data : Array(12).fill(0);
 
-    // Fixed Target line calculation (mockup trend matching image)
-    const targets = months.map((_, i) => (maxRevenue * 0.3) + (i * (maxRevenue * 0.05)));
-    const totalRevenue = data.reduce((sum, val) => sum + (val || 0), 0);
+    // Find a peak for tooltip, or default to 1 (Feb)
+    let maxIndex = 1;
+    let maxVal = -1;
+    safeData.forEach((val, i) => {
+      if (val > maxVal) { maxVal = val; maxIndex = i; }
+    });
+    // Default to index 1 if no data, as in the user's mockup
+    const tooltipIndex = maxVal > 0 ? maxIndex : 1;
+
+    const maxRevenue = Math.max(...safeData, 100);
+
+    const pointWidth = 60;
+    const chartWidth = Math.max(pointWidth * 12, width - 60);
+    const chartHeight = 150;
+    const paddingHorizontal = 20;
+    const paddingVertical = 20;
+    const graphHeight = chartHeight - paddingVertical * 2;
+
+    const points = safeData.map((val, i) => {
+      let h = val > 0 ? (val / maxRevenue) * graphHeight : 0;
+      // Mock curve if all data is 0 for testing design visually
+      if (maxVal === 0) h = Math.abs(Math.sin(i * 0.8)) * 80 + 20;
+
+      return {
+        x: paddingHorizontal + i * ((chartWidth - paddingHorizontal * 2) / 11),
+        y: paddingVertical + graphHeight - h,
+        val: val
+      };
+    });
+
+    const createPath = (pts: { x: number, y: number }[]) => {
+      if (pts.length === 0) return '';
+      let d = `M ${pts[0].x} ${pts[0].y}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i];
+        const p1 = pts[i + 1];
+        const midX = (p0.x + p1.x) / 2;
+        d += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+      }
+      return d;
+    };
+
+    const pathD = createPath(points);
+    const areaD = `${pathD} L ${points[11].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
 
     return (
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
-          <View>
-            <Text style={styles.chartTitle}>SALES REVENUE VS, TARGET I YTD</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.yearDropdown}
-            onPress={() => setShowYearPicker(true)}
-          >
-            <Text style={styles.chartYear}>Year: {selectedYear}</Text>
-            <Text style={styles.downArrowSmall}>▼</Text>
+          <Text style={styles.chartTitle}>SALES REVENUE VS. TARGET I YTD</Text>
+          <TouchableOpacity style={styles.monthDropdownBtn} onPress={() => setShowYearPicker(true)}>
+            <Text style={styles.monthDropdownText}>Year ⌄</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.chartBody}>
-          <View style={styles.yAxis}>
-            {[1, 0.75, 0.5, 0.25, 0].map((step) => (
-              <Text key={step} style={styles.yLabel}>
-                ₹{(maxRevenue * step / 1000).toFixed(0)}K
-              </Text>
-            ))}
-          </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -15 }} contentContainerStyle={{ paddingHorizontal: 15 }}>
+          <View style={{ width: chartWidth, height: chartHeight + 40 }}>
+            <Svg width={chartWidth} height={chartHeight}>
+              <Defs>
+                <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#E67E22" stopOpacity="0.8" />
+                  <Stop offset="1" stopColor="#E67E22" stopOpacity="0" />
+                </LinearGradient>
+              </Defs>
 
-          <View style={styles.chartArea}>
-            {[0, 25, 50, 75, 100].map(h => (
-              <View key={h} style={[styles.gridLine, { bottom: `${h}%` }]} />
-            ))}
+              <Path d={areaD} fill="url(#grad)" />
+              <Path d={pathD} fill="none" stroke="#E67E22" strokeWidth="2.5" />
 
-            <View style={styles.barsRow}>
-              {data.map((val, i) => {
-                const barHeight = (val / maxRevenue) * chartHeight;
-                const targetHeight = (targets[i] / maxRevenue) * chartHeight;
+              <Line
+                x1={points[tooltipIndex].x}
+                y1={0}
+                x2={points[tooltipIndex].x}
+                y2={chartHeight}
+                stroke="#555"
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
 
-                // Trend Line Calculation
-                const nextVal = data[i + 1];
-                const hasNext = nextVal !== undefined;
-                const nextHeight = hasNext ? (nextVal / maxRevenue) * chartHeight : 0;
-                const barWidth = (width - 100) / 12;
+              {points.map((p, i) => (
+                <Circle key={i} cx={p.x} cy={p.y} r="5" fill="#E67E22" stroke="#FFF" strokeWidth="2" />
+              ))}
+            </Svg>
 
-                return (
-                  <View key={i} style={styles.barGroup}>
-                    <View style={[styles.bar, { height: Math.max(barHeight, 5) }]} />
-                    <View style={[styles.linePin, { bottom: targetHeight }]} />
-                    <Text style={styles.xLabel}>{months[i]}</Text>
-                  </View>
-                );
-              })}
+            <View style={[styles.tooltipBoxSvg, {
+              left: points[tooltipIndex].x + 8,
+              top: points[tooltipIndex].y - 12
+            }]}
+            >
+              <Text style={styles.tooltipTextSvg}>${points[tooltipIndex].val.toLocaleString()}</Text>
             </View>
-            <View style={styles.targetLineOverlay} />
-          </View>
-        </View>
 
-        <View style={styles.legend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendBox, { backgroundColor: '#1B4D6B' }]} />
-            <Text style={styles.legendText}>Sales Revenue</Text>
+            <View style={styles.xAxisContainerSvg}>
+              <View style={styles.chartXAxisLineSvg} />
+              {months.map((m, i) => (
+                <View key={i} style={[styles.xAxisTickWrapperSvg, { left: points[i].x - 15 }]}>
+                  <View style={styles.xTickSvg} />
+                  <Text style={styles.xLabelSvg}>{m}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: '#EB5757' }]} />
-            <Text style={styles.legendText}>Target</Text>
-          </View>
-        </View>
-
-        <View style={styles.chartFooter}>
-          <Text style={styles.footerAmountLabel}>Sales Revenue amount : </Text>
-          <Text style={styles.footerAmountValue}>₹ {totalRevenue.toLocaleString()}</Text>
-        </View>
+        </ScrollView>
       </View>
     );
   };
 
-  const ServiceCard = ({ title, count, icon }: any) => (
-    <View style={styles.serviceCard}>
-      <View style={styles.serviceIconContainer}>
-        <Text style={styles.serviceEmoji}>{icon || '🛠️'}</Text>
-      </View>
-      <Text style={styles.serviceTitle} numberOfLines={1}>{title}</Text>
-      <Text style={styles.serviceCount}>{count} orders</Text>
-    </View>
-  );
-
   const RecentOrderCard = ({ order }: { order: any }) => {
     const userImg = order.user?.profileImage || order.userDetails?.profileImage;
-    const services = order.serviceNames || [];
-    const serviceText = services.length > 0 ? services.join(', ') : 'General Service';
+    const email = order.user?.email || order.userDetails?.email || order.email || 'No Email Provided';
+    const phone = order.user?.mobile || order.userDetails?.mobile || order.mobile || order.user?.phone || order.userDetails?.phone || order.phone || '';
+    const name = order.user?.name || order.userDetails?.name || order.name || 'Customer';
+    const d = new Date(order.createdAt || order.bookingDate || new Date());
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' });
+    const timeSlot = order.timeSlot || d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const orderStatus = order.status || 'pending';
+
+    const getStatusColor = (status: string) => {
+      switch (status.toLowerCase()) {
+        case 'completed':
+        case 'delivered':
+          return '#27AE60';
+        case 'cancelled':
+          return '#E74C3C';
+        case 'on_the_way':
+        case 'confirmed':
+          return '#3498DB';
+        default:
+          return '#E67E22';
+      }
+    };
 
     return (
       <View style={styles.recentOrderCard}>
-        <View style={styles.orderLeft}>
+        <View style={styles.recentOrderTopRow}>
+          <Text style={styles.recentOrderDate}>Date & Time</Text>
+          <View style={[
+            styles.unpaidBadge,
+            { backgroundColor: getStatusColor(orderStatus) }
+          ]}>
+            <Text style={styles.unpaidText}>{orderStatus.replace(/_/g, ' ').toUpperCase()}</Text>
+          </View>
+        </View>
+        <View style={styles.recentOrderTimeRow}>
+          <Text style={styles.recentOrderTimeVal}>{dateStr}</Text>
+          <Text style={styles.recentOrderTimeValRight}>{timeSlot}</Text>
+        </View>
+
+        <View style={styles.orderBottomRow}>
           {userImg ? (
             <Image source={{ uri: getImageUrl(userImg) }} style={styles.orderUserImg} />
           ) : (
             <View style={styles.orderUserPlaceholder}>
               <Text style={styles.orderUserInitial}>
-                {(order.user?.name || order.userDetails?.name || 'C').charAt(0)}
+                {name.charAt(0).toUpperCase()}
               </Text>
             </View>
           )}
           <View style={styles.orderMid}>
             <Text style={styles.orderUserName} numberOfLines={1}>
-              {order.user?.name || order.userDetails?.name || 'Customer'}
+              {name}
             </Text>
-            <Text style={styles.orderServices} numberOfLines={1}>
-              {serviceText}
+            <Text style={styles.orderEmail} numberOfLines={1}>
+              #{order.bookingRef || order._id.slice(-6).toUpperCase()}
             </Text>
           </View>
+          <TouchableOpacity 
+            style={styles.phoneBtn}
+            onPress={() => {
+              if (phone) {
+                Linking.openURL(`tel:${phone}`);
+              } else {
+                Alert.alert('Phone not available', 'The customer phone number is missing.');
+              }
+            }}
+          >
+            <Text style={styles.phoneIcon}>📞</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.viewBtn}
-          onPress={() => setActiveTab('Orders')}
-        >
-          <Text style={styles.viewBtnText}>View</Text>
-        </TouchableOpacity>
       </View>
     );
   };
@@ -254,195 +300,180 @@ const VendorDashboard = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            onPress={() => setActiveTab('Profile')}
-          >
-            {user?.profileImage ? (
-              <Image
-                source={{ uri: getImageUrl(user.profileImage) }}
-                style={styles.headerAvatar}
-              />
-            ) : (
-              <View style={styles.headerAvatarPlaceholder}>
-                <Text style={styles.avatarInitial}>{user?.name?.charAt(0) || 'V'}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.headerTextContainer}>
-            <View style={styles.greetingRow}>
-              <Text style={styles.greetingText}>{getGreeting()}, </Text>
-              <Text style={styles.userNameText}>{user?.name || 'Vendor'}</Text>
-            </View>
-            <Text style={styles.dateDayText}>
-              {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}, {currentDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            onPress={() => setActiveTab('Notifications')}
-            style={styles.notifBtn}
-          >
-            <Text style={styles.notifIcon}>🔔</Text>
-            {unreadCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifBadgeText}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.dateRow}>
-          <TouchableOpacity
-            style={styles.datePicker}
-            onPress={() => period === 'Year' && setShowYearPicker(true)}
-          >
-            <Text style={styles.dateText}>
-              {period === 'Year' ? selectedYear : currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-            </Text>
-            {period === 'Year' && <Text style={styles.downArrow}> ▼</Text>}
-          </TouchableOpacity>
-
-          <View style={styles.tabBar}>
-            {['Today', 'Week', 'Month', 'Year'].map((p) => (
-              <TouchableOpacity
-                key={p}
-                onPress={() => setPeriod(p)}
-                style={[styles.tab, period === p && styles.activeTab]}
-              >
-                <Text style={[styles.tabText, period === p && styles.activeTabText]}>{p}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.statGrid}>
-          <StatCard
-            title="Total Booking service"
-            value={stats?.totalOrders}
-            percentage="+5%"
-            icon="📋"
-            color="#2F80ED"
-            bgColor="#E9F2FF"
-          />
-          <StatCard
-            title="Total Services"
-            value={stats?.completedOrders}
-            percentage="+12%"
-            icon="📊"
-            color="#9B51E0"
-            bgColor="#F2E9FB"
-          />
-          <StatCard
-            title="Pending Services"
-            value={stats?.pendingOrders}
-            percentage="-3.56%"
-            icon="⏳"
-            color="#1B4D6B"
-            bgColor="#E9F2FF"
-          />
-          <StatCard
-            title="Cancel Services"
-            value={stats?.cancelledOrders}
-            percentage="-6%"
-            icon="❌"
-            color="#EB5757"
-            bgColor="#FFEDED"
-          />
-        </View>
-
-
-        <View style={styles.chartSection}>
-          <RevenueChart data={stats?.monthlyRevenue || Array(12).fill(0)} />
-        </View>
-
-
-        <View style={styles.recentSection}>
-          <View style={styles.recentHeaderRow}>
-            <Text style={styles.sectionTitle}>Recent Bookings</Text>
-            <TouchableOpacity onPress={() => setActiveTab('Orders')}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          {(() => {
-            // Get today's date in YYYY-MM-DD format (Local time)
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const todayStr = `${year}-${month}-${day}`;
-
-            const todayBookings = recentOrders.filter((o: any) => o.bookingDate === todayStr);
-
-            const displayOrders = todayBookings.length > 0
-              ? todayBookings.slice(0, 3)
-              : recentOrders.slice(0, 3);
-
-            if (displayOrders.length > 0) {
-              return displayOrders.map((order: any) => (
-                <RecentOrderCard key={order._id} order={order} />
-              ));
-            }
-
-            return (
-              <Text style={styles.emptyText}>No bookings found for today.</Text>
-            );
-          })()}
-        </View>
-      </ScrollView>
-
-      {/* Year Picker Modal */}
-      <Modal visible={showYearPicker} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Year</Text>
-            <FlatList
-              data={years}
-              keyExtractor={(item) => item.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.yearItem}
-                  onPress={() => {
-                    setSelectedYear(item);
-                    setShowYearPicker(false);
-                  }}
-                >
-                  <Text style={[styles.yearItemText, selectedYear === item && styles.activeYearText]}>
-                    {item}
-                  </Text>
-                </TouchableOpacity>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={() => setActiveTab('Profile')}>
+              {user?.profileImage ? (
+                <Image source={{ uri: getImageUrl(user.profileImage) }} style={styles.headerAvatar} />
+              ) : (
+                <View style={styles.headerAvatarPlaceholder}>
+                  <Text style={styles.avatarInitial}>{user?.name?.charAt(0) || 'V'}</Text>
+                </View>
               )}
-            />
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setShowYearPicker(false)}
-            >
-              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.greetingText}>Welcome</Text>
+              <Text style={styles.userNameText}>{user?.name || 'Tayyab Sohail'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={() => setActiveTab('Notifications')} style={styles.notifBtn}>
+              <Text style={styles.notifIcon}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    </SafeAreaView>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          <View style={styles.welcomeCardContainer}>
+            <View style={styles.welcomeCard}>
+              <TouchableOpacity style={[styles.yearDropdownBtn, { position: 'absolute', top: 15, right: 15, zIndex: 10 }]} onPress={() => setShowYearPicker(true)}>
+                <Text style={styles.yearDropdownText}>Year</Text>
+                <Text style={styles.yearDropdownArrow}> ⌄</Text>
+              </TouchableOpacity>
+              <Text style={styles.welcomeSubText}>Welcome, Back</Text>
+              <Text style={styles.welcomeMainText}>{user?.name || 'Tayyab sohail'}</Text>
+              <Text style={styles.welcomeMonthText}>
+                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][currentDate.getMonth()]} Month
+              </Text>
+
+              <View style={styles.totalBookingRow}>
+                <Text style={styles.totalBookingLabel}>Total Booking :</Text>
+                <Text style={styles.totalBookingValue}>{stats?.totalOrders || 0}</Text>
+              </View>
+
+              <View style={styles.statsRow}>
+                <View style={styles.statCol}>
+                  <Text style={styles.statLabel}>Active</Text>
+                  <Text style={styles.statVal}>{stats?.completedOrders || 0}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statCol}>
+                  <Text style={styles.statLabel}>Pending</Text>
+                  <Text style={styles.statVal}>{stats?.pendingOrders || 0}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statCol}>
+                  <Text style={styles.statLabel}>Cancel</Text>
+                  <Text style={styles.statVal}>{stats?.cancelledOrders || 0}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.categorySection}>
+            <Text style={styles.sectionTitleMain}>Category</Text>
+            <View style={styles.categoryRow}>
+              <View style={styles.categoryItemWrapper}>
+                <TouchableOpacity style={styles.categoryBox} onPress={() => setActiveTab('Vendorspareshop')}>
+                  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E67E22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </Svg>
+                </TouchableOpacity>
+                <Text style={styles.categoryLabelText}>Shop</Text>
+              </View>
+              <View style={styles.categoryItemWrapper}>
+                <TouchableOpacity style={styles.categoryBox} onPress={() => setActiveTab('VendorWallet')}>
+                  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E67E22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M21 12V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-5m-9 0h9m-9 0a2 2 0 100-4h9" />
+                  </Svg>
+                </TouchableOpacity>
+                <Text style={styles.categoryLabelText}>Wallet</Text>
+              </View>
+              <View style={styles.categoryItemWrapper}>
+                <TouchableOpacity style={styles.categoryBox} onPress={() => setActiveTab('ChallenBooking')}>
+                  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E67E22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></Path>
+                    <Path d="M14 2v6h6"></Path>
+                    <Path d="M16 13H8"></Path>
+                    <Path d="M16 17H8"></Path>
+                    <Path d="M10 9H8"></Path>
+                  </Svg>
+                </TouchableOpacity>
+                <Text style={styles.categoryLabelText}>Chellan</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.chartSection}>
+            <RevenueChart data={stats?.monthlyRevenue || Array(12).fill(0)} />
+          </View>
+
+          <View style={styles.recentSection}>
+            <View style={styles.recentHeaderRow}>
+              <Text style={styles.sectionTitleMain}>Recent Bookings</Text>
+              <TouchableOpacity onPress={() => setActiveTab('Orders')}>
+                <Text style={styles.viewAllText}>View all</Text>
+              </TouchableOpacity>
+            </View>
+            {(() => {
+              const now = new Date();
+              const year = now.getFullYear();
+              const month = String(now.getMonth() + 1).padStart(2, '0');
+              const day = String(now.getDate()).padStart(2, '0');
+              const todayStr = `${year}-${month}-${day}`;
+              
+              // Filter out completed and delivered orders
+              const activeOrders = recentOrders.filter((o: any) => o.status !== 'completed' && o.status !== 'delivered');
+              
+              const todayBookings = activeOrders.filter((o: any) => o.bookingDate === todayStr);
+              const displayOrders = todayBookings.length > 0 ? todayBookings.slice(0, 3) : activeOrders.slice(0, 3);
+
+              if (displayOrders.length > 0) {
+                return displayOrders.map((order: any) => (
+                  <RecentOrderCard key={order._id} order={order} />
+                ));
+              }
+              return <Text style={styles.emptyText}>No bookings found for today.</Text>;
+            })()}
+          </View>
+        </ScrollView>
+
+        <Modal visible={showYearPicker} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Year</Text>
+              <FlatList
+                data={years}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.yearItem} onPress={() => { setSelectedYear(item); setShowYearPicker(false); }}>
+                    <Text style={[styles.yearItemText, selectedYear === item && styles.activeYearText]}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowYearPicker(false)}>
+                <Text style={styles.closeBtnText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FB' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  safeArea: { flex: 1, backgroundColor: 'transparent' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
-    backgroundColor: '#F8F9FB',
+    paddingTop: 15,
+    paddingBottom: 10,
+    marginTop: 30,
+    backgroundColor: 'transparent',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -450,23 +481,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerRight: {
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
   },
   notifBtn: {
-    padding: 10,
+    padding: 8,
     position: 'relative',
-    backgroundColor: '#FFF',
-    borderRadius: 25,
-    ...SHADOWS.light,
+    marginLeft: 15,
   },
   notifIcon: {
-    fontSize: 20,
+    fontSize: 22,
+    color: '#FFF',
   },
   notifBadge: {
     position: 'absolute',
-    top: 5,
-    right: 5,
+    top: 0,
+    right: 0,
     backgroundColor: '#EB5757',
     borderRadius: 8,
     minWidth: 16,
@@ -474,402 +504,129 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
-    borderWidth: 1.5,
-    borderColor: '#FFF',
-  },
-  notifBadgeText: {
-    color: '#FFF',
-    fontSize: 8,
-    fontWeight: '800',
-  },
-  headerTextContainer: {
-    marginLeft: 15,
-  },
-  greetingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  greetingText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  userNameText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-  },
-  dateDayText: {
-    fontSize: 12,
-    color: '#1B4D6B',
-    fontWeight: '600',
-  },
-  headerBtn: { padding: 8 },
-  menuIcon: { fontSize: 22, color: '#000' },
-  headerAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#000',
   },
-  headerAvatarPlaceholder: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: '#1B4D6B',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  scroll: { paddingVertical: 20 },
-  dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  datePicker: { flexDirection: 'row', alignItems: 'center' },
-  dateText: { fontSize: 16, fontWeight: '600', color: '#000', marginRight: 8 },
-  downArrow: { fontSize: 10, color: '#000' },
-  downArrowSmall: { fontSize: 8, color: '#000', marginLeft: 5 },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 3,
-  },
-  tab: {
-    paddingHorizontal: 15,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  activeTab: {
-    backgroundColor: '#000',
-    ...SHADOWS.light,
-  },
-  tabText: { fontSize: 13, color: '#666', fontWeight: '500' },
-  activeTabText: { color: '#FFF' },
-  statGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 10,
-  },
-  statCard: {
-    width: '48%',
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 15,
-    ...SHADOWS.light,
-  },
-  statCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  statIconContainer: {
-    padding: 8,
-    borderRadius: 10,
-  },
-  statEmoji: { fontSize: 18 },
-  percentageText: { fontSize: 12, fontWeight: 'bold' },
-  statCardBody: {},
-  statValue: { fontSize: 22, fontWeight: 'bold', color: '#000', marginBottom: 5 },
-  statLabel: { fontSize: 12, color: '#000' },
+  notifBadgeText: { color: '#FFF', fontSize: 8, fontWeight: '800' },
+  headerTextContainer: { marginLeft: 12 },
+  greetingText: { fontSize: 12, color: '#DDD', fontWeight: '500' },
+  userNameText: { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
+  headerAvatar: { width: 45, height: 45, borderRadius: 22.5, borderWidth: 1, borderColor: '#444' },
+  headerAvatarPlaceholder: { width: 45, height: 45, borderRadius: 22.5, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  scroll: { paddingVertical: 5 },
 
-  chartSection: { paddingHorizontal: 20, marginBottom: 30 },
-  chartCard: {
-    backgroundColor: '#FFF',
+  yearDropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E67E22'
+  },
+  yearDropdownText: { color: '#CCC', fontSize: 12, fontWeight: '500' },
+  yearDropdownArrow: { color: '#CCC', fontSize: 14, marginLeft: 5 },
+
+  welcomeCardContainer: { paddingHorizontal: 20, marginBottom: 20 },
+  welcomeCard: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E67E22',
     padding: 20,
+    alignItems: 'center',
+  },
+  welcomeSubText: { color: '#FFF', fontSize: 13, marginBottom: 5 },
+  welcomeMainText: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginBottom: 5 },
+  welcomeMonthText: { color: '#FFF', fontSize: 13, marginBottom: 5, width: '100%', textAlign: 'center' },
+  totalBookingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, paddingHorizontal: 10 },
+  totalBookingLabel: { color: '#FFFF00', fontSize: 16, fontWeight: 'bold' },
+  totalBookingValue: { color: '#FFFF00', fontSize: 16, fontWeight: 'bold' },
+  statsRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center' },
+  statCol: { flex: 1, alignItems: 'center' },
+  statLabel: { color: '#FFF', fontSize: 17, marginBottom: 10 ,width:80, textAlign: 'center'},
+  statVal: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
+  statDivider: { width: 1, height: 40, backgroundColor: '#888' },
+
+  categorySection: { paddingHorizontal: 20, marginBottom: 20 },
+  sectionTitleMain: { fontSize: 18, fontWeight: 'bold', color: '#FFF', marginBottom: 15 },
+  categoryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  categoryItemWrapper: { alignItems: 'center', width: '30%' },
+  categoryBox: {
+    width: 65,
+    height: 65,
+    backgroundColor: '#1E1E1E',
     borderRadius: 15,
-    ...SHADOWS.medium,
-  },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
-    paddingBottom: 10,
-  },
-  yearDropdown: { flexDirection: 'row', alignItems: 'center', padding: 5 },
-  chartTitle: { fontSize: 12, fontWeight: 'bold', color: '#000', letterSpacing: 0.5 },
-  chartYear: { fontSize: 12, color: '#000', fontWeight: 'bold' },
-  chartBody: {
-    flexDirection: 'row',
-    height: 220,
-    paddingTop: 10,
-  },
-  yAxis: {
-    justifyContent: 'space-between',
-    height: 180,
-    paddingRight: 10,
-    borderRightWidth: 1,
-    borderRightColor: '#EEE',
-  },
-  yLabel: { fontSize: 10, color: '#000', textAlign: 'right' },
-  chartArea: {
-    flex: 1,
-    height: 180,
-    position: 'relative',
-  },
-  gridLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: '#EEE',
-  },
-  barsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-around',
-    height: 180,
-  },
-  barGroup: {
-    alignItems: 'center',
-    width: (width - 100) / 12,
-  },
-  bar: {
-    width: 8,
-    backgroundColor: '#1B4D6B',
-    borderRadius: 4,
-  },
-  linePin: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EB5757',
-    zIndex: 10,
-  },
-  targetLineOverlay: {
-    position: 'absolute',
-    top: 60,
-    left: 0,
-    right: 0,
-    height: 1,
-    borderStyle: 'dashed',
     borderWidth: 1,
-    borderColor: 'rgba(235, 87, 87, 0.3)',
-    borderRadius: 1,
-    transform: [{ rotate: '-10deg' }],
-  },
-
-  xLabel: {
-    fontSize: 8,
-    color: '#000',
-    marginTop: 8,
-    position: 'absolute',
-    bottom: -25,
-    width: 30,
-    textAlign: 'center',
-  },
-  legend: {
-    flexDirection: 'row',
+    borderColor: '#E67E22',
     justifyContent: 'center',
-    marginTop: 35,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 15 },
-  legendBox: { width: 12, height: 12, marginRight: 8, borderRadius: 2 },
-  legendLine: { width: 20, height: 3, marginRight: 8, borderRadius: 1.5 },
-  legendText: { fontSize: 11, color: '#000', fontWeight: '500' },
-  chartFooter: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  footerAmountLabel: { fontSize: 14, color: '#000', fontWeight: '500' },
-  footerAmountValue: { fontSize: 14, color: '#000', fontWeight: 'bold' },
-
-  servicesSection: { paddingHorizontal: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#000', marginBottom: 15 },
-  servicesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  serviceCard: {
-    width: (width - 60) / 3,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 15,
     alignItems: 'center',
-    marginBottom: 10,
-    ...SHADOWS.light,
-  },
-  serviceIconContainer: {
     marginBottom: 8,
   },
-  serviceEmoji: { fontSize: 24 },
-  serviceTitle: {
-    fontSize: 10,
-    color: '#000',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  serviceCount: { fontSize: 9, color: '#999', marginTop: 2 },
-  recentSection: { paddingHorizontal: 20, marginTop: 20, paddingBottom: 30 },
-  recentOrderCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 15,
-    padding: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    ...SHADOWS.light,
-  },
-  orderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  orderUserImg: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    marginRight: 12,
-  },
-  orderUserPlaceholder: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  orderUserInitial: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1B4D6B',
-  },
-  orderMid: {
-    flex: 1,
-  },
-  orderUserName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 2,
-  },
-  orderServices: {
-    fontSize: 12,
-    color: '#666',
-  },
-  viewBtn: {
-    paddingHorizontal: 15,
-    paddingVertical: 6,
+  catEmoji: { fontSize: 24 },
+  categoryLabelText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+
+  chartSection: { paddingHorizontal: 20, marginBottom: 20 },
+  chartCard: {
+    backgroundColor: '#1E1E1E',
     borderRadius: 20,
-    backgroundColor: '#F8F9FB',
+    padding: 15,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
   },
-  viewBtnText: {
-    fontSize: 12,
-    color: '#1B4D6B',
-    fontWeight: '700',
-  },
-  recentHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  chartTitle: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
+  monthDropdownBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2A2A2A', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#E67E22' },
+  monthDropdownText: { color: '#FFF', fontSize: 10 },
+
+  tooltipBoxSvg: { position: 'absolute', backgroundColor: '#FFF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, zIndex: 20 },
+  tooltipTextSvg: { color: '#000', fontSize: 10, fontWeight: 'bold' },
+  xAxisContainerSvg: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 35 },
+  chartXAxisLineSvg: { position: 'absolute', top: 0, left: 20, right: 20, height: 1, borderTopWidth: 1, borderColor: '#444', borderStyle: 'dashed' },
+  xAxisTickWrapperSvg: { position: 'absolute', top: -2, width: 30, alignItems: 'center' },
+  xTickSvg: { width: 6, height: 4, backgroundColor: '#007AFF', borderRadius: 1 },
+  xLabelSvg: { color: '#FFF', fontSize: 10, marginTop: 5 },
+
+  recentSection: { paddingHorizontal: 20, paddingBottom: 15 },
+  recentHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  viewAllText: { color: '#888', fontSize: 12, fontWeight: '600' },
+  recentOrderCard: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+    borderLeftWidth: 4,
+    borderLeftColor: '#E67E22',
+    padding: 15,
     marginBottom: 15,
   },
-  viewAllText: {
-    fontSize: 14,
-    color: '#1B4D6B',
-    fontWeight: '600',
-  },
-  quickActions: {
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  actionCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...SHADOWS.medium,
-    borderWidth: 1,
-    borderColor: '#E9F2FF',
-  },
-  actionIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: '#E9F2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  actionEmoji: {
-    fontSize: 24,
-  },
-  actionTextContainer: {
-    flex: 1,
-  },
-  actionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1B4D6B',
-  },
-  actionSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  actionArrow: {
-    fontSize: 20,
-    color: '#1B4D6B',
-    fontWeight: 'bold',
-  },
-  recentOrderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  customerName: { fontSize: 14, fontWeight: '700', color: '#000' },
-  orderAmount: { fontSize: 14, fontWeight: '800', color: '#1B4D6B' },
-  vehicleInfo: { fontSize: 12, color: '#666', marginBottom: 8 },
-  statusRow: { flexDirection: 'row', alignItems: 'center' },
-  orderTime: { fontSize: 11, color: '#999', flex: 1 },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
-  statusName: { fontSize: 11, fontWeight: '600', color: '#333', textTransform: 'capitalize' },
-  emptyText: { fontSize: 14, color: '#999', textAlign: 'center', width: '100%', marginVertical: 20 },
+  recentOrderTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
+  recentOrderDate: { color: '#CCC', fontSize: 11 },
+  unpaidBadge: { backgroundColor: '#E67E22', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  unpaidText: { color: '#FFF', fontSize: 9, fontWeight: 'bold' },
+  recentOrderTimeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  recentOrderTimeVal: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  recentOrderTimeValRight: { color: '#FFF', fontSize: 12, justifyContent: "flex-end", width: 130 ,textAlign:'right'},
+  orderBottomRow: { flexDirection: 'row', alignItems: 'center' },
+  orderUserImg: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
+  orderUserPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#444', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  orderUserInitial: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  orderMid: { flex: 1 },
+  orderUserName: { color: '#FFF', fontSize: 14, fontWeight: 'bold', marginBottom: 2 },
+  orderEmail: { color: '#AAA', fontSize: 10 },
+  phoneBtn: { width: 35, height: 35, borderRadius: 17.5, backgroundColor: '#27AE60', justifyContent: 'center', alignItems: 'center' },
+  phoneIcon: { fontSize: 16, color: '#FFF' },
+  emptyText: { color: '#888', textAlign: 'center', marginTop: 20 },
 
-  // Modal & Picker Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 30,
-    maxHeight: '50%',
-  },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 20, textAlign: 'center' },
-  yearItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE', alignItems: 'center' },
-  yearItemText: { fontSize: 18, color: '#666' },
-  activeYearText: { color: '#1B4D6B', fontWeight: 'bold' },
-  closeBtn: { marginTop: 20, padding: 15, backgroundColor: '#1B4D6B', borderRadius: 15, alignItems: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#1E1E1E', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, maxHeight: '50%' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF', marginBottom: 20, textAlign: 'center' },
+  yearItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#333', alignItems: 'center' },
+  yearItemText: { fontSize: 18, color: '#AAA' },
+  activeYearText: { color: '#E67E22', fontWeight: 'bold' },
+  closeBtn: { marginTop: 20, padding: 15, backgroundColor: '#E67E22', borderRadius: 15, alignItems: 'center' },
   closeBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
 

@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ScrollView,
     ActivityIndicator,
+    ImageBackground,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,25 +29,24 @@ interface NotificationRowProps {
 }
 
 const NotificationRow = ({ initials, avatarBg, name, message, time, hasNew, hasEndIcon, onPress }: NotificationRowProps) => (
-    <TouchableOpacity style={styles.notificationRow} onPress={onPress}>
+    <TouchableOpacity style={styles.notificationRow} onPress={onPress} activeOpacity={0.8}>
         <View style={styles.rowLead}>
-            <View style={[styles.newBullet, { backgroundColor: hasNew ? '#2196F3' : 'transparent' }]} />
-            <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-                <Text style={styles.avatarText}>{initials}</Text>
+            <View style={[styles.newBullet, { backgroundColor: hasNew ? '#4CD964' : 'transparent' }]} />
+            <View style={[styles.avatar, { backgroundColor: '#FFF' }]}>
+                <Text style={[styles.avatarText, { color: '#555' }]}>{initials}</Text>
             </View>
         </View>
         <View style={styles.rowContent}>
-            <Text style={styles.messageLine}>
-                <Text style={styles.boldText}>{name}</Text>
-                <Text style={styles.grayText}> {message}</Text>
-            </Text>
-            <Text style={styles.timeLine}>MotorService · {time}</Text>
-        </View>
-        {hasEndIcon && (
-            <View style={styles.endIconContainer}>
-                <View style={styles.blueDot} />
+            <View style={styles.rowHeader}>
+                <Text style={styles.boldText} numberOfLines={1}>{name}</Text>
+                <View style={styles.timeGroup}>
+                    <Text style={styles.timeLine}>{time}</Text>
+                </View>
             </View>
-        )}
+            {message ? (
+                <Text style={styles.grayText} numberOfLines={2}>{message}</Text>
+            ) : null}
+        </View>
     </TouchableOpacity>
 );
 
@@ -139,6 +139,10 @@ const NotificationPage = () => {
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
+                <TouchableOpacity onPress={() => vendorNav.setActiveTab('Dashboard')} style={styles.backBtn}>
+                    <Text style={styles.backBtnText}>{'<'}</Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Notifications</Text>
                 {notifications.some(n => !n.isRead) && (
                     <TouchableOpacity onPress={handleReadAll} style={styles.markAllBtn}>
                         <Text style={styles.markAllText}>Mark all as read</Text>
@@ -148,7 +152,7 @@ const NotificationPage = () => {
 
             {loading ? (
                 <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#1B4D6B" />
+                    <ActivityIndicator size="large" color="#E67E22" />
                 </View>
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -186,21 +190,43 @@ const NotificationPage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9F9F9',
+        backgroundColor: 'transparent',
     },
     header: {
         padding: 0,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 30,
+        marginBottom: 30,
         paddingTop: 15,
-        paddingRight: 15,
-        backgroundColor: '#fff',
+        paddingHorizontal: 15,
+        backgroundColor: 'transparent',
+    },
+    backBtn: {
+        position: 'absolute',
+        left: 15,
+        top: 15,
+        padding: 5,
+    },
+    backBtnText: {
+        color: '#FFF',
+        fontSize: 24,
+        fontWeight: 'bold',
+    },
+    headerTitle: {
+        color: '#FFF',
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     markAllBtn: {
-        marginLeft: 'auto',
+        position: 'absolute',
+        right: 15,
+        bottom: 0,
     },
     markAllText: {
-        color: '#1B4D6B',
+        color: '#E67E22',
         fontSize: 14,
         fontWeight: '600',
     },
@@ -215,23 +241,27 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     scrollContent: {
-        paddingHorizontal: 20,
-        backgroundColor: '#fff',
+        paddingHorizontal: 15,
+        backgroundColor: 'transparent',
         flexGrow: 1,
+        paddingBottom: 10,
     },
     sectionLabel: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#1a1a2e',
-        marginTop: 16,
-        marginBottom: 8,
+        color: '#FFF',
+        marginTop: 10,
+        marginBottom: 15,
+        display: 'none',
     },
     notificationRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f5f5f5',
+        backgroundColor: 'rgba(35, 35, 35, 0.9)',
+        borderRadius: 8,
+        paddingVertical: 15,
+        paddingHorizontal: 15,
+        marginBottom: 10,
+        alignItems: 'flex-start',
     },
     rowLead: {
         flexDirection: 'row',
@@ -251,38 +281,43 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarText: {
-        color: '#fff',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 18,
     },
     rowContent: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 15,
     },
-    messageLine: {
-        fontSize: 14,
-        lineHeight: 20,
+    rowHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
     boldText: {
         fontWeight: 'bold',
-        color: '#000',
+        color: '#FFF',
+        fontSize: 14,
+        flex: 1,
+        marginRight: 10,
     },
-    grayText: {
-        color: '#888',
+    timeGroup: {
+        alignItems: 'center',
     },
     timeLine: {
+        fontSize: 11,
+        color: '#888',
+    },
+    dots: {
+        color: '#FFF',
         fontSize: 12,
-        color: '#aaa',
-        marginTop: 2,
+        marginTop: 4,
+        letterSpacing: 2,
     },
-    endIconContainer: {
-        paddingLeft: 10,
-    },
-    blueDot: {
-        width: 8,
-        height: 8,
-        backgroundColor: '#1B4D6B',
-        borderRadius: 4,
+    grayText: {
+        color: '#AAA',
+        fontSize: 12,
+        marginTop: 8,
+        lineHeight: 18,
     },
 });
 
