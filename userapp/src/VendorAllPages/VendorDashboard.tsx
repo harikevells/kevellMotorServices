@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  welcomeSubText: { color: '#FFF', fontSize: 13, marginBottom: 5 },
+  welcomeSubText: { color: '#FFF', fontSize: 13, marginBottom: 5, width:100 },
   welcomeMainText: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginBottom: 5 },
   welcomeMonthText: { color: '#FFF', fontSize: 13, marginBottom: 5, width: '100%', textAlign: 'center' },
   totalBookingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, paddingHorizontal: 10 },

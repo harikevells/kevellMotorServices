@@ -18,3 +18,19 @@ export const EVCharging = ({ width = 200, height = 200 }) => (
   </Svg>
 );
 
+export const EVBike = ({ width = 200, height = 200 }) => (
+  <Svg width={width} height={height} viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx="5.5" cy="17.5" r="3.5" />
+    <Circle cx="18.5" cy="17.5" r="3.5" />
+    <Path d="M15 6a1 1 0 100-2 1 1 0 000 2zm-3 11.5V14l-3-3 4-3 2 3h2" />
+  </Svg>
+);
+
+export const EVTruck = ({ width = 200, height = 200 }) => (
+  <Svg width={width} height={height} viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M10 17h4V5H2v12h3M20 17h2v-6l-3-2h-3v8h1" />
+    <Circle cx="7.5" cy="17.5" r="2.5" />
+    <Circle cx="17.5" cy="17.5" r="2.5" />
+    <Path d="M14 17h1" />
+  </Svg>
+);

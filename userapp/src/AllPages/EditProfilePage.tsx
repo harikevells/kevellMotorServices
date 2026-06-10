@@ -185,7 +185,7 @@ const EditProfilePage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       {/* Header - Simpler now */}
       <View style={styles.header}>
@@ -307,7 +307,7 @@ const EditProfilePage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: '#000',
   },
   header: {
     flexDirection: 'row',
@@ -316,8 +316,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 40,
-    backgroundColor: '#FFF',
-    ...SHADOWS.light,
+    backgroundColor: '#000',
     zIndex: 10,
   },
   backButton: {
@@ -325,12 +324,12 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 24,
-    color: '#333',
+    color: '#FFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#333',
+    color: '#FFF',
   },
   form: {
     padding: 20,
@@ -344,11 +343,12 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#111122',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    ...SHADOWS.medium,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   avatarImage: {
     width: 110,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 55,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#111122',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -372,12 +372,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#f28b2c',
     width: 34,
     height: 34,
     borderRadius: 17,
     borderWidth: 3,
-    borderColor: '#FFF',
+    borderColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#666',
+    color: '#f28b2c',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 15,
@@ -398,17 +398,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFF',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#111122',
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    color: '#333',
+    color: '#FFF',
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
   },
   row: {
     flexDirection: 'row',
@@ -422,35 +422,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#EEE',
+    borderColor: '#333',
     alignItems: 'center',
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#111122',
   },
   genderBtnActive: {
-    backgroundColor: '#FFF3E0',
-    borderColor: '#1a1a2e',
+    backgroundColor: 'rgba(242, 139, 44, 0.2)',
+    borderColor: '#f28b2c',
   },
   genderBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#aaa',
   },
   genderBtnTextActive: {
-    color: '#1a1a2e',
+    color: '#f28b2c',
   },
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    backgroundColor: '#FFF',
+    borderTopColor: '#333',
+    backgroundColor: '#000',
   },
   saveButton: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#f28b2c',
     borderRadius: 15,
     paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.medium,
   },
   saveButtonText: {
     color: '#FFF',

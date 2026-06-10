@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomePage from '../AllPages/HomePage';
 import BookingHistory from '../AllPages/YourOrderDetails'; 
 import LiveTrackingPage from '../AllPages/LiveTrackingPage';
-import NotificationPage from '../AllPages/NotificationPage';
+import SubscriptionViewpage from '../AllPages/SubscriptionViewpage';
 import ProfilePage from '../AllPages/ProfilePage';
 import UserProductspare from '../AllPages/UserProductspare';
 import Footer from './footer';
@@ -12,7 +12,7 @@ export type BottomTabParamList = {
   Home: undefined;
   Bookings: undefined;
   Tracking: { bookingId?: string };
-  Bell: undefined;
+  Subscription: undefined;
   Spares: undefined;
   Profile: undefined;
 };
@@ -30,7 +30,7 @@ const MainTabs = () => {
       <Tab.Screen name="Bookings" component={BookingHistory} />
       {/* <Tab.Screen name="Tracking" component={LiveTrackingPage} /> */}
       <Tab.Screen name="Spares" component={UserProductspare} />
-      <Tab.Screen name="Bell" component={NotificationPage} />
+      <Tab.Screen name="Subscription" component={SubscriptionViewpage} />
       <Tab.Screen name="Profile" component={ProfilePage} />
     </Tab.Navigator>
   );

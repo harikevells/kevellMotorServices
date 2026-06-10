@@ -19,7 +19,7 @@ const FooterIcon: React.FC<FooterIconProps> = ({ name, isActive, onPress }) => {
       case 'Bookings': return 'Your Booking';
       case 'Tracking': return 'Services';
       case 'Spares': return 'Spares';
-      case 'Bell': return 'Notification';
+      case 'Subscription': return 'Subscription';
       case 'Profile': return 'Profile';
       default: return name;
     }
@@ -60,11 +60,10 @@ const FooterIcon: React.FC<FooterIconProps> = ({ name, isActive, onPress }) => {
             <Path d="M12 22.08V12" />
           </Svg>
         );
-      case 'Bell':
+      case 'Subscription':
         return (
           <Svg width="24" height="24" viewBox="0 0 24 24" fill={isActive ? color : "none"} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </Svg>
         );
       case 'Profile':
@@ -117,6 +116,3 @@ const styles = StyleSheet.create({
 });
 
 export default FooterIcon;
-
-export default FooterIcon;
-

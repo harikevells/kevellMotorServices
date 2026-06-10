@@ -22,11 +22,15 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
+  "main": "public/electron.js",
+  "homepage": "./",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron-start": "electron .",
+    "electron-build": "electron-builder"
   },
   "eslintConfig": {
     "extends": [
@@ -45,5 +49,18 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1",
+    "electron-is-dev": "^3.0.1"
+  },
+  "build": {
+    "appId": "com.iws.admin",
+    "productName": "IWS",
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/DesktopLogo.png"
+    }
   }
 }

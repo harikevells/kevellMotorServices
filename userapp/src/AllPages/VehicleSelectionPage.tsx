@@ -17,7 +17,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
-import { EVCar } from '../assets/EVIcons';
+import { EVCar, EVBike, EVTruck } from '../assets/EVIcons';
 import { fetchUserVehicles, addVehicle, fetchBrands } from '../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -147,7 +147,13 @@ const VehicleSelectionPage = () => {
       onPress={() => setSelectedVehicle(item)}
     >
       <View style={styles.vehicleIconContainer}>
-        <EVCar width={40} height={40} />
+        {item.vehicle_category && item.vehicle_category.toString().toLowerCase().includes('2') ? (
+          <EVBike width={40} height={40} />
+        ) : item.vehicle_category && item.vehicle_category.toString().toLowerCase().includes('heavy') ? (
+          <EVTruck width={40} height={40} />
+        ) : (
+          <EVCar width={40} height={40} />
+        )}
       </View>
       <View style={styles.vehicleInfo}>
         <Text style={styles.vehicleName}>{item.brand} {item.model}</Text>

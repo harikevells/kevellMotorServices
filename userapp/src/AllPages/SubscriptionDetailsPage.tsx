@@ -127,7 +127,7 @@ const SubscriptionDetailsPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -157,7 +157,7 @@ const SubscriptionDetailsPage = () => {
       {/* Content */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {loading ? (
-          <ActivityIndicator size="large" color="#F5A623" style={{ marginTop: 50 }} />
+          <ActivityIndicator size="large" color="#f28b2c" style={{ marginTop: 50 }} />
         ) : (
           viewMode === 'plan' ? renderActivePlan() : renderHistory()
         )}
@@ -169,7 +169,7 @@ const SubscriptionDetailsPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#000',
   },
   header: {
     flexDirection: 'row',
@@ -177,27 +177,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#FFF',
-    ...SHADOWS.light,
+    backgroundColor: '#000',
   },
   backButton: {
     padding: 5,
   },
   backIcon: {
     fontSize: 24,
-    color: '#333',
+    color: '#FFF',
   },
   headerTitle: {
     fontSize: 20,
-    paddingTop:30,
+    paddingTop: 30,
     fontWeight: 'bold',
-    color: '#1a1a2e',
+    color: '#FFF',
   },
   toggleContainer: {
     flexDirection: 'row',
     marginHorizontal: 20,
     marginTop: 20,
-    backgroundColor: '#E9ECEF',
+    backgroundColor: '#111122',
     borderRadius: 30,
     padding: 4,
   },
@@ -208,13 +207,12 @@ const styles = StyleSheet.create({
     borderRadius: 26,
   },
   toggleBtnActive: {
-    backgroundColor: '#F5A623',
-    ...SHADOWS.medium,
+    backgroundColor: '#f28b2c',
   },
   toggleBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#6C757D',
+    color: '#aaa',
   },
   toggleBtnTextActive: {
     color: '#FFF',
@@ -223,10 +221,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   activeCard: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#111122',
     borderRadius: 20,
     padding: 25,
-    ...SHADOWS.medium,
   },
   activeHeader: {
     flexDirection: 'row',
@@ -254,7 +251,7 @@ const styles = StyleSheet.create({
   activePrice: {
     fontSize: 36,
     fontWeight: '900',
-    color: '#F5A623',
+    color: '#f28b2c',
     marginTop: 10,
   },
   billingCycle: {
@@ -279,7 +276,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   checkIcon: {
-    color: '#F5A623',
+    color: '#f28b2c',
     fontSize: 16,
     marginRight: 10,
     fontWeight: 'bold',
@@ -313,11 +310,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: '#aaa',
     marginBottom: 20,
   },
   subscribeBtn: {
-    backgroundColor: '#F5A623',
+    backgroundColor: '#f28b2c',
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 25,
@@ -331,10 +328,9 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   historyCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#111122',
     borderRadius: 15,
     padding: 20,
-    ...SHADOWS.light,
   },
   historyHeaderRow: {
     flexDirection: 'row',
@@ -345,7 +341,7 @@ const styles = StyleSheet.create({
   historyPlanName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFF',
   },
   historyStatus: {
     fontSize: 12,
@@ -365,12 +361,12 @@ const styles = StyleSheet.create({
   historyPrice: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F5A623',
+    color: '#f28b2c',
     marginBottom: 10,
   },
   historyDates: {
     fontSize: 14,
-    color: '#666',
+    color: '#aaa',
     marginBottom: 4,
   }
 });

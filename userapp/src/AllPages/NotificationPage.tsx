@@ -26,42 +26,59 @@ interface NotificationRowProps {
     onPress?: () => void;
 }
 
-const NotificationRow = ({ initials, avatarBg, name, message, time, hasNew, hasEndIcon, onPress }: NotificationRowProps) => (
-    <TouchableOpacity style={styles.notificationRow} onPress={onPress}>
-        <View style={styles.rowLead}>
-            <View style={[styles.newBullet, { backgroundColor: hasNew ? '#2196F3' : 'transparent' }]} />
-            <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-                <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-        </View>
-        <View style={styles.rowContent}>
-            <Text style={styles.messageLine}>
-                <Text style={styles.boldText}>{name}</Text>
-                <Text style={styles.grayText}> {message}</Text>
-            </Text>
-            <Text style={styles.timeLine}>MotorService · {time}</Text>
-        </View>
-        {hasEndIcon && (
-            <View style={styles.endIconContainer}>
-                <View style={styles.blueDot} />
-            </View>
-        )}
-    </TouchableOpacity>
-);
+const NotificationRow = ({ initials, avatarBg, name, message, time, hasNew, hasEndIcon, onPress }: NotificationRowProps) => {
+    const displayAvatarBg = avatarBg === '#1a1a2e' ? '#fff' : avatarBg;
+    const displayAvatarColor = avatarBg === '#1a1a2e' ? '#000' : '#fff';
 
-const timeAgo = (dateStr: string) => {
-    const seconds = Math.floor((new Date().getTime() - new Date(dateStr).getTime()) / 1000);
+    return (
+        <TouchableOpacity style={styles.notificationRow} onPress={onPress}>
+            <View style={styles.rowLead}>
+                <View style={[styles.newBullet, { backgroundColor: hasNew ? '#4CAF50' : 'transparent' }]} />
+                <View style={[styles.avatar, { backgroundColor: displayAvatarBg }]}>
+                    <Text style={[styles.avatarText, { color: displayAvatarColor }]}>{initials}</Text>
+                </View>
+            </View>
+            <View style={styles.rowContent}>
+                <View style={styles.rowHeader}>
+                    <Text style={styles.boldText}>{name}</Text>
+                </View>
+                <View style={styles.messageContainer}>
+                    {message ? <View style={styles.verticalLine} /> : null}
+                    <Text style={styles.grayText} numberOfLines={2}>{message}</Text>
+                </View>
+            </View>
+            <View style={styles.rowRight}>
+                <Text style={styles.timeText} numberOfLines={1}>{time}</Text>
+                <Text style={styles.menuIcon}>•••</Text>
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+const timeAgo = (dateStr: any) => {
+    if (!dateStr) return '';
+    
+    let date = new Date(dateStr);
+    if (!isNaN(Number(dateStr))) {
+        date = new Date(Number(dateStr));
+    }
+
+    if (isNaN(date.getTime())) return String(dateStr);
+    
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    if (seconds < 0) return 'Just now';
+    
     let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + "y ago";
+    if (interval >= 1) return Math.floor(interval) + " yrs";
     interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + "mo ago";
+    if (interval >= 1) return Math.floor(interval) + " mos";
     interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + "d ago";
+    if (interval >= 1) return Math.floor(interval) + " days";
     interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + "h ago";
+    if (interval >= 1) return Math.floor(interval) + " hrs";
     interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m ago";
-    return Math.floor(seconds) + "s ago";
+    if (interval >= 1) return Math.floor(interval) + " min";
+    return Math.floor(seconds) + " sec";
 };
 
 const getAvatarProps = (type: string, title: string) => {
@@ -135,14 +152,16 @@ const NotificationPage = () => {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Text style={styles.backIcon}>←</Text>
+                    <Text style={styles.backIcon}>{'<'}</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notification</Text>
-                {notifications.some(n => !n.isRead) && (
-                    <TouchableOpacity onPress={handleReadAll} style={styles.markAllBtn}>
-                        <Text style={styles.markAllText}>Mark all as read</Text>
-                    </TouchableOpacity>
-                )}
+                <Text style={styles.headerTitle}>Notifications</Text>
+                <View style={styles.rightAction}>
+                    {notifications.some(n => !n.isRead) && (
+                        <TouchableOpacity onPress={handleReadAll}>
+                            <Text style={styles.markAllText}>Mark all</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
             {loading ? (
@@ -153,7 +172,6 @@ const NotificationPage = () => {
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     {notifications.length > 0 ? (
                         <>
-                            <Text style={styles.sectionLabel}>Recent</Text>
                             {notifications.map((notif) => {
                                 const { initials, bg } = getAvatarProps(notif.type, notif.title);
                                 return (
@@ -185,67 +203,78 @@ const NotificationPage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9F9F9',
+        backgroundColor: '#000',
     },
     header: {
-        padding: 20,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
         paddingTop: 40,
-        backgroundColor: '#fff',
+        paddingBottom: 20,
+        backgroundColor: '#000',
     },
     backButton: {
-        marginRight: 15,
+        flex: 1,
+        alignItems: 'flex-start',
     },
     backIcon: {
-        fontSize: 28,
-        color: '#333',
+        fontSize: 22,
+        color: '#fff',
+        paddingVertical: 5,
+        paddingRight: 15,
     },
     headerTitle: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#fff',
+        flex: 2,
+        textAlign: 'center',
     },
-    markAllBtn: {
-        marginLeft: 'auto',
+    rightAction: {
+        flex: 1,
+        alignItems: 'flex-end',
     },
     markAllText: {
-        color: '#2196F3',
-        fontSize: 14,
+        color: '#F5A623',
+        fontSize: 12,
         fontWeight: '600',
+        paddingVertical: 5,
+        paddingLeft: 10,
     },
     centerContent: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        backgroundColor: '#000',
     },
     emptyText: {
         color: '#888',
         fontSize: 16,
     },
     scrollContent: {
-        paddingHorizontal: 20,
-        backgroundColor: '#fff',
+        paddingHorizontal: 0,
+        backgroundColor: '#000',
         flexGrow: 1,
+        paddingBottom: 20,
+        paddingTop: 10,
     },
     sectionLabel: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#1a1a2e',
-        marginTop: 16,
-        marginBottom: 8,
+        display: 'none',
     },
     notificationRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f5f5f5',
+        alignItems: 'flex-start',
+        paddingVertical: 15,
+        paddingHorizontal: 15,
+        backgroundColor: '#222',
+        marginBottom: 4,
     },
     rowLead: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginTop: 2,
     },
     newBullet: {
         width: 6,
@@ -261,38 +290,57 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarText: {
-        color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
     },
     rowContent: {
         flex: 1,
         marginLeft: 12,
+        marginRight: 10,
     },
-    messageLine: {
-        fontSize: 14,
-        lineHeight: 20,
+    rowHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
     },
     boldText: {
         fontWeight: 'bold',
-        color: '#000',
+        color: '#fff',
+        fontSize: 16,
+    },
+    messageContainer: {
+        flexDirection: 'row',
+        marginTop: 4,
+    },
+    verticalLine: {
+        width: 2,
+        backgroundColor: '#444',
+        marginRight: 8,
+        borderRadius: 1,
     },
     grayText: {
-        color: '#888',
-    },
-    timeLine: {
-        fontSize: 12,
         color: '#aaa',
-        marginTop: 2,
+        fontSize: 13,
+        lineHeight: 18,
+        flex: 1,
     },
-    endIconContainer: {
-        paddingLeft: 10,
+    rowRight: {
+        width: 80,
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        height: 44,
+        flexShrink: 0,
     },
-    blueDot: {
-        width: 8,
-        height: 8,
-        backgroundColor: '#2196F3',
-        borderRadius: 4,
+    timeText: {
+        fontSize: 12,
+        color: '#fff',
+        textAlign: 'right',
+        width: '100%',
+    },
+    menuIcon: {
+        color: '#888',
+        fontSize: 16,
+        letterSpacing: 1,
     },
 });
 

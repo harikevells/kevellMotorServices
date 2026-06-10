@@ -15,13 +15,16 @@ import {
   ImageBackground,
   Modal,
   Alert,
+  Animated,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import RazorpayCheckout from 'react-native-razorpay';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { EVCar } from '../assets/EVIcons';
+import { AgentIcon, VehicleIcon, ServiceIcon, SubscriptionIcon, PartsIcon, PaymentsIcon, FeedbackIcon, ReferralsIcon, DocumentsIcon } from '../assets/HomeIcons';
 import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications, fetchActiveOffers, validateOffer, fetchSubscriptions, purchaseSubscription, fetchMySubscriptions } from '../services/api';
 import { getImageUrl } from '../constants/config';
 
@@ -36,12 +39,14 @@ const V6 = require('../assets/banners/v6.png');
 const OFFER_1 = require('../assets/offers/free_checkup.png');
 const OFFER_2 = require('../assets/offers/battery_repair.png');
 const SUB_BG = require('../assets/subscription_bg.jpg');
-
+const MAIN_BG = require('../assets/vendorbackgroundimageAll.png');
 const CATEGORIES = [
-  { id: 'General Service', title: 'Periodic Service', icon: '🛠️', color: '#111' },
-  { id: 'Battery', title: 'Battery Health', icon: '⚡', color: '#111' },
-  { id: 'Engine', title: 'Brake Check', icon: '⚙️', color: '#111' },
-  { id: 'RSA', title: 'Roadside Asst.', icon: '🆘', color: '#111' },
+  { id: 'agent', title: 'Booking Agent', icon: <AgentIcon size={26} color="#f28b2c" /> },
+  { id: 'vehicle', title: 'My Vehicle', icon: <VehicleIcon size={26} color="#f28b2c" /> },
+  { id: 'General Service', title: 'Service', icon: <ServiceIcon size={26} color="#f28b2c" /> },
+  { id: 'subscription', title: 'Subscription', icon: <SubscriptionIcon size={26} color="#f28b2c" /> },
+  { id: 'parts', title: 'Spare Parts', icon: <PartsIcon size={26} color="#f28b2c" /> },
+  { id: 'payments', title: 'Payments', icon: <PaymentsIcon size={26} color="#f28b2c" /> },
 ];
 
 const OFFERS = [
@@ -64,19 +69,27 @@ const OFFERS = [
 const BANNERS = [
   {
     id: '1',
-    title: 'Get your checked for 999 only!',
-    price: '999',
-    type: 'Bike',
-    color: '#ff8c00',
+    title: 'Car Service\n& Spare Parts',
+    price: '2999',
+    type: 'Car',
+    color: '#444',
     img: V1,
   },
   {
     id: '2',
-    title: 'Car First Service checked for 2999 only!',
-    price: '2999',
-    type: 'Car',
-    color: '#ff8c00',
+    title: 'Bike Service\n& Spare Parts',
+    price: '999',
+    type: 'Bike',
+    color: '#444',
     img: V2,
+  },
+  {
+    id: '3',
+    title: 'Commercial\n& Spare Parts',
+    price: '3999',
+    type: 'Commercial',
+    color: '#444',
+    img: V3,
   },
 ];
 
@@ -97,12 +110,30 @@ const HomeScreen = () => {
   const scrollRef = useRef<FlatList>(null);
   const intervalRef = useRef<any>(null);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       loadUser();
       loadNotifications();
       loadActiveOffers(); // Fetch active offers on focus to update used status
-      
+
       const timer = setTimeout(async () => {
         try {
           const mySub: any = await fetchMySubscriptions();
@@ -113,7 +144,7 @@ const HomeScreen = () => {
         } catch (e) {
           console.warn('Failed to check active subscription for popup', e);
         }
-        
+
         loadSubscriptions();
         setShowAdPopup(true);
       }, 1500);
@@ -152,7 +183,7 @@ const HomeScreen = () => {
         setShowAdPopup(false);
         return;
       }
-      
+
       const selectedPlan = subscriptionPlans.find(p => (p._id || p.id) === planId);
       if (!selectedPlan) return;
 
@@ -184,7 +215,7 @@ const HomeScreen = () => {
             Alert.alert('Error', res.message || 'Failed to activate plan after payment.');
           }
         } catch (e) {
-            Alert.alert('Error', 'Failed to activate plan after payment.');
+          Alert.alert('Error', 'Failed to activate plan after payment.');
         }
       }).catch((error: any) => {
         Alert.alert('Payment Cancelled/Failed', 'Payment was not completed. Plan is not active.');
@@ -297,78 +328,104 @@ const HomeScreen = () => {
   const dateString = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const renderBanner = ({ item }: { item: typeof BANNERS[0] }) => (
-    <View style={[styles.banner, { backgroundColor: item.color, width: width - 40 }]}>
-      <View style={styles.bannerContent}>
-        <Text style={styles.bannerText}>{item.title}</Text>
-        <TouchableOpacity
-          style={styles.bannerButton}
-          onPress={() => handleStartBooking(item.type)}
-        >
-          <Text style={styles.bannerButtonText}>Book Now</Text>
+    <View style={styles.bannerCardNew}>
+      <Text style={styles.bannerCardTitle}>{item.title}</Text>
+      <Text style={styles.bannerCardSubtitle} numberOfLines={3}>
+        Professional car maintenance, repairs, and genuine spare parts for safe and smooth driving.
+      </Text>
+      <View style={styles.bannerCardFooter}>
+        <TouchableOpacity onPress={() => navigation.navigate('VehicleSelection' as any)}>
+          <Text style={styles.bannerCardViewText}>View Service</Text>
         </TouchableOpacity>
-      </View>
-      <View style={styles.bannerRightImages}>
-        <Image source={V3} style={styles.floatImg1} />
-        <Image source={V2} style={styles.floatImg2} />
-        <Image source={V4} style={styles.floatImg3} />
-        <Image source={V1} style={styles.floatImg4} />
-        <Image source={V5} style={styles.floatImg5} />
-        <Image source={V6} style={styles.floatImg6} />
+        <TouchableOpacity
+          style={styles.bannerCardShopBtn}
+          onPress={() => navigation.navigate('Spares' as any)}
+        >
+          <Text style={styles.bannerCardShopText}>shop</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
+      {/* 2-Color Linear Gradient & Cave Line */}
+      <View style={StyleSheet.absoluteFillObject}>
+        {/* Top Linear Gradient */}
+        <Svg height="100%" width="100%">
+          <Defs>
+            <LinearGradient id="topGrad" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#633C00" stopOpacity="1" />
+              <Stop offset="0.35" stopColor="#000000" stopOpacity="1" />
+            </LinearGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#topGrad)" />
+        </Svg>
+        
+        {/* Bottom Cave Line (Curve) */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: -150,
+          right: -150,
+          height: 350,
+          backgroundColor: '#000',
+          borderTopLeftRadius: 500,
+          borderTopRightRadius: 500,
+          borderTopWidth: 2,
+          borderTopColor: 'rgba(242, 139, 44, 0.35)',
+        }} />
+      </View>
+
+      <StatusBar barStyle="light-content" backgroundColor="#000" translucent={false} />
+
+      {/* Header - Fixed at top */}
+      <View style={[styles.header, { paddingHorizontal: 20 }]}>
+        <View style={styles.headerLeft}>
+          <View style={styles.avatarMini}>
+            {profileImageUrl ? (
+              <Image source={{ uri: profileImageUrl }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarLetter}>{user?.name?.charAt(0) || 'U'}</Text>
+            )}
+          </View>
+          <View style={styles.greetingBox}>
+            <Text style={styles.greetingTitle}>Welcome</Text>
+            <Text style={styles.dateText}>{user?.name || 'Tayyab Sohail'}</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.locationCircleNoBg}
+          onPress={() => navigation.navigate('Notifications' as any)}
+        >
+          <Text style={{ fontSize: 22, color: '#fff' }}>🔔</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header - Premium Dark Style */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatarMini}>
-              {profileImageUrl ? (
-                <Image source={{ uri: profileImageUrl }} style={styles.avatarImg} />
-              ) : (
-                <Text style={styles.avatarLetter}>{user?.name?.charAt(0) || 'U'}</Text>
-              )}
-            </View>
-            <View style={styles.greetingBox}>
-              <Text style={styles.greetingTitle}>
-                {`${(() => {
-                  const hour = new Date().getHours();
-                  if (hour < 12) return 'Good Morning';
-                  if (hour < 17) return 'Good Afternoon';
-                  return 'Good Evening';
-                })()}${user?.name ? `, ${user.name}` : ''}`}
-              </Text>
-              <Text style={styles.dateText}>{dateString}</Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.locationCircle}
-            onPress={() => navigation.navigate('Notifications' as any)}
-          >
-            <Text style={{ fontSize: 18 }}>🔔</Text>
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+        {/* Big Title */}
+        <View style={styles.heroTitleContainer}>
+          <Text style={styles.heroTitle}>Smart Buy And Service</Text>
+          <Text style={styles.heroTitle}>With IWS</Text>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
+          <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
-            placeholder="Search your services"
+            placeholder="Search Service"
             placeholderTextColor="#666"
             style={styles.searchInput}
           />
-          <Text style={styles.searchIcon}>🔍</Text>
         </View>
 
         {/* Sliding Promotional Banners */}
@@ -378,50 +435,49 @@ const HomeScreen = () => {
             data={BANNERS}
             renderItem={renderBanner}
             horizontal
-            pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(e) => {
-              const newIndex = Math.round(e.nativeEvent.contentOffset.x / (width - 40));
-              setActiveSlide(newIndex);
-              startAutoSlide();
-            }}
+            contentContainerStyle={{ paddingRight: 20 }}
             onScrollBeginDrag={() => stopAutoSlide()}
             keyExtractor={(item) => item.id}
           />
-          <View style={styles.pagination}>
-            {BANNERS.map((_, i) => (
-              <View key={i} style={[styles.dot, activeSlide === i && styles.activeDot]} />
-            ))}
-          </View>
         </View>
 
         {/* Services Section */}
-        <Text style={styles.sectionTitle}>Services</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.servicesScroll}>
+        <Text style={[styles.sectionTitle, { textTransform: 'uppercase' }]}>SERVICE</Text>
+        <Animated.View style={[styles.servicesGrid, { opacity: fadeAnim, transform: [{ translateY }] }]}>
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat.id}
-              style={[
-                styles.serviceCard,
-                selectedCategory === cat.id && styles.serviceCardActive
-              ]}
+              style={styles.serviceGridItem}
               onPress={() => {
-                loadServicesByCategory(cat.id);
-                navigation.navigate('VehicleSelection', { category: cat.id });
+                if (cat.id === 'General Service') {
+                  loadServicesByCategory(cat.id);
+                  navigation.navigate('VehicleSelection', { category: cat.id });
+                } else if (cat.id === 'subscription') {
+                  navigation.navigate('Subscription' as any);
+                } else if (cat.id === 'parts') {
+                  navigation.navigate('Spares' as any);
+                } else if (cat.id === 'vehicle') {
+                  navigation.navigate('VehicleSelection' as any);
+                } else {
+                  Alert.alert('Coming Soon', `${cat.title} will be available shortly.`);
+                }
               }}
             >
-              <Text style={styles.serviceIcon}>{cat.icon}</Text>
-              <Text style={styles.serviceTitle}>{cat.title}</Text>
+              <View style={[styles.serviceIconBox, selectedCategory === cat.id && styles.serviceIconBoxActive]}>
+                {cat.icon}
+              </View>
+              <Text style={styles.serviceTitleText} numberOfLines={1} adjustsFontSizeToFit>{cat.title}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </Animated.View>
 
         {/* Exclusive Offers Section */}
         {(liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).length > 0 || OFFERS.length > 0) && (
-          <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Exclusive Offers</Text>
+          <Text style={[styles.sectionTitle, { marginTop: 15 }]}>EXCLUSIVE OFFERS</Text>
         )}
         {liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+          <View style={styles.offersGrid}>
             {liveOffers.filter((o: any) => !usedOfferIds.has(o._id)).map((offer: any, idx: number) => {
               const bgImages = [OFFER_1, OFFER_2];
               const bgImage = bgImages[idx % bgImages.length];
@@ -430,41 +486,42 @@ const HomeScreen = () => {
                 <ImageBackground
                   key={offer._id}
                   source={bgImage}
-                  style={styles.liveOfferCard}
-                  imageStyle={{ borderRadius: 18 }}
+                  style={styles.offerCardNewStyle}
+                  imageStyle={{ borderRadius: 16 }}
                 >
-                  <View style={styles.liveOfferOverlay}>
-                    <View style={styles.liveOfferBadge}>
-                      <Text style={styles.liveOfferDiscount}>
-                        {offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `₹${offer.discount} OFF`}
+                  <View style={styles.offerDiscountBadge}>
+                    <Text style={styles.offerDiscountText}>
+                      {offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `₹${offer.discount} OFF`}
+                    </Text>
+                  </View>
+                  <View style={styles.offerOverlayNew}>
+                    <View style={styles.offerPill}>
+                      <Text style={styles.offerPillText} numberOfLines={1}>
+                        {offer.offerTitle || offer.title || (offer.discountType === 'percentage' ? `${offer.discount}% OFF` : `₹${offer.discount} OFF`)}
                       </Text>
-                    </View>
-
-                    <View style={styles.liveOfferFooter}>
-                      <Text style={styles.liveOfferTitle} numberOfLines={2}>{offer.offerTitle}</Text>
-                      <Text style={styles.offerShop} numberOfLines={1}>🏪 {offer.shopName}</Text>
-                      <Text style={styles.offerExpiry}>Expires: {new Date(offer.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Text>
                     </View>
                   </View>
                 </ImageBackground>
               );
             })}
-          </ScrollView>
+          </View>
         ) : (
           <View style={styles.offersGrid}>
             {OFFERS.map(offer => (
               <ImageBackground
                 key={offer.id}
                 source={offer.image}
-                style={styles.offerCardNew}
-                imageStyle={{ borderRadius: 20 }}
+                style={styles.offerCardNewStyle}
+                imageStyle={{ borderRadius: 16 }}
               >
-                <View style={styles.offerOverlay}>
-                  <View style={styles.offerBadge}>
-                    <Text style={styles.badgeText}>{offer.title}</Text>
+                {offer.discount && (
+                  <View style={styles.offerDiscountBadge}>
+                    <Text style={styles.offerDiscountText}>{offer.discount}</Text>
                   </View>
-                  <View style={styles.offerFooter}>
-                    <Text style={styles.offerSubtitle}>{offer.subtitle}</Text>
+                )}
+                <View style={styles.offerOverlayNew}>
+                  <View style={styles.offerPill}>
+                    <Text style={styles.offerPillText}>{offer.subtitle}</Text>
                   </View>
                 </View>
               </ImageBackground>
@@ -486,7 +543,7 @@ const HomeScreen = () => {
               <TouchableOpacity style={styles.adModalCloseBtn} onPress={() => setShowAdPopup(false)}>
                 <Text style={styles.adModalCloseText}>✕</Text>
               </TouchableOpacity>
-              
+
               <Text style={styles.adModalTitle}>Subscription Plan</Text>
               <Text style={styles.adModalSubtitle}>Choose a subscription plan and save big on every service.</Text>
 
@@ -533,8 +590,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 50,
-    marginBottom: 15,
+    paddingTop: 50,
+    marginBottom: 20,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -548,8 +605,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#444',
   },
   avatarImg: {
     width: '100%',
@@ -564,29 +619,25 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   greetingTitle: {
-    fontSize: 14,
-    color: '#888',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '400',
   },
   dateText: {
     fontSize: 16,
     color: '#fff',
-    fontWeight: '700',
+    fontWeight: 'bold',
     marginTop: 2,
   },
-  locationCircle: {
+  locationCircleNoBg: {
     width: 45,
     height: 45,
-    borderRadius: 22.5,
-    backgroundColor: '#333',
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#444',
+    alignItems: 'flex-end',
   },
   badge: {
     position: 'absolute',
-    top: -4,
+    top: 4,
     right: -4,
     backgroundColor: '#FF5252',
     width: 18,
@@ -600,209 +651,172 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
+  heroTitleContainer: {
+    marginBottom: 25,
+  },
+  heroTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
+    lineHeight: 30,
+  },
   searchContainer: {
-    backgroundColor: '#111',
-    borderRadius: 15,
+    backgroundColor: '#1c1c1e',
+    borderRadius: 30,
     height: 55,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     marginBottom: 25,
     borderWidth: 1,
-    borderColor: '#222',
+    borderColor: '#f28b2c',
+  },
+  searchIcon: {
+    fontSize: 18,
+    color: '#666',
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     color: '#fff',
     fontSize: 15,
   },
-  searchIcon: {
-    fontSize: 18,
-    color: '#666',
-  },
   bannerWrapper: {
     marginBottom: 35,
   },
-  banner: {
-    borderRadius: 30,
-    padding: 24,
+  bannerCardNew: {
+    backgroundColor: '#333',
+    borderRadius: 16,
+    padding: 16,
+    width: width * 0.42,
+    marginRight: 15,
+    justifyContent: 'space-between',
+    minHeight: 180,
+  },
+  bannerCardTitle: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  bannerCardSubtitle: {
+    color: '#aaa',
+    fontSize: 10,
+    lineHeight: 14,
+    marginBottom: 15,
+  },
+  bannerCardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 180,
-    position: 'relative',
-    // overflow: 'hidden', // Allowed bleed as per screenshot
+    justifyContent: 'space-between',
+    marginTop: 10,
   },
-  bannerContent: {
-    flex: 1.2,
-    zIndex: 10,
+  bannerCardViewText: {
+    color: '#ccc',
+    fontSize: 11,
+    fontWeight: '600',
   },
-  bannerText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: 20,
+  bannerCardShopBtn: {
+    backgroundColor: '#fff',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 12,
   },
-  bannerButton: {
-    backgroundColor: '#f28b2c',
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
-  },
-  bannerButtonText: {
-    color: '#fff',
-    fontSize: 14,
+  bannerCardShopText: {
+    color: '#000',
+    fontSize: 12,
     fontWeight: 'bold',
   },
-  bannerRightImages: {
-    flex: 1,
-    position: 'relative',
-    height: '100%',
-  },
-  floatImg1: { width: 75, height: 75, borderRadius: 37.5, position: 'absolute', bottom: -10, left: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 6 },
-  floatImg2: { width: 45, height: 45, borderRadius: 22.5, position: 'absolute', top: 5, left: 3, borderWidth: 1.5, borderColor: '#fff', zIndex: 5 },
-  floatImg3: { width: 65, height: 65, borderRadius: 32.5, position: 'absolute', top: -20, right: 25, borderWidth: 1.5, borderColor: '#fff', zIndex: 4 },
-  floatImg4: { width: 35, height: 35, borderRadius: 17.5, position: 'absolute', top: 60, right: 50, borderWidth: 1.5, borderColor: '#fff', zIndex: 3 },
-  floatImg5: { width: 40, height: 40, borderRadius: 20, position: 'absolute', top: 35, right: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 2 },
-  floatImg6: { width: 55, height: 55, borderRadius: 27.5, position: 'absolute', bottom: -5, right: -15, borderWidth: 1.5, borderColor: '#fff', zIndex: 1 },
-
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 15,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#333',
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    width: 20,
-    backgroundColor: '#f28b2c',
-  },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: '#fff',
     marginBottom: 20,
   },
-  servicesScroll: {
+  servicesGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 5,
   },
-  serviceCard: {
-    width: 180,
-    height: 60,
-    backgroundColor: '#000',
-    borderRadius: 15,
-    flexDirection: 'row',
+  serviceGridItem: {
+    width: '30%',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    marginRight: 15,
+    marginBottom: 25,
+  },
+  serviceIconBox: {
+    width: 65,
+    height: 65,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#333',
-  },
-  serviceCardActive: {
     borderColor: '#f28b2c',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  serviceIcon: {
-    fontSize: 22,
-    marginRight: 17, // Added 5px padding/margin right
+  serviceIconBoxActive: {
+    borderColor: '#f28b2c',
+    backgroundColor: '#111',
   },
-  serviceTitle: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
+  serviceTitleText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '800',
+    textAlign: 'center',
+    textTransform: 'uppercase',
   },
   offersGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
-  offerCardNew: {
+  offerCardNewStyle: {
     width: (width - 55) / 2,
-    height: 240,
+    height: 160,
     overflow: 'hidden',
+    marginBottom: 15,
   },
-  offerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'space-between',
-    padding: 15,
-  },
-  offerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f28b2c',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  offerFooter: {
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    padding: 10,
-    borderRadius: 12,
-  },
-  offerSubtitle: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  // Live offer card styles
   liveOfferCard: {
     width: 200,
-    height: 240,
-    borderRadius: 18,
+    height: 160,
     marginRight: 14,
     overflow: 'hidden',
   },
-  liveOfferOverlay: {
+  offerOverlayNew: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'space-between',
-    padding: 14,
+    justifyContent: 'flex-end',
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
-  liveOfferBadge: {
-    backgroundColor: '#f28b2c',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  offerPill: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
+    alignSelf: 'flex-start',
   },
-  liveOfferDiscount: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 13,
-  },
-  liveOfferFooter: {
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    borderRadius: 12,
-    padding: 10,
-  },
-  liveOfferTitle: {
-    color: '#fff',
+  offerPillText: {
+    color: '#000',
     fontWeight: '700',
-    fontSize: 13,
-    marginBottom: 5,
-    lineHeight: 18,
+    fontSize: 12,
   },
-  offerShop: {
-    color: '#ccc',
-    fontSize: 11,
-    marginBottom: 3,
+  offerDiscountBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#000',
+    borderColor: '#f28b2c',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 1,
   },
-  offerExpiry: {
-    color: '#aaa',
-    fontSize: 10,
+  offerDiscountText: {
+    color: '#f28b2c',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   // Subscription Ad Popup Styles
   adModalOverlay: {
