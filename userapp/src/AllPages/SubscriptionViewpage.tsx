@@ -9,7 +9,8 @@ import {
   FlatList,
   Alert,
   StatusBar,
-  ScrollView
+  ScrollView,
+  Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import RazorpayCheckout from 'react-native-razorpay';
@@ -22,37 +23,42 @@ const { width } = Dimensions.get('window');
 
 // --- SVG Icons ---
 const IconCheck = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f28b2c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 10 }}>
-    <Polyline points="20 6 9 17 4 12"></Polyline>
-  </Svg>
-);
-
-const IconClose = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M18 6L6 18M6 6l12 12"></Path>
-  </Svg>
-);
-
-const IconSparkle = ({ color }: { color: string }) => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill={color}>
-    <Path d="M12 0l2.5 8.5L23 12l-8.5 2.5L12 24l-2.5-8.5L1 12l8.5-2.5z" />
-  </Svg>
-);
-
-const IconSmallCheck = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f28b2c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 10 }}>
     <Polyline points="20 6 9 17 4 12"></Polyline>
   </Svg>
 );
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+const formatDuration = (cycle: any) => {
+  if (!cycle || typeof cycle !== 'string' || cycle.trim() === '') return 'monthly';
+  const lower = cycle.toLowerCase();
+  if (lower.includes('year')) return 'yearly';
+  if (lower.includes('day')) return 'days';
+  if (lower.includes('month')) return 'monthly';
+  if (lower === 'custom') return 'monthly';
+  return cycle;
+};
+
+const formatDate = (dateVal: any) => {
+  if (!dateVal) return '--';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '--';
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  } catch (e) {
+    return '--';
+  }
+};
+
 const SubscriptionViewpage = () => {
   const navigation = useNavigation<NavigationProp>();
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  const [myActiveSubscription, setMyActiveSubscription] = useState<any>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'available' | 'myplan'>('available');
 
   useEffect(() => {
     loadUser();
@@ -85,6 +91,7 @@ const SubscriptionViewpage = () => {
       const res: any = await fetchMySubscriptions();
       if (res.success && res.active && res.active.plan) {
         setActivePlanId(res.active.plan._id || res.active.plan.id);
+        setMyActiveSubscription(res.active);
       }
     } catch (e) {
       console.warn('Failed to load my subscriptions', e);
@@ -163,116 +170,156 @@ const SubscriptionViewpage = () => {
     }
   };
 
-  const selectedPlan = subscriptionPlans.find(p => (p._id || p.id) === selectedPlanId);
-  const planFeatures = selectedPlan?.features || selectedPlan?.benefits || ['Up to 50 service requests', 'Customer chat support', 'Service history', 'Earnings dashboard', 'Performance analytics'];
-  const isCurrentlyActive = selectedPlanId === activePlanId;
-
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* Absolute SVG Gradient Background */}
-      <View style={StyleSheet.absoluteFillObject}>
-        <Svg height="100%" width="100%">
-          <Defs>
-            <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#b85c00" stopOpacity="1" />
-              <Stop offset="0.65" stopColor="#1a0c00" stopOpacity="1" />
-              <Stop offset="0.85" stopColor="#000000" stopOpacity="1" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />
-        </Svg>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M15 18l-6-6 6-6"></Path>
+          </Svg>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Subscriptions</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <SafeAreaView style={{ flex: 1 }}>
-        {/* Header Close Button */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 15 }}>
-            <IconClose />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity onPress={() => setActiveTab('available')} style={styles.tabButton}>
+          <Text style={[styles.tabText, activeTab === 'available' && styles.activeTabText]}>Available plan</Text>
+          {activeTab === 'available' && <View style={styles.activeTabIndicator} />}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab('myplan')} style={styles.tabButton}>
+          <Text style={[styles.tabText, activeTab === 'myplan' && styles.activeTabText]}>My Plan</Text>
+          {activeTab === 'myplan' && <View style={styles.activeTabIndicator} />}
+        </TouchableOpacity>
+      </View>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 180 }} showsVerticalScrollIndicator={false}>
-          <View style={{ alignItems: 'center', marginBottom: 30 }}>
-            <Text style={styles.mainTitle}>Choose Your Plan</Text>
-            <Text style={styles.subtitle}>Choose the right plan for your workshop.</Text>
-          </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={styles.descriptionText}>
+          Mechanive is a smart vehicle service and spare parts platform designed for car, bike, and heavy vehicle owners
+        </Text>
 
-          {/* Global Features List */}
-          <View style={styles.globalFeaturesBox}>
-            {planFeatures.map((feat: string, idx: number) => (
-              <View key={idx} style={styles.globalFeatureRow}>
-                <IconCheck />
-                <Text style={styles.globalFeatureText}>{feat}</Text>
+        {activeTab === 'available' ? (
+          subscriptionPlans.map((plan, index) => {
+            const isCurrent = (plan._id || plan.id) === activePlanId;
+            return (
+              <View key={index} style={styles.cardContainer}>
+                <View style={styles.cardGradientWrapper}>
+                  <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
+                    <Defs>
+                      <LinearGradient id={`gradAvailable${index}`} x1="0" y1="0" x2="1" y2="1">
+                        <Stop offset="0" stopColor="#4A2E15" stopOpacity="1" />
+                        <Stop offset="0.6" stopColor="#222222" stopOpacity="1" />
+                        <Stop offset="1" stopColor="#1C1C1C" stopOpacity="1" />
+                      </LinearGradient>
+                    </Defs>
+                    <Rect x="0" y="0" width="100%" height="100%" fill={`url(#gradAvailable${index})`} rx={20} />
+                  </Svg>
+                  <View style={styles.cardContent}>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.priceValue}>
+                        <Text style={styles.priceSymbol}>$</Text>
+                        {plan.price}
+                        <Text style={styles.priceDuration}> /{formatDuration(plan.billingCycle || plan.duration || plan.validity)}</Text>
+                      </Text>
+                    </View>
+                    <Text style={styles.planTitle}>{plan.name}{plan.name?.toLowerCase().includes('plan') ? '' : ' Plan'}</Text>
+                    <Text style={styles.planSubtitle}>Perfect for regular vehicle maintenance.</Text>
+                    
+                    <View style={styles.divider} />
+                    
+                    <View style={styles.featuresList}>
+                      {plan.features?.map((feat: string, i: number) => (
+                        <View key={i} style={styles.featureRow}>
+                          <IconCheck />
+                          <Text style={styles.featureText}>{feat}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <TouchableOpacity 
+                      style={[styles.actionButton, isCurrent ? styles.currentPlanButton : styles.upgradeButton]}
+                      onPress={() => {
+                        if (!isCurrent) handleSubscribe(plan._id || plan.id);
+                      }}
+                      disabled={isCurrent}
+                    >
+                      <Text style={styles.actionButtonText}>
+                        {isCurrent ? 'YOUR CURRENT PLAN' : 'UPGRADE TO PREMIUM'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            ))}
-          </View>
-
-          {/* Plan Cards Horizontal Scroll */}
-          <FlatList
-            data={subscriptionPlans}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item._id || item.id}
-            contentContainerStyle={{ paddingHorizontal: 25, gap: 15, paddingVertical: 10 }}
-            renderItem={({ item }) => {
-              const isSelected = (item._id || item.id) === selectedPlanId;
-              const titleMonths = item.billingCycle === 'yearly' ? '1 Year' : '1 Month';
+            );
+          })
+        ) : (
+          subscriptionPlans.filter(p => (p._id || p.id) === activePlanId).length > 0 ? (
+            subscriptionPlans.filter(p => (p._id || p.id) === activePlanId).map((plan, index) => {
+              const pDate = formatDate(myActiveSubscription?.purchaseDate);
+              const eDate = formatDate(myActiveSubscription?.expiryDate);
               
               return (
-                <TouchableOpacity 
-                  activeOpacity={0.9}
-                  onPress={() => setSelectedPlanId(item._id || item.id)}
-                  style={[styles.planCard, isSelected ? styles.planCardSelected : styles.planCardUnselected]}
-                >
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.cardPlanName}>{item.name || 'Plan'}</Text>
-                    {isSelected && <IconSmallCheck />}
-                  </View>
-                  <Text style={styles.cardDurationTitle}>{titleMonths}</Text>
-                  
-                  <View style={[styles.cardSparkleBadge, { backgroundColor: isSelected ? '#f28b2c' : '#fff' }]}>
-                    <IconSparkle color={isSelected ? '#fff' : '#f28b2c'} />
-                  </View>
-                  
-                  <View style={{ marginTop: 'auto' }}>
-                    <Text style={styles.cardPrice}>₹{item.price}/{item.billingCycle === 'yearly' ? 'yr' : 'mo'}</Text>
-                  </View>
-                </TouchableOpacity>
-              )
-            }}
-          />
-        </ScrollView>
+              <View key={index} style={styles.cardContainer}>
+                <View style={styles.cardGradientWrapper}>
+                  <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
+                    <Defs>
+                      <LinearGradient id={`gradMyPlan${index}`} x1="0" y1="0" x2="1" y2="1">
+                        <Stop offset="0" stopColor="#4A2E15" stopOpacity="1" />
+                        <Stop offset="0.6" stopColor="#222222" stopOpacity="1" />
+                        <Stop offset="1" stopColor="#1C1C1C" stopOpacity="1" />
+                      </LinearGradient>
+                    </Defs>
+                    <Rect x="0" y="0" width="100%" height="100%" fill={`url(#gradMyPlan${index})`} rx={20} />
+                  </Svg>
+                  <View style={styles.cardContent}>
+                    <View style={styles.myPlanHeader}>
+                      <Text style={styles.planTitle}>{plan.name}{plan.name?.toLowerCase().includes('plan') ? '' : ' Plan'}</Text>
+                      <Text style={styles.activeBadge}>ACTIVE</Text>
+                    </View>
+                    <Text style={styles.chassisText}>Chassis Model: 72748837963793</Text>
+                    
+                    <View style={styles.myPlanPriceRow}>
+                      <Text style={styles.myPlanPriceValue}>
+                        <Text style={styles.priceSymbol}>$</Text>
+                        {plan.price}
+                        <Text style={styles.priceDuration}> /{formatDuration(plan.billingCycle || plan.duration || plan.validity)}</Text>
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.divider} />
+                    
+                    <View style={styles.featuresList}>
+                      {plan.features?.map((feat: string, i: number) => (
+                        <View key={i} style={styles.featureRow}>
+                          <IconCheck />
+                          <Text style={styles.featureText}>{feat}</Text>
+                        </View>
+                      ))}
+                    </View>
 
-        {/* Floating Bottom Button */}
-        <View style={styles.bottomButtonContainer}>
-          {activePlanId && (
-            <TouchableOpacity 
-              style={styles.viewActiveBtn} 
-              onPress={() => navigation.navigate('SubscriptionDetails' as any)}
-            >
-              <Text style={styles.viewActiveBtnText}>View Active Plan</Text>
-            </TouchableOpacity>
-          )}
+                    <View style={[styles.divider, { marginTop: 10 }]} />
 
-          <TouchableOpacity 
-            style={[
-              styles.subscribeBtn, 
-              (!selectedPlanId || isCurrentlyActive) && { opacity: 0.5, backgroundColor: isCurrentlyActive ? '#444' : '#f28b2c' }
-            ]} 
-            onPress={() => {
-              if (selectedPlanId && !isCurrentlyActive) handleSubscribe(selectedPlanId);
-            }}
-            disabled={!selectedPlanId || isCurrentlyActive}
-          >
-            <Text style={styles.subscribeBtnText}>
-              {isCurrentlyActive ? 'Active Plan' : 'Subscribe >'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </View>
+                    <View style={styles.dateContainer}>
+                      <Text style={styles.dateLabel}>Purchased:</Text>
+                      <Text style={styles.dateValue}>{pDate}</Text>
+                    </View>
+                    <View style={styles.dateContainer}>
+                      <Text style={styles.dateLabel}>Expires:</Text>
+                      <Text style={styles.dateValue}>{eDate}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+              );
+            })
+          ) : (
+            <Text style={{ color: '#aaa', textAlign: 'center', marginTop: 40, fontSize: 16 }}>No active plan found.</Text>
+          )
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -280,123 +327,193 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
-    width: '100%',
-    paddingHorizontal: 10,
-    marginTop: 20,
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: 0,
   },
-  mainTitle: {
+  backButton: {
+    padding: 5,
+  },
+  headerTitle: {
     color: '#FFF',
-    fontSize: 28,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    marginTop: 10,
+    marginBottom: 20,
+    gap: 40,
+  },
+  tabButton: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  tabText: {
+    color: '#888',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: 2,
+    backgroundColor: '#FFF',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  descriptionText: {
+    color: '#ccc',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 20,
+    paddingHorizontal: 10,
+  },
+  cardContainer: {
+    marginBottom: 25,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  cardGradientWrapper: {
+    width: '100%',
+    borderRadius: 20,
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  cardContent: {
+    padding: 25,
+    zIndex: 1,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 10,
+  },
+  priceSymbol: {
+    color: '#FFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginRight: 2,
+  },
+  priceValue: {
+    color: '#FFF',
+    fontSize: 42,
+    fontWeight: 'bold',
+  },
+  priceDuration: {
+    color: '#aaa',
+    fontSize: 14,
+    marginLeft: 5,
+  },
+  planTitle: {
+    color: '#f28b2c',
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  subtitle: {
-    color: '#ddd',
-    fontSize: 14,
-    textAlign: 'center',
-    width: '100%',
-    paddingHorizontal: 50,
+  planSubtitle: {
+    color: '#ccc',
+    fontSize: 13,
+    marginBottom: 20,
+    lineHeight: 18,
   },
-  globalFeaturesBox: {
-    paddingHorizontal: 40,
-    marginBottom: 40,
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 20,
   },
-  globalFeatureRow: {
+  featuresList: {
+    marginBottom: 15,
+    
+  },
+  featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  globalFeatureText: {
+  featureText: {
+    color: '#ccc',
+    fontSize: 14,
+    flex: 1,
+  },
+  actionButton: {
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  currentPlanButton: {
+    backgroundColor: '#f28b2c',
+  },
+  upgradeButton: {
+    backgroundColor: '#f28b2c',
+  },
+  actionButtonText: {
     color: '#FFF',
-    fontSize: 16,
-    width: '100%',
-    letterSpacing: 0.5, 
+    fontSize: 13,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
-  planCard: {
-    width: 160,
-    height: 180,
-    backgroundColor: '#000',
-    borderRadius: 12,
-    padding: 15,
-  },
-  planCardSelected: {
-    borderWidth: 1.5,
-    borderColor: '#f28b2c',
-  },
-  planCardUnselected: {
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  cardHeaderRow: {
+  myPlanHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  cardPlanName: {
-    color: '#aaa',
+  activeBadge: {
+    color: '#4ade80',
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  chassisText: {
+    color: '#888',
     fontSize: 12,
-    fontWeight: '600',
+    marginBottom: 20,
   },
-  cardDurationTitle: {
+  myPlanPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 20,
+  },
+  myPlanPriceValue: {
     color: '#FFF',
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 15,
   },
-  cardSparkleBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+  dateContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 8,
   },
-  cardPrice: {
+  dateLabel: {
+    color: '#888',
+    fontSize: 13,
+    width: 80,
+  },
+  dateValue: {
     color: '#FFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
   },
-  bottomButtonContainer: {
-    position: 'absolute',
-    bottom: 90,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 25,
-    backgroundColor: 'transparent',
-  },
-  viewActiveBtn: {
-    backgroundColor: 'transparent',
-    paddingVertical: 12,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#FFF',
-  },
-  viewActiveBtnText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  subscribeBtn: {
-    backgroundColor: '#f28b2c',
-    paddingVertical: 18,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  subscribeBtnText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  }
 });
 
 export default SubscriptionViewpage;
+

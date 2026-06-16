@@ -48,8 +48,9 @@ exports.createSparePart = async (req, res, next) => {
   try {
     const sparePartData = { ...req.body };
     
-    if (req.file) {
-      sparePartData.image = `/uploads/spareparts/${req.file.filename}`;
+    if (req.files && req.files.length > 0) {
+      sparePartData.images = req.files.map(file => `/uploads/spareparts/${file.filename}`);
+      sparePartData.image = sparePartData.images[0]; // For backwards compatibility
     }
 
     // Convert string boolean/numbers if coming from FormData
@@ -83,16 +84,34 @@ exports.updateSparePart = async (req, res, next) => {
 
     const updateData = { ...req.body };
 
-    if (req.file) {
-      // Delete old image if exists
-      if (sparePart.image) {
-        const oldImagePath = path.join(__dirname, '..', sparePart.image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
-      }
-      updateData.image = `/uploads/spareparts/${req.file.filename}`;
+    // Handle existing images that the user kept
+    let retainedImages = [];
+    if (req.body.retainedImages) {
+        retainedImages = Array.isArray(req.body.retainedImages) ? req.body.retainedImages : [req.body.retainedImages];
+    } else if (req.body.retainedImagesEmpty !== 'true') {
+        retainedImages = sparePart.images && sparePart.images.length > 0 ? sparePart.images : (sparePart.image ? [sparePart.image] : []);
     }
+
+    // Delete images that are no longer retained
+    const oldImages = sparePart.images && sparePart.images.length > 0 ? sparePart.images : (sparePart.image ? [sparePart.image] : []);
+    oldImages.forEach(img => {
+        if (!retainedImages.includes(img)) {
+            const oldImagePath = path.join(__dirname, '..', img);
+            if (fs.existsSync(oldImagePath)) {
+                try { fs.unlinkSync(oldImagePath); } catch(err) { console.error('Error deleting image:', err); }
+            }
+        }
+    });
+
+    let finalImages = [...retainedImages];
+
+    if (req.files && req.files.length > 0) {
+      const newImages = req.files.map(file => `/uploads/spareparts/${file.filename}`);
+      finalImages = [...finalImages, ...newImages];
+    }
+
+    updateData.images = finalImages;
+    updateData.image = finalImages.length > 0 ? finalImages[0] : null;
 
     // Convert string boolean/numbers if coming from FormData
     if (updateData.amount) updateData.amount = Number(updateData.amount);
@@ -126,8 +145,15 @@ exports.deleteSparePart = async (req, res, next) => {
       });
     }
 
-    // Delete image file if exists
-    if (sparePart.image) {
+    // Delete image files if exist
+    if (sparePart.images && sparePart.images.length > 0) {
+      sparePart.images.forEach(img => {
+        const imagePath = path.join(__dirname, '..', img);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      });
+    } else if (sparePart.image) {
       const imagePath = path.join(__dirname, '..', sparePart.image);
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);

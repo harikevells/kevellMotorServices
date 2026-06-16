@@ -56,7 +56,8 @@ const UserProductspare = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('All');
     const [filterModalVisible, setFilterModalVisible] = useState(false);
-    const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+    const [fullScreenItem, setFullScreenItem] = useState<any>(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     // User Form Details
     const [userId, setUserId] = useState('');
@@ -398,8 +399,8 @@ const UserProductspare = () => {
         
         return (
             <View style={styles.card}>
-                <TouchableOpacity style={styles.imageContainer} onPress={() => setFullScreenImage(getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image')}>
-                    <Image source={{ uri: getImageUrl(item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} style={styles.productImage} />
+                <TouchableOpacity style={styles.imageContainer} onPress={() => { setFullScreenItem(item); setCurrentImageIndex(0); }}>
+                    <Image source={{ uri: getImageUrl(item.images && item.images.length > 0 ? item.images[0] : item.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} style={styles.productImage} />
                 </TouchableOpacity>
                 <View style={styles.cardContent}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -527,6 +528,26 @@ const UserProductspare = () => {
                             {selectedPart && (
                                 <View style={styles.orderSummary}>
                                     <Text style={styles.summaryTitle}>Item: {selectedPart.name}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 15, backgroundColor: 'rgba(0,0,0,0.5)', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                        <Text style={{ color: '#CCC', fontSize: 14, fontWeight: 'bold' }}>QUANTITY</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <TouchableOpacity 
+                                                onPress={() => setQuantity(String(Math.max(1, parseInt(quantity, 10) - 1)))}
+                                                style={{ paddingHorizontal: 15, paddingVertical: 5, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 5 }}
+                                            >
+                                                <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold' }}>-</Text>
+                                            </TouchableOpacity>
+                                            <Text style={{ color: '#FFF', fontSize: 16, marginHorizontal: 15, fontWeight: 'bold' }}>{quantity}</Text>
+                                            <TouchableOpacity 
+                                                onPress={() => setQuantity(String(Math.min(selectedPart.stockQty || 1, parseInt(quantity, 10) + 1)))}
+                                                style={{ paddingHorizontal: 15, paddingVertical: 5, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 5 }}
+                                                disabled={parseInt(quantity, 10) >= (selectedPart.stockQty || 1)}
+                                            >
+                                                <Text style={{ color: parseInt(quantity, 10) >= (selectedPart.stockQty || 1) ? '#666' : '#FFF', fontSize: 18, fontWeight: 'bold' }}>+</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
                                         <Text style={{ color: '#aaa', flex: 1 }}>Total:</Text>
                                         <Text style={{ color: '#fff', width:60 }}>₹{selectedPart.amount * (parseInt(quantity, 10) || 1)}</Text>
@@ -862,21 +883,62 @@ const UserProductspare = () => {
 
             {/* Full Screen Image Modal */}
             <Modal
-                visible={!!fullScreenImage}
+                visible={!!fullScreenItem}
                 transparent={true}
                 animationType="fade"
-                onRequestClose={() => setFullScreenImage(null)}
+                onRequestClose={() => setFullScreenItem(null)}
             >
-                <TouchableOpacity 
-                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}
-                    activeOpacity={1}
-                    onPress={() => setFullScreenImage(null)}
-                >
-                    <Image 
-                        source={{ uri: fullScreenImage || '' }} 
-                        style={{ width: '90%', height: '70%', resizeMode: 'contain' }} 
-                    />
-                </TouchableOpacity>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity 
+                        style={{ position: 'absolute', top: Platform.OS === 'ios' ? 50 : 20, right: 20, zIndex: 10, padding: 10 }}
+                        onPress={() => setFullScreenItem(null)}
+                    >
+                        <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>✕</Text>
+                    </TouchableOpacity>
+
+                    {fullScreenItem && (
+                        <View style={{ width: '100%', height: '70%', justifyContent: 'center', alignItems: 'center' }}>
+                            <Image 
+                                source={{ uri: getImageUrl(fullScreenItem.images && fullScreenItem.images.length > 0 ? fullScreenItem.images[currentImageIndex] : fullScreenItem.image) || 'https://via.placeholder.com/150/111111/f28b2c?text=No+Image' }} 
+                                style={{ width: '90%', height: '100%', resizeMode: 'contain' }} 
+                            />
+
+                            {fullScreenItem.images && fullScreenItem.images.length > 1 && (
+                                <>
+                                    <TouchableOpacity
+                                        style={{ position: 'absolute', left: 10, top: '50%', padding: 15, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 25 }}
+                                        onPress={() => setCurrentImageIndex(prev => prev === 0 ? fullScreenItem.images.length - 1 : prev - 1)}
+                                    >
+                                        <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>{'<'}</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={{ position: 'absolute', right: 10, top: '50%', padding: 15, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 25 }}
+                                        onPress={() => setCurrentImageIndex(prev => prev === fullScreenItem.images.length - 1 ? 0 : prev + 1)}
+                                    >
+                                        <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>{'>'}</Text>
+                                    </TouchableOpacity>
+
+                                    <View style={{ position: 'absolute', bottom: -30, flexDirection: 'row', justifyContent: 'center', width: '100%' }}>
+                                        {fullScreenItem.images.map((_: any, idx: number) => (
+                                            <TouchableOpacity key={idx} onPress={() => setCurrentImageIndex(idx)}>
+                                                <View
+                                                    style={{
+                                                        width: currentImageIndex === idx ? 12 : 8,
+                                                        height: currentImageIndex === idx ? 12 : 8,
+                                                        borderRadius: 6,
+                                                        backgroundColor: currentImageIndex === idx ? '#f28b2c' : '#555',
+                                                        marginHorizontal: 5
+                                                    }}
+                                                />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+                        </View>
+                    )}
+                </View>
             </Modal>
         </SafeAreaView>
     );

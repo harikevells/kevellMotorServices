@@ -166,7 +166,7 @@
 .vendor-name {
     font-weight: 600;
     font-size: 15px;
-    color: #f28b2c; /* Updated to Orange */
+    color: #000000; /* Updated to Black */
 }
 
 .track-link {
@@ -260,7 +260,7 @@
 .detail-label {
     font-size: 12px;
     font-weight: 700;
-    color: #f28b2c; /* Updated to Orange */
+    color: #000000; /* Updated to Black */
 }
 
 .detail-value {
@@ -302,7 +302,7 @@
 .user-name-track {
     font-size: 12px;
     font-weight: 700;
-    color: #f28b2c; /* Updated to Orange */
+    color: #000000; /* Updated to Black */
 }
 
 .delivery-actions {

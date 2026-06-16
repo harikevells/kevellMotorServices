@@ -15,15 +15,19 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   ScrollView,
-  Platform
+  Platform,
+  PermissionsAndroid,
+  Modal
 } from 'react-native';
+import RNFS from 'react-native-fs';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import VendorImage from './assets/logoimage.png';
 import UserImage from './assets/logoimage1.png';
-import { login, SafeStorage } from './services/api';
+import { login, forgotPasswordAPI, resetPasswordAPI, SafeStorage, verifyForgotPasswordOTPAPI } from './services/api';
+import { launchCamera } from 'react-native-image-picker';
 import { SHADOWS } from './constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -49,6 +53,23 @@ const EyeOffIcon = ({ color }: { color: string }) => (
   </Svg>
 );
 
+
+const MailIcon = ({ color, style }: { color: string, style?: any }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <Path d="M22 6l-10 7L2 6" />
+  </Svg>
+);
+
+const LockIcon = ({ color, style }: { color: string, style?: any }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M21 16V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z" />
+    <Path d="M12 11v4" />
+    <Path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </Svg>
+);
+
+
 const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<LoginRouteProp>();
@@ -60,6 +81,14 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Forgot Password States
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -67,7 +96,6 @@ const LoginScreen = () => {
   const inputStagger = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // If route params change, update local role state
     if (route.params?.role) {
       setRole(route.params.role);
     }
@@ -129,11 +157,79 @@ const LoginScreen = () => {
         }
       }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.toString());
+      console.log('Login error:', error);
+      Alert.alert('Login Failed', error.toString() || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) {
+      Alert.alert('Error', 'Please enter your email.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res: any = await forgotPasswordAPI(forgotEmail);
+      Alert.alert('OTP Sent', res.message || 'Check your email for the OTP.');
+      // if (res.devOtp) {
+      //   Alert.alert('DEV MODE OTP', `Your OTP is: ${res.devOtp}`);
+      // }
+      setForgotStep(2);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Email not registered.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      Alert.alert('Error', 'Please enter the 6-digit OTP.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res: any = await verifyForgotPasswordOTPAPI(forgotEmail, otp);
+      if (res.success) {
+        setForgotStep(3);
+      } else {
+        Alert.alert('Error', 'Invalid OTP');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Invalid or expired OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      Alert.alert('Error', 'Please enter and confirm your new password.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res: any = await resetPasswordAPI({ email: forgotEmail, otp, newPassword });
+      Alert.alert('Success', res.message || 'Password changed successfully!');
+      setIsForgotPassword(false);
+      setForgotStep(1);
+      setForgotEmail('');
+      setOtp('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Password reset failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -144,7 +240,7 @@ const LoginScreen = () => {
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           bounces={false}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -162,67 +258,157 @@ const LoginScreen = () => {
           </Animated.View>
 
           <Animated.View style={[styles.bottomHalf, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View style={styles.roleContainer}>
-              <TouchableOpacity
-                style={[styles.roleOption, role === 'user' && styles.roleSelected]}
-                onPress={() => setRole('user')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.roleText, role === 'user' && styles.roleTextSelected]}>User</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.roleOption, role === 'vendor' && styles.roleSelected]}
-                onPress={() => setRole('vendor')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.roleText, role === 'vendor' && styles.roleTextSelected]}>Vendor</Text>
-              </TouchableOpacity>
-            </View>
+            {isForgotPassword ? (
+              <View>
+                <Text style={[styles.heading, { fontSize: 24, marginBottom: 20 }]}>Reset Password</Text>
 
-            <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email Address"
-                  placeholderTextColor="#555"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={email}
-                  onChangeText={setEmail}
-                />
-              </View>
-            </Animated.View>
+                {forgotStep === 1 && (
+                  <>
+                    <View style={styles.inputContainer}>
+                      <MailIcon color={ORANGE} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter your Email Address"
+                        placeholderTextColor="#555"
+                        keyboardType="email-address"
+                        value={forgotEmail}
+                        onChangeText={setForgotEmail}
+                        autoCapitalize="none"
+                      />
+                    </View>
+                    <TouchableOpacity style={styles.verifyButton} onPress={handleForgotPassword} disabled={loading}>
+                      {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>SEND OTP</Text>}
+                    </TouchableOpacity>
+                  </>
+                )}
 
-            <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password"
-                  placeholderTextColor="#555"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-                  {showPassword ? <EyeIcon color={ORANGE} /> : <EyeOffIcon color="#555" />}
+                {forgotStep === 2 && (
+                  <>
+                    <View style={styles.inputContainer}>
+                      <LockIcon color={ORANGE} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter 6-Digit OTP"
+                        placeholderTextColor="#555"
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        value={otp}
+                        onChangeText={setOtp}
+                      />
+                    </View>
+                    <TouchableOpacity style={styles.verifyButton} onPress={handleVerifyOtp} disabled={loading}>
+                      {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>VERIFY OTP</Text>}
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                {forgotStep === 3 && (
+                  <>
+                    <View style={styles.inputContainer}>
+                      <LockIcon color={ORANGE} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="New Password"
+                        placeholderTextColor="#555"
+                        secureTextEntry
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                      />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <LockIcon color={ORANGE} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Confirm Password"
+                        placeholderTextColor="#555"
+                        secureTextEntry
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                      />
+                    </View>
+                    <TouchableOpacity style={styles.verifyButton} onPress={handleResetPassword} disabled={loading}>
+                      {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>SUBMIT</Text>}
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                <TouchableOpacity onPress={() => { setIsForgotPassword(false); setForgotStep(1); }} style={{ alignSelf: 'center', marginTop: 20 }}>
+                  <Text style={styles.backLink}>
+                    Back to <Text style={{ fontWeight: '900', color: ORANGE }}>Login</Text>
+                  </Text>
                 </TouchableOpacity>
               </View>
-            </Animated.View>
+            ) : (
+              <View>
+                <View style={styles.roleContainer}>
+                  <TouchableOpacity
+                    style={[styles.roleOption, role === 'user' && styles.roleSelected]}
+                    onPress={() => setRole('user')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.roleText, role === 'user' && styles.roleTextSelected]}>User</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.roleOption, role === 'vendor' && styles.roleSelected]}
+                    onPress={() => setRole('vendor')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.roleText, role === 'vendor' && styles.roleTextSelected]}>Vendor</Text>
+                  </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity
-              style={styles.verifyButton}
-              onPress={handleLogin}
-              disabled={loading}
-              activeOpacity={0.9}
-            >
-              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>LOG IN</Text>}
-            </TouchableOpacity>
+                <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email Address"
+                      placeholderTextColor="#555"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={email}
+                      onChangeText={setEmail}
+                    />
+                  </View>
+                </Animated.View>
 
-            <TouchableOpacity onPress={() => navigation.navigate('Registration' as any)} style={{ alignSelf: 'center' }}>
-              <Text style={styles.backLink}>
-                Don't have an account? <Text style={{ fontWeight: '900', color: ORANGE }}>Register</Text>
-              </Text>
-            </TouchableOpacity>
+                <Animated.View style={{ opacity: inputStagger, transform: [{ translateX: inputStagger.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Password"
+                      placeholderTextColor="#555"
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                      {showPassword ? <EyeIcon color={ORANGE} /> : <EyeOffIcon color="#555" />}
+                    </TouchableOpacity>
+                  </View>
+                </Animated.View>
+
+                <TouchableOpacity onPress={() => setIsForgotPassword(true)}>
+                  <Text style={{ color: ORANGE, textAlign: 'right', marginBottom: 0, fontWeight: 'bold' }}>Forgot Password?</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.verifyButton}
+                  onPress={handleLogin}
+                  disabled={loading}
+                  activeOpacity={0.9}
+                >
+                  {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.verifyButtonText}>LOG IN</Text>}
+                </TouchableOpacity>
+
+
+
+                <TouchableOpacity onPress={() => navigation.navigate('Registration' as any)} style={{ alignSelf: 'center' }}>
+                  <Text style={styles.backLink}>
+                    Don't have an account? <Text style={{ fontWeight: '900', color: ORANGE }}>Register</Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -237,18 +423,18 @@ const styles = StyleSheet.create({
   },
   topHalf: {
     paddingHorizontal: 0,
-    paddingTop: 40,
+    paddingTop: 20,
     paddingBottom: 0,
     alignItems: 'center',
   },
   illustrationContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     width: '100%',
   },
   logoImage: {
-    width: width * 1,
-    height: width * 0.85,
+    width: width * 0.9,
+    height: width * 0.80,
     marginTop: 20,
   },
   heading: {
@@ -341,6 +527,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 0.5,
   },
+
 });
 
 export default LoginScreen;

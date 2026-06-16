@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: null
   },
+  faceImage: {
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

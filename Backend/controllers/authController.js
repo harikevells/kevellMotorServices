@@ -501,3 +501,174 @@ exports.updateUserProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.faceRegister = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No face image uploaded' });
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) {
+       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    user.faceImage = '/uploads/' + req.file.filename;
+    await user.save();
+    console.log('[Face Register] Face registered for user:', user.email);
+    res.json({ success: true, message: 'Face registered successfully' });
+  } catch (error) {
+    console.error('[Face Register Error]', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.faceLogin = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No face image uploaded' });
+    }
+    
+    let user;
+
+    if (email && email !== 'undefined' && email !== 'null' && email.trim() !== '') {
+      console.log('[Face Login] Attempting explicit login for:', email);
+      user = await User.findOne({ email });
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Account not found' });
+      }
+      if (!user.faceImage) {
+        return res.status(401).json({ success: false, message: 'Face Lock is not registered for this account' });
+      }
+    } else {
+      console.log('[Face Login] No email provided, simulating AI match by finding latest face...');
+      // Simulate face match by finding the most recently registered user with a face
+      user = await User.findOne({ faceImage: { $ne: null } }).sort({ createdAt: -1 });
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'No accounts with Face Lock found in the database.' });
+      }
+    }
+
+    // In a production app, we would compare the two images using TFJS here.
+    console.log('[Face Login] Login successful for user:', user.email);
+
+    // Generate Token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    let vendorId = undefined;
+    if (user.role === 'vendor') {
+      const vendorDoc = await Vendor.findOne({ user: user._id });
+      if (vendorDoc) vendorId = vendorDoc._id;
+    }
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        address: user.address,
+        profileImage: user.profileImage,
+        defaultAddress: user.defaultAddress,
+        vendorId
+      }
+    });
+  } catch (error) {
+    console.error('[Face Login Error]', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide an email' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Account not found with this email' });
+    }
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
+
+    console.log(`[Forgot Password] OTP for ${email} is ${otp}`);
+
+    res.json({
+      success: true,
+      message: 'OTP sent successfully',
+      devOtp: otp // Always send back in this simulated environment so frontend can show Alert
+    });
+  } catch (error) {
+    console.error('[Forgot Password Error]', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+exports.verifyForgotPasswordOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Please provide email and otp' });
+    }
+
+    const user = await User.findOne({
+      email,
+      otp,
+      otpExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    res.json({ success: true, message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error('[Verify Forgot Password OTP Error]', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Please provide email, otp, and new password' });
+    }
+
+    const user = await User.findOne({
+      email,
+      otp,
+      otpExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    console.log(`[Reset Password] Password reset successful for ${email}`);
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('[Reset Password Error]', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};

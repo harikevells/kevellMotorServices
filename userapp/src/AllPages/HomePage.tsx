@@ -25,7 +25,7 @@ import { RootStackParamList } from '../../App';
 import { COLORS, SIZES, SHADOWS } from '../constants/theme';
 import { EVCar } from '../assets/EVIcons';
 import { AgentIcon, VehicleIcon, ServiceIcon, SubscriptionIcon, PartsIcon, PaymentsIcon, FeedbackIcon, ReferralsIcon, DocumentsIcon } from '../assets/HomeIcons';
-import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications, fetchActiveOffers, validateOffer, fetchSubscriptions, purchaseSubscription, fetchMySubscriptions } from '../services/api';
+import { SafeStorage, fetchProfile, fetchServices, fetchUserVehicles, fetchNotifications, fetchActiveOffers, validateOffer, fetchSubscriptions, purchaseSubscription, fetchMySubscriptions, globalSearch } from '../services/api';
 import { getImageUrl } from '../constants/config';
 
 const { width } = Dimensions.get('window');
@@ -107,6 +107,10 @@ const HomeScreen = () => {
   const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
   const [liveOffers, setLiveOffers] = useState<any[]>([]);
   const [usedOfferIds, setUsedOfferIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{services: any[], spareParts: any[]}>({ services: [], spareParts: [] });
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const scrollRef = useRef<FlatList>(null);
   const intervalRef = useRef<any>(null);
 
@@ -127,6 +131,33 @@ const HomeScreen = () => {
       })
     ]).start();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length > 0) {
+        setIsSearching(true);
+        setShowDropdown(true);
+        try {
+          const res: any = await globalSearch(searchQuery.trim());
+          if (res.success) {
+            setSearchResults({
+              services: res.services || [],
+              spareParts: res.spareParts || []
+            });
+          }
+        } catch (e) {
+          console.warn('Search error:', e);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setShowDropdown(false);
+        setSearchResults({ services: [], spareParts: [] });
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -411,6 +442,7 @@ const HomeScreen = () => {
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Big Title */}
         <View style={styles.heroTitleContainer}>
@@ -419,13 +451,50 @@ const HomeScreen = () => {
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { zIndex: 10, elevation: 10 }]}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
-            placeholder="Search Service"
+            placeholder="Search Service or Spare Part"
             placeholderTextColor="#666"
             style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onFocus={() => { if(searchQuery.trim().length > 0) setShowDropdown(true); }}
+            onBlur={() => { setTimeout(() => setShowDropdown(false), 500); }}
           />
+          {showDropdown && (
+            <View style={styles.searchDropdown}>
+              {isSearching ? (
+                <View style={{ padding: 15 }}><ActivityIndicator color="#f28b2c" /></View>
+              ) : (
+                <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="always" style={{ maxHeight: 300 }}>
+                  {searchResults.services.length > 0 && (
+                    <View>
+                      <Text style={styles.dropdownSectionTitle}>Services</Text>
+                      {searchResults.services.map((s: any) => (
+                        <TouchableOpacity key={s._id} style={styles.dropdownItem} onPress={() => { setShowDropdown(false); navigation.navigate('VehicleSelection' as never, { category: s.category || s.serviceName } as never); }}>
+                          <Text style={styles.dropdownItemText}>{s.serviceName} <Text style={{fontSize: 10, color: '#888'}}>({s.category})</Text></Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                  {searchResults.spareParts.length > 0 && (
+                    <View>
+                      <Text style={styles.dropdownSectionTitle}>Spare Parts</Text>
+                      {searchResults.spareParts.map((sp: any) => (
+                        <TouchableOpacity key={sp._id} style={styles.dropdownItem} onPress={() => { setShowDropdown(false); navigation.navigate('Spares' as never); }}>
+                          <Text style={styles.dropdownItemText}>{sp.name} <Text style={{fontSize: 12, color: '#f28b2c'}}>₹{sp.amount}</Text></Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                  {searchResults.services.length === 0 && searchResults.spareParts.length === 0 && (
+                     <Text style={{ padding: 15, color: '#999', textAlign: 'center' }}>No results found</Text>
+                  )}
+                </ScrollView>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Sliding Promotional Banners */}
@@ -915,6 +984,43 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  searchDropdown: {
+    position: 'absolute',
+    top: 55,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    overflow: 'hidden',
+    zIndex: 999,
+    elevation: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  dropdownSectionTitle: {
+    color: '#f28b2c',
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 5,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    textTransform: 'uppercase',
+  },
+  dropdownItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  dropdownItemText: {
+    color: '#FFF',
+    fontSize: 14,
   },
 });
 

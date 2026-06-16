@@ -16,12 +16,12 @@ const { isAdmin, isAdminOrVendor } = require('../middleware/roleCheck');
 router
   .route('/')
   .get(verifyToken, getAllSpareParts)
-  .post(verifyToken, isAdmin, uploadSparePart.single('image'), createSparePart);
+  .post(verifyToken, isAdmin, uploadSparePart.array('images', 20), createSparePart);
 
 router
   .route('/:id')
   .get(verifyToken, getSparePart)
-  .put(verifyToken, isAdmin, uploadSparePart.single('image'), updateSparePart)
+  .put(verifyToken, isAdmin, uploadSparePart.array('images', 20), updateSparePart)
   .delete(verifyToken, isAdmin, deleteSparePart);
 
 router.post('/:id/reviews', verifyToken, addSparePartReview);

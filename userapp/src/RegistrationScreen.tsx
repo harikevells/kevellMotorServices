@@ -12,13 +12,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  PermissionsAndroid,
+  Modal,
+  Animated
 } from 'react-native';
+import RNFS from 'react-native-fs';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { COLORS, SIZES, SHADOWS } from './constants/theme';
 import { register, SafeStorage } from './services/api';
+import { launchCamera } from 'react-native-image-picker';
 
 const { width } = Dimensions.get('window');
 const ORANGE = '#f28b2c';
@@ -41,6 +46,7 @@ const EyeOffIcon = ({ color }: { color: string }) => (
     <Line x1="1" y1="1" x2="23" y2="23" />
   </Svg>
 );
+
 
 const RegistrationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -96,6 +102,7 @@ const RegistrationScreen = () => {
       if (res.token) {
         await SafeStorage.setItem('token', res.token);
         await SafeStorage.setItem('user', JSON.stringify(res.user));
+
         Alert.alert('Success', 'Registration successful!', [
           {
             text: 'OK',
@@ -256,6 +263,8 @@ const RegistrationScreen = () => {
               value={form.pincode}
               onChangeText={(text) => setForm({ ...form, pincode: text })}
             />
+
+
           </View>
 
           <TouchableOpacity
@@ -460,6 +469,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+
 });
 
 export default RegistrationScreen;

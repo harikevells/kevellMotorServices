@@ -97,6 +97,13 @@ api.interceptors.response.use(
 export { SafeStorage };
 export const login = (data: any) => api.post('/auth/login', data);
 export const register = (data: any) => api.post('/auth/register', data);
+export const globalSearch = (query: string) => api.get(`/search?q=${query}`);
+export const uploadFaceRegistration = (formData: FormData) => api.post('/auth/face-register', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const loginWithFace = (formData: FormData) => api.post('/auth/face-login', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
 export const fetchProfile = () => api.get('/auth/profile');
 export const updateProfile = (data: any) => api.put('/users/profile', data);
 export const uploadAvatar = (formData: any) => api.post('/users/upload-avatar', formData, {
@@ -104,6 +111,9 @@ export const uploadAvatar = (formData: any) => api.post('/users/upload-avatar', 
 });
 export const sendOTP = (phone: string) => api.post('/auth/send-otp', { phone });
 export const verifyOTP = (phone: string, otp: string) => api.post('/auth/verify-otp', { phone, otp });
+export const forgotPasswordAPI = (email: string) => api.post('/auth/forgot-password', { email });
+export const verifyForgotPasswordOTPAPI = (email: string, otp: string) => api.post('/auth/verify-forgot-password-otp', { email, otp });
+export const resetPasswordAPI = (data: any) => api.post('/auth/reset-password', data);
 
 // Vehicles
 export const fetchUserVehicles = () => api.get('/vehicles');

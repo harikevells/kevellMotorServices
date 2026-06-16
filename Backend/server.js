@@ -105,6 +105,7 @@ app.use('/api/spare-parts', require('./routes/sparePartRoutes'));
 app.use('/api/spare-part-orders', require('./routes/sparePartOrderRoutes'));
 app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
+app.use('/api/search', require('./routes/searchRoutes'));
 
 // Error handler
 app.use(require('./middleware/errorHandler'));

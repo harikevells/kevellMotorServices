@@ -62,7 +62,8 @@ const SpareParts = () => {
         isListed: true,
         status: 'Active'
     });
-    const [imageFile, setImageFile] = useState(null);
+    const [imageFiles, setImageFiles] = useState([]);
+    const [existingImages, setExistingImages] = useState([]);
 
     const fetchSpareParts = useCallback(async () => {
         setLoading(true);
@@ -125,7 +126,16 @@ const SpareParts = () => {
     };
 
     const handleFileChange = (e) => {
-        setImageFile(e.target.files[0]);
+        setImageFiles(prev => [...prev, ...Array.from(e.target.files)]);
+        e.target.value = null;
+    };
+
+    const removeNewImage = (indexToRemove) => {
+        setImageFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+
+    const removeExistingImage = (indexToRemove) => {
+        setExistingImages(prev => prev.filter((_, index) => index !== indexToRemove));
     };
 
     const handleSubmit = async (e) => {
@@ -137,8 +147,18 @@ const SpareParts = () => {
         Object.keys(formData).forEach(key => {
             data.append(key, formData[key]);
         });
-        if (imageFile) {
-            data.append('image', imageFile);
+        if (existingImages.length > 0) {
+            existingImages.forEach(img => {
+                data.append('retainedImages', img);
+            });
+        } else {
+            data.append('retainedImagesEmpty', 'true');
+        }
+
+        if (imageFiles && imageFiles.length > 0) {
+            imageFiles.forEach(file => {
+                data.append('images', file);
+            });
         }
 
         try {
@@ -162,7 +182,7 @@ const SpareParts = () => {
             fetchSpareParts();
         } catch (error) {
             console.error('Error saving spare part:', error);
-            showMessage('error', error.response?.data?.error || 'Something went wrong');
+            showMessage('error', error.response?.data?.message || error.response?.data?.error || 'Something went wrong');
         } finally {
             setLoading(false);
         }
@@ -224,6 +244,7 @@ const SpareParts = () => {
                 isListed: part.isListed !== undefined ? part.isListed : true,
                 status: part.status || 'Active'
             });
+            setExistingImages(part.images && part.images.length > 0 ? part.images : (part.image ? [part.image] : []));
         } else {
             setIsEditing(false);
             setFormData({
@@ -238,8 +259,9 @@ const SpareParts = () => {
                 isListed: true,
                 status: 'Active'
             });
+            setExistingImages([]);
         }
-        setImageFile(null);
+        setImageFiles([]);
         setShowModal(true);
     };
 
@@ -423,7 +445,9 @@ const SpareParts = () => {
                             <div className="part-card" key={part._id}>
                                 <span className="card-status-badge">Active</span>
                                 <div className="card-image-section">
-                                    {part.image ? (
+                                    {(part.images && part.images.length > 0) ? (
+                                        <img src={`http://localhost:5000${part.images[0]}`} alt={part.name} />
+                                    ) : part.image ? (
                                         <img src={`http://localhost:5000${part.image}`} alt={part.name} />
                                     ) : (
                                         getCategoryIcon(part.category)
@@ -501,6 +525,7 @@ const SpareParts = () => {
                                 <th>Date</th>
                                 <th>Part Details</th>
                                 <th>Customer/Vendor</th>
+                                <th>Qty</th>
                                 <th>Amount</th>
                                 <th>Payment Status</th>
                                 <th>Status</th>
@@ -539,6 +564,7 @@ const SpareParts = () => {
                                         </div>
                                         <div className="small">{order.user?.email}</div>
                                     </td>
+                                    <td><div className="font-weight-bold">{order.quantity || 1}</div></td>
                                     <td><div className="text-primary font-weight-bold">₹{order.totalAmount}</div></td>
                                     <td>
                                         <span className={`font-weight-bold text-${order.paymentStatus === 'Paid' ? 'success' : 'warning'}`}>
@@ -764,9 +790,43 @@ const SpareParts = () => {
                         </div>
 
                         <div className="form-group form-full-width">
-                            <label>Product Image</label>
-                            <div className="file-upload-container">
-                                <input type="file" onChange={handleFileChange} accept="image/*" />
+                            <label>Product Images (Multiple)</label>
+                            <div className="file-upload-wrapper mt-2">
+                                <label className="file-upload-box d-flex flex-column align-items-center justify-content-center p-4 border border-dashed rounded bg-dark-custom cursor-pointer" style={{ borderStyle: 'dashed', borderColor: '#555', cursor: 'pointer' }}>
+                                    <Plus size={32} color="#888" className="mb-2" />
+                                    <span className="text-secondary">Click to upload multiple images</span>
+                                    <input 
+                                        type="file" 
+                                        onChange={handleFileChange} 
+                                        accept="image/*" 
+                                        multiple 
+                                        style={{ display: 'none' }} 
+                                    />
+                                </label>
+                            </div>
+                            <div className="image-preview-container mt-2 d-flex gap-2 flex-wrap">
+                                {existingImages.map((img, index) => (
+                                    <div key={`existing-${index}`} style={{ position: 'relative', display: 'inline-block' }}>
+                                        <img src={`http://localhost:5000${img}`} alt="existing" style={{width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px'}} />
+                                        <XCircle 
+                                            size={20} 
+                                            color="#dc3545" 
+                                            style={{ position: 'absolute', top: '-8px', right: '-8px', cursor: 'pointer', background: 'white', borderRadius: '50%' }} 
+                                            onClick={() => removeExistingImage(index)}
+                                        />
+                                    </div>
+                                ))}
+                                {imageFiles.map((file, index) => (
+                                    <div key={`new-${index}`} style={{ position: 'relative', display: 'inline-block' }}>
+                                        <img src={URL.createObjectURL(file)} alt="preview" style={{width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px'}} />
+                                        <XCircle 
+                                            size={20} 
+                                            color="#dc3545" 
+                                            style={{ position: 'absolute', top: '-8px', right: '-8px', cursor: 'pointer', background: 'white', borderRadius: '50%' }} 
+                                            onClick={() => removeNewImage(index)}
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -880,6 +940,7 @@ const SpareParts = () => {
                                     <div className="detail-card">
                                         <div className="detail-row"><strong>Status:</strong> <span className={`font-weight-bold text-${currentOrder.paymentStatus === 'Paid' ? 'success' : 'warning'} ml-2`}>{currentOrder.paymentStatus || 'Pending'}</span></div>
                                         <div className="detail-row"><strong>Payment ID:</strong> {currentOrder.paymentId || 'N/A'}</div>
+                                        <div className="detail-row"><strong>Quantity:</strong> {currentOrder.quantity || 1}</div>
                                         <div className="detail-row"><strong>Amount:</strong> ₹{currentOrder.totalAmount}</div>
                                         {(() => {
                                             const itemTotal = currentOrder.sparePart?.amount ? 

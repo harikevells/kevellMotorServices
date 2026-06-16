@@ -97,13 +97,13 @@ const uploadProfilePicture = multer({
 
 const uploadBill = multer({
   storage: getStorage('bills'),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 150 * 1024 * 1024 }, // 20MB
   fileFilter: fileFilter
 });
 
 const uploadSparePart = multer({
   storage: getStorage('spareparts'),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 150 * 1024 * 1024 }, // 150MB
   fileFilter: fileFilter
 });
 

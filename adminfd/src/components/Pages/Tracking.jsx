@@ -204,7 +204,7 @@ const Tracking = () => {
                             </div>
                             <div className="vendor-info-track">
                                 <div className="vendor-name-row">
-                                    <span className="vendor-name">{vendor.name} <small className="text-muted">({vendor.bookingRef})</small></span>
+                                    <span className="vendor-name1" style={{ color: 'black' }}>{vendor.name} <small style={{ color: 'black' }}>({vendor.bookingRef})</small></span>
                                     <span className="track-link">Track</span>
                                 </div>
                                 <div className="vendor-role-status">

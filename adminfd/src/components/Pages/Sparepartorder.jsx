@@ -39,6 +39,8 @@ const Sparepartorder = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(20);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [orderQuantity, setOrderQuantity] = useState(1);
 
     const [shippingDetails, setShippingDetails] = useState({
         name: '',
@@ -117,6 +119,8 @@ const Sparepartorder = () => {
 
     const handleBuyClick = (part) => {
         setSelectedPart(part);
+        setCurrentImageIndex(0);
+        setOrderQuantity(1);
         
         const userStr = sessionStorage.getItem('adminUser');
         if (userStr) {
@@ -160,13 +164,13 @@ const Sparepartorder = () => {
             const user = JSON.parse(sessionStorage.getItem('adminUser') || '{}');
 
             // Calculate amount with 10% vendor discount and delivery charge
-            const itemTotal = selectedPart.amount * 1;
+            const itemTotal = selectedPart.amount * orderQuantity;
             const discount = itemTotal * 0.10;
             const amount = (itemTotal - discount) + 50;
 
             const response = await axios.post('http://localhost:5000/api/spare-part-orders', {
                 sparePartId: selectedPart._id,
-                quantity: 1,
+                quantity: orderQuantity,
                 totalAmount: amount,
                 shippingAddress: shippingDetails,
                 vendorDiscount: discount
@@ -422,7 +426,7 @@ const Sparepartorder = () => {
                                                 <div className="card-name-col">
                                                     <h3 className="card-name">{part.name}</h3>
                                                 </div>
-                                                {part.reviews?.length > 0 && (
+                                                {part.reviews?.length > 0 ? (
                                                     <div
                                                         className="card-rating-circle clickable"
                                                         onClick={(e) => {
@@ -436,8 +440,18 @@ const Sparepartorder = () => {
                                                             {(part.reviews.reduce((acc, r) => acc + r.rating, 0) / part.reviews.length).toFixed(1)}
                                                         </div>
                                                     </div>
+                                                ) : (
+                                                    <div className="card-rating-circle">
+                                                        <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                                                        <div className="rating-value">5.0</div>
+                                                    </div>
                                                 )}
                                             </div>
+                                            {part.description && (
+                                                <div className="card-description" style={{ fontSize: '12px', color: '#999', marginTop: '4px', marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    {part.description}
+                                                </div>
+                                            )}
                                             <div className="card-pricing-row">
                                                 <div className="card-price">₹{part.amount?.toLocaleString()}</div>
                                                 <div className="card-stock">
@@ -511,7 +525,7 @@ const Sparepartorder = () => {
                                                 <div className="card-name-col">
                                                     <h3 className="card-name">{order.sparePart?.name}</h3>
                                                 </div>
-                                                {order.sparePart?.reviews?.length > 0 && (
+                                                {order.sparePart?.reviews?.length > 0 ? (
                                                     <div
                                                         className="card-rating-circle clickable"
                                                         onClick={(e) => {
@@ -525,8 +539,18 @@ const Sparepartorder = () => {
                                                             {(order.sparePart.reviews.reduce((acc, r) => acc + r.rating, 0) / order.sparePart.reviews.length).toFixed(1)}
                                                         </div>
                                                     </div>
+                                                ) : (
+                                                    <div className="card-rating-circle">
+                                                        <Star size={10} fill="#f59e0b" color="#f59e0b" />
+                                                        <div className="rating-value">5.0</div>
+                                                    </div>
                                                 )}
                                             </div>
+                                            {order.sparePart?.description && (
+                                                <div className="card-description" style={{ fontSize: '12px', color: '#999', marginTop: '4px', marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    {order.sparePart.description}
+                                                </div>
+                                            )}
                                             <div className="card-part-number">Order ID: #{order._id.slice(-6).toUpperCase()}</div>
 
                                             <div className="card-pricing-row">
@@ -589,6 +613,59 @@ const Sparepartorder = () => {
                     <Modal.Title>Shipping Details</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="p-4">
+                    {selectedPart && (
+                        <div className="modal-image-slider-container mb-4" style={{ position: 'relative', width: '100%', height: '200px', backgroundColor: '#222', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {selectedPart.images && selectedPart.images.length > 0 ? (
+                                <>
+                                    <img 
+                                        src={`http://localhost:5000${selectedPart.images[currentImageIndex]}`} 
+                                        alt={selectedPart.name} 
+                                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                    />
+                                    {selectedPart.images.length > 1 && (
+                                        <>
+                                            <button 
+                                                onClick={(e) => { e.preventDefault(); setCurrentImageIndex(prev => prev === 0 ? selectedPart.images.length - 1 : prev - 1); }}
+                                                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+                                            >
+                                                <ChevronLeft size={20} />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.preventDefault(); setCurrentImageIndex(prev => prev === selectedPart.images.length - 1 ? 0 : prev + 1); }}
+                                                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+                                            >
+                                                <ChevronRight size={20} />
+                                            </button>
+                                            <div style={{ position: 'absolute', bottom: '10px', display: 'flex', gap: '6px', zIndex: 10 }}>
+                                                {selectedPart.images.map((_, idx) => (
+                                                    <div 
+                                                        key={idx} 
+                                                        onClick={(e) => { e.preventDefault(); setCurrentImageIndex(idx); }}
+                                                        style={{ 
+                                                            width: '8px', 
+                                                            height: '8px', 
+                                                            borderRadius: '50%', 
+                                                            backgroundColor: currentImageIndex === idx ? '#f59e0b' : 'rgba(255,255,255,0.5)',
+                                                            cursor: 'pointer',
+                                                            transition: 'background-color 0.3s'
+                                                        }} 
+                                                    />
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            ) : selectedPart.image ? (
+                                <img 
+                                    src={`http://localhost:5000${selectedPart.image}`} 
+                                    alt={selectedPart.name} 
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                />
+                            ) : (
+                                getCategoryIcon(selectedPart.category)
+                            )}
+                        </div>
+                    )}
                     <Form onSubmit={handleOrderSubmit} className="address-form">
                         <Form.Group className="mb-3 full-row">
                             <Form.Label className="small">FULL NAME</Form.Label>
@@ -651,14 +728,38 @@ const Sparepartorder = () => {
                             />
                         </Form.Group>
 
+                        <Form.Group className="mb-3 full-row d-flex align-items-center justify-content-between bg-dark p-3 rounded border border-secondary" style={{ marginTop: '10px' }}>
+                            <Form.Label className="small mb-0 text-white" style={{ flex: 1 }}>QUANTITY</Form.Label>
+                            <div className="d-flex align-items-center">
+                                <Button 
+                                    variant="outline-secondary" 
+                                    className="px-3 py-1"
+                                    onClick={() => setOrderQuantity(prev => Math.max(1, prev - 1))}
+                                    style={{ background: 'transparent', borderColor: '#555', color: 'white' }}
+                                >
+                                    -
+                                </Button>
+                                <span className="mx-3 text-white font-weight-bold">{orderQuantity}</span>
+                                <Button 
+                                    variant="outline-secondary" 
+                                    className="px-3 py-1"
+                                    onClick={() => setOrderQuantity(prev => Math.min(prev + 1, selectedPart?.stockQty || 1))}
+                                    style={{ background: 'transparent', borderColor: '#555', color: 'white' }}
+                                    disabled={orderQuantity >= (selectedPart?.stockQty || 1)}
+                                >
+                                    +
+                                </Button>
+                            </div>
+                        </Form.Group>
+
                         <div className="full-row mt-3 p-3 bg-dark rounded border border-secondary">
                             <div className="d-flex justify-content-between mb-2">
-                                <span className="">Item Total:</span>
-                                <span>₹{selectedPart?.amount}</span>
+                                <span className="">Item Total ({orderQuantity} x ₹{selectedPart?.amount}):</span>
+                                <span>₹{(selectedPart?.amount * orderQuantity)}</span>
                             </div>
                             <div className="d-flex justify-content-between mb-2">
                                 <span className="text-success">Vendor Discount (10%):</span>
-                                <span className="text-success">-₹{(selectedPart?.amount * 0.10).toFixed(2)}</span>
+                                <span className="text-success">-₹{(selectedPart?.amount * orderQuantity * 0.10).toFixed(2)}</span>
                             </div>
                             <div className="d-flex justify-content-between mb-2 border-bottom border-secondary pb-2">
                                 <span className="text-white">Delivery Charge:</span>
@@ -666,7 +767,7 @@ const Sparepartorder = () => {
                             </div>
                             <div className="d-flex justify-content-between font-weight-bold h5 mt-2">
                                 <span className="text-white">Grand Total:</span>
-                                <span className="text-success">₹{((selectedPart?.amount * 0.90) + 50).toFixed(2)}</span>
+                                <span className="text-success">₹{((selectedPart?.amount * orderQuantity * 0.90) + 50).toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -731,6 +832,10 @@ const Sparepartorder = () => {
                                         <div className="detail-row">
                                             <span className="label">Date:</span>
                                             <span className="value">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="label">Quantity:</span>
+                                            <span className="value">{selectedOrder.quantity}</span>
                                         </div>
                                         <div className="detail-row">
                                             <span className="label">Item Total:</span>
